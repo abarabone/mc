@@ -204,15 +204,23 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
 
         var qStandard =
             from cube in qData
-            from tri in cube.tris
-            select new[]
-            {
+            select
+                from tri in cube.tris
+                select new[]
+                {
                     cube.vtxs[tri[0]],
                     cube.vtxs[tri[1]],
                     cube.vtxs[tri[2]],
-            };
-        var standard = qStandard.ToArray();
+                };
+        var qStandardId =
+            from cube in qData
+            select cube.cubeId
+            ;
 
+        var qXFlipName =
+            from id in qStandardId
+            select id ^ 0b_0000_0000
+            ;
         //var xflip =
         //    from cube in standard
         //    from vtri in cube
