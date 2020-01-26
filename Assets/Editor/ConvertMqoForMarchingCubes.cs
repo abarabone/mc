@@ -217,9 +217,43 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
             select cube.cubeId
             ;
 
-        var qXFlipName =
+        var qFlipId_x =
             from id in qStandardId
-            select id ^ 0b_0000_0000
+            let l = id & 0b_0101_0101
+            let r = id & 0b_1010_1010
+            select (byte)( ( l << 1 ) | ( r >> 1 ) )
+            ;
+
+        var qFlipId_y =
+            from id in qStandardId
+            let u = id & 0b_0000_1111
+            let d = id & 0b_1111_0000
+            select (byte)( ( u << 4 ) | ( d >> 4 ) )
+            ;
+
+        var qFlipId_z =
+            from id in qStandardId
+            let f = id & 0b_0011_0011
+            let b = id & 0b_1100_1100
+            select (byte)( ( f << 2 ) | ( b >> 2 ) )
+            ;
+
+        var qReverseId =
+            from id in qStandardId
+            select (byte)( id ^ 0b_1111_1111 )
+            ;
+
+        var qReverseId_x =
+            from id in qFlipId_x
+            select (byte)( id ^ 0b_1111_1111 )
+            ;
+        var qReverseId_y =
+            from id in qFlipId_y
+            select (byte)( id ^ 0b_1111_1111 )
+            ;
+        var qReverseId_z =
+            from id in qFlipId_z
+            select (byte)( id ^ 0b_1111_1111 )
             ;
         //var xflip =
         //    from cube in standard
@@ -229,7 +263,21 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
         //        vtri * Vector3.right * -1
         //    };
 
+        var qId = qStandardId
+            .Concat( qFlipId_x )
+            .Concat( qFlipId_y )
+            .Concat( qFlipId_z )
+            .Concat( qReverseId )
+            .Concat( qReverseId_x )
+            .Concat( qReverseId_y )
+            .Concat( qReverseId_z )
+            ;
 
+        using( var f = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
+        {
+            var s = string.Join( "\r\n", qId.Select( x => Convert.ToString( x, 2 ).PadLeft(8,'0') ) );
+            f.Write( s );
+        }
 
         var expandPattern256 = qData
             ;
