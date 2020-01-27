@@ -235,16 +235,13 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
     static void aaa( (string name, Vector3[] vtxs, int[][] tris)[] objectsData )
     {
 
-        var extractedData = extractCubeObjects_( objectsData );
-        var cubePattarns = makeCube_( extractedData );
-
-        makeVtxList_( extractedData );
-
+        var prototypeCubes = makePrototypeCubes_( objectsData );
+        var cube254Pattarns = makeCube254Pattarns_( prototypeCubes );
 
         return;
 
 
-        IEnumerable<(byte cubeId, Vector3[] vtxs, int[][] tris)> extractCubeObjects_
+        (byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[] trivtxs)[] makePrototypeCubes_
             ( (string name, Vector3[] vtxs, int[][] tris)[] objectsData_ )
         {
             var qExtractedData =
@@ -254,26 +251,48 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
                 let n = obj.name.Replace( "_", "" )
                 select (cubeId: Convert.ToByte( n, 2 ), obj.vtxs, obj.tris)
                 ;
+            var extractedData = qExtractedData.ToArray();
+
+
+            var qTriVtx =
+                from cube in extractedData
+                select
+                    from tri in cube.tris
+                    select (v0: cube.vtxs[ tri[ 0 ] ], v1: cube.vtxs[ tri[ 1 ] ], v2: cube.vtxs[ tri[ 2 ] ])
+                ;
+            var qId =
+                from cube in extractedData
+                select cube.cubeId
+                ;
+
+            var qVtxAndId =
+                from x in Enumerable.Zip( qId, qTriVtx, ( l, r ) => (id: l, trivtx: r) )
+                select (x.id, trivtxs:x.trivtx.ToArray())
+                ;
+            var vtxsAndIds = qVtxAndId.ToArray();
+
+
             // 確認
             foreach( var x in qExtractedData )
             {
                 Debug.Log( $"{Convert.ToString( x.cubeId, 2 ).PadLeft( 8, '0' )}" );
             }
 
-            return qExtractedData;
+            return vtxsAndIds;
         }
 
-        CubePattarn[] makeCube_( IEnumerable<(byte cubeId, Vector3[] vtxs, int[][] tris)> objectsData_ )
+        CubePattarn[] makeCube254Pattarns_
+            ( IEnumerable<(byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[])> prototypeCubes_ )
         {
-            var qStandardId =
-                from cube in objectsData_
-                select new CubePattarn( cube.cubeId )
+            var qPrototypeId =
+                from cube in prototypeCubes_
+                select new CubePattarn( cube.id )
                 ;
-            var standardId = qStandardId.ToArray();
+            var prototypeId = qPrototypeId.ToArray();
 
-            var stds = standardId;
-            var revs = qReverseId_( standardId );//.ToArray();
-                                                 //var flips = qFlipId_X_( standardId );//.ToArray();
+            var stds = prototypeId;
+            var revs = qReverseId_( prototypeId );//.ToArray();
+            //var flips = qFlipId_X_( standardId );//.ToArray();
             var rotstds = rot_( stds );
             var rotrevs = rot_( revs );
             //var rotFlips = rot_( flips );
@@ -377,49 +396,51 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
             }
         }
 
-        (byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[])[] makeVtxList_
-            ( IEnumerable<(byte cubeId, Vector3[] vtxs, int[][] tris)> objectsData_ )
+
+        void transformSbvtxs_(
+            IEnumerable<CubePattarn> cubePattarns,
+            IEnumerable<(byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[] trivtxs)> prototypeCubes_
+        )
         {
 
-            //(sbyte p0, sbyte p1, sbyte p2) toSbyte_( Vector3 vec ) =>
-            //    ((sbyte)Math.Sign(vec.x), (sbyte)Math.Sign(vec.y), (sbyte)Math.Sign(vec.z));
-
-            //var qVtxsRegular =
-            //    from obj in objectsData_
-            //    from vtx in obj.vtxs
-            //    group vtx by toSbyte_( vtx )
-            //    ;
-            //var vtxIdxDictBySbvtx = qVtxsRegular
-            //    .Select( ( x, i ) => (sbvtx:x.Key, i) )
-            //    .ToDictionary( x => x.sbvtx, x => x.i );
-            //Debug.Log( vtxIdxDictBySbvtx.Count );
-            
-            var qTriVtx =
-                from cube in objectsData_
-                select
-                    from tri in cube.tris
-                    select (v0:cube.vtxs[tri[0]], v1:cube.vtxs[tri[1]], v2:cube.vtxs[tri[2]])
-                ;
-            var qId =
-                from cube in objectsData_
-                select cube.cubeId
+            var q =
+                from pat in cubePattarns
+                join proto in prototypeCubes_ on pat.primaryId equals proto.id
+                select ( pat.id )
                 ;
 
-            var qVtxAndId =
-                from x in Enumerable.Zip( qId, qTriVtx, ( l, r ) => (id: l, trivtx: r) )
-                select (x.id, x.trivtx.ToArray())
-                ;
-            var vtxsAndIds = qVtxAndId.ToArray();
-            
-            // 確認
-            using( var f = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt", append:true ) )
+            (sbyte x, sbyte y, sbyte z) transform_( ref CubePattarn cube, Vector3 protoVtx )
             {
-                f.WriteLine( vtxsDistinct.Length );
-                var s = string.Join( "\r\n", vtxsDistinct );
-                f.WriteLine( s );
-            }
 
-            return vtxsAndIds;
+            }
+        }
+
+
+        Dictionary<(sbyte x, sbyte y, sbyte z), int>
+            makeBaseVtxIndexBySbvtxDict_()
+        {
+            var sbvtxs = new (sbyte x, sbyte y, sbyte z)[]
+            {
+                (0, 1, 1),
+                (-1, 1, 0),
+                (1, 1, 0),
+                (0, 1, -1),
+
+                (-1, 0, 1),
+                (1, 0, 1),
+                (-1, 0, -1),
+                (1, 0, -1),
+
+                (0, -1, 1),
+                (-1, -1, 0),
+                (1, -1, 0),
+                (0, -1, -1),
+            };
+            var dict = sbvtxs
+                .Select( ( sbvtx, i ) => (sbvtx, i) )
+                .ToDictionary( x => x.sbvtx, x => x.i )
+                ;
+            return dict;
         }
 
         void makeMarchingCubeData_( CubePattarn[] cubePattarns_ )
