@@ -403,7 +403,7 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
         }
 
 
-        IEnumerable<(byte id, IEnumerable<(sbyte x, sbyte y, sbyte z)> triVtxs)> transformSbvtxs_(
+        IEnumerable<(byte cubeId, IEnumerable<(sbyte x, sbyte y, sbyte z)[]> triVtxs)> transformSbvtxs_(
             IEnumerable<CubePattarn> cubePattarns,
             IEnumerable<(byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[] trivtxs)> prototypeCubes_
         )
@@ -421,7 +421,7 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
                         transform_( pat, trivtx.v2 ),
                     }
                 ;
-            return Enumerable.Zip(cubePattarns, q, (l, r)=>(l.id, r.SelectMany(x=>x)));
+            return Enumerable.Zip(cubePattarns, q, (l, r)=>(l.id, l.isReverseTriangle ? r.Reverse() : r));
 
             (sbyte x, sbyte y, sbyte z) transform_( CubePattarn cube, Vector3 protoVtx )
             {
@@ -465,16 +465,48 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
         }
 
 
-        void a_(
-            ie
+        (byte cubeId, int[] vtxIdxs)[] makeCubeIdsAndVtxIndexLists_(
+            IEnumerable<(byte cubeId, IEnumerable<(sbyte x, sbyte y, sbyte z)[]> triVtxs)> cubeIdsAndVtxLists_,
+            Dictionary<(sbyte x, sbyte y, sbyte z), int> baseVtxIndexBySbvtxDict_
         )
         {
-
+            var q =
+                from cube in cubeIdsAndVtxLists_
+                select
+                    from triVtx in cube.triVtxs
+                    from vtx in triVtx
+                    select baseVtxIndexBySbvtxDict_[ vtx ]
+                ;
+            return Enumerable.Zip( cubeIdsAndVtxLists_, q, (l,r)=>(l.cubeId, r.ToArray()) ).ToArray();
         }
 
-        void makeMarchingCubeData_( CubePattarn[] cubePattarns_ )
+        Vector3[] makeBaseVtxList_( Dictionary<(sbyte x, sbyte y, sbyte z), int> baseVtxIndexBySbvtxDict_ )
         {
-            
+            var q =
+                from sbvtxAndIndex in baseVtxIndexBySbvtxDict_
+                orderby sbvtxAndIndex.Value
+                select new Vector3( sbvtxAndIndex.Key.x, sbvtxAndIndex.Key.y, sbvtxAndIndex.Key.z ) * 0.5f
+                ;
+            return q.ToArray();
+        }
+
+        void makeMarchingCubeData_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_, Vector3[] baseVtxList_ )
+        {
+
+            var q =
+                from x in cubeIdsAndVtxIndexLists_
+                select
+                ;
+
+            int[] aaa_(int[] vtxIds)
+            {
+                var idx = new int[4];
+                for( var i = 0; i < vtxIds.Length; i += 3 )
+                {
+                    vtxIds[ i + 2 ] << 8 | vtxIds[ i + 1 ] << 4 | vtxIds[ i + 0 ]
+
+                }
+            }
         }
     }
 }
