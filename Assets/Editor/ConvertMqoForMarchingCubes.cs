@@ -174,12 +174,14 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
     {
         public byte primaryId;
         public byte id;
+        public bool isReverseTriangle;
         public (sbyte x, sbyte y, sbyte z) dir;
         public (sbyte x, sbyte y, sbyte z) up;
         public CubePattarn( byte id )
         {
             this.primaryId = id;
             this.id = id;
+            this.isReverseTriangle = false;
             this.dir = (0, 0, 1);
             this.up = (0, 1, 0);
         }
@@ -210,24 +212,28 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
         {
             this.dir.x = (sbyte)-this.dir.x;
             this.up.x = (sbyte)-this.up.x;
+            this.isReverseTriangle ^= true;
             return this;
         }
         public CubePattarn FlipY()
         {
             this.dir.y = (sbyte)-this.dir.y;
             this.up.y = (sbyte)-this.up.y;
+            this.isReverseTriangle ^= true;
             return this;
         }
         public CubePattarn FlipZ()
         {
             this.dir.z = (sbyte)-this.dir.z;
             this.up.z = (sbyte)-this.up.z;
+            this.isReverseTriangle ^= true;
             return this;
         }
         public CubePattarn Reverse()
         {
             this.dir = ((sbyte)-this.dir.x, (sbyte)-this.dir.y, (sbyte)-this.dir.z);
             this.up  = ((sbyte)-this.up.x,  (sbyte)-this.up.y,  (sbyte)-this.up.z );
+            this.isReverseTriangle ^= true;
             return this;
         }
     }
@@ -397,7 +403,7 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
         }
 
 
-        void transformSbvtxs_(
+        IEnumerable<(byte id, IEnumerable<(sbyte x, sbyte y, sbyte z)> triVtxs)> transformSbvtxs_(
             IEnumerable<CubePattarn> cubePattarns,
             IEnumerable<(byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[] trivtxs)> prototypeCubes_
         )
@@ -406,12 +412,27 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
             var q =
                 from pat in cubePattarns
                 join proto in prototypeCubes_ on pat.primaryId equals proto.id
-                select ( pat.id )
+                select
+                    from trivtx in proto.trivtxs
+                    select new[]
+                    {
+                        transform_( pat, trivtx.v0 ),
+                        transform_( pat, trivtx.v1 ),
+                        transform_( pat, trivtx.v2 ),
+                    }
                 ;
+            return Enumerable.Zip(cubePattarns, q, (l, r)=>(l.id, r.SelectMany(x=>x)));
 
-            (sbyte x, sbyte y, sbyte z) transform_( ref CubePattarn cube, Vector3 protoVtx )
+            (sbyte x, sbyte y, sbyte z) transform_( CubePattarn cube, Vector3 protoVtx )
             {
-
+                var vtx = (x: Math.Sign( protoVtx.x ), y: Math.Sign( protoVtx.y ), z: Math.Sign( protoVtx.z ));
+                var fwd = cube.dir;
+                var up = cube.up;
+                var side = (x: fwd.y * up.z - fwd.z * up.y, y: fwd.z * up.x - fwd.x * up.z, z: fwd.x * up.y - fwd.y * up.x);
+                var x = vtx.x * side.x + vtx.y * side.y + vtx.z * side.z;
+                var y = vtx.x * up.x + vtx.y * up.y + vtx.z * up.z;
+                var z = vtx.x * fwd.x + vtx.y * fwd.y + vtx.z * fwd.z;
+                return ((sbyte)x, (sbyte)y, (sbyte)z);
             }
         }
 
@@ -443,23 +464,17 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
             return dict;
         }
 
-        void makeMarchingCubeData_( CubePattarn[] cubePattarns_ )
+
+        void a_(
+            ie
+        )
         {
 
-            var a =
-                from x in cubePattarns
-                select x.
-                ;
+        }
 
-            (sbyte x, sbyte y, sbyte z) transform( ref CubePattarn cp )
-            {
-
-            }
+        void makeMarchingCubeData_( CubePattarn[] cubePattarns_ )
+        {
+            
         }
     }
-}
-
-static public class VectorUtilityExtension
-{
-    //static public (int x, int y, int z) 
 }
