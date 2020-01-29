@@ -1,13 +1,17 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Runtime.InteropServices;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using Sprache;
+using Unity.Mathematics;
 
-public class ConvertMqoForMarchingCubes : MonoBehaviour
+using mc;
+
+static public class ConvertMqoForMarchingCubes
 {
 
     //[MenuItem( "Assets/Convert Mqo For Marching Cubes" )]
@@ -39,7 +43,7 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
     }
 
     [MenuItem( "Assets/Convert Mqo For Marching Cubes" )]
-    static public void ConvertMqoToMarchingCubesData()
+    static public void CreateMachingCubesAsset()
     {
         if( Selection.objects == null ) return;
 
@@ -47,17 +51,45 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
             .Select( o => AssetDatabase.GetAssetPath( o ) )
             .Where( path => Path.GetExtension( path ) == ".mqo" )
             ;
-        foreach( var path in qMqoPath )
-        {
-            using( var f = new StreamReader( path ) )
-            {
-                var s = f.ReadToEnd();
-                var data = convertToObjectsData( s );
 
-                aaa( data );
-            }
+        var mqopath = qMqoPath.First();
+
+        using( var f = new StreamReader( mqopath ) )
+        {
+            var s = f.ReadToEnd();
+            var objdata = convertToObjectsData( s );
+            var cubes = convertObjectDataToMachingCubesData( objdata );
+
+            save( Selection.objects, cubes.cubeIdsAndVtxIndexLists, cubes.baseVtxList );
         }
     }
+
+    static void save(
+        UnityEngine.Object[] selectedObjects,
+        (byte cubeId, int[] vertexIndices)[] cubeIdsAndVtxIndexLists,
+        Vector3[] baseVertexList
+    )
+    {
+
+        // 渡されたアセットと同じ場所のパス生成
+
+        var srcFilePath = AssetDatabase.GetAssetPath( selectedObjects.First() );
+
+        var folderPath = Path.GetDirectoryName( srcFilePath );
+
+        var fileName = Path.GetFileNameWithoutExtension( srcFilePath );
+
+        var dstFilePath = folderPath + $"/Marching Cubes Resource.asset";
+
+
+        // アセットとして生成
+        var asset = ScriptableObject.CreateInstance<MarchingCubeAsset>();
+        asset.CubeIdsAndVtxIndexLists = cubeIdsAndVtxIndexLists;
+        asset.BaseVertexList = baseVertexList;
+        AssetDatabase.CreateAsset( asset, dstFilePath );
+        AssetDatabase.Refresh();
+    }
+
 
 
 
@@ -238,18 +270,20 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
         }
     }
 
-    static void aaa( (string name, Vector3[] vtxs, int[][] tris)[] objectsData )
+    static (int[][] cubeIdsAndVtxIndexLists, Vector3[] baseVtxList)
+    convertObjectDataToMachingCubesData( (string name, Vector3[] vtxs, int[][] tris)[] objectsData )
     {
 
-        var prototypeCubes = makePrototypeCubes_( objectsData );
-        var cube254Pattarns = makeCube254Pattarns_( prototypeCubes );
         var baseVtxList = makeBaseVtxList_();
         var baseVtxIndexBySbvtxDict = makeBaseVtxIndexBySbvtxDict_( baseVtxList );
 
+        var prototypeCubes = makePrototypeCubes_( objectsData );
+        var cube254Pattarns = makeCube254Pattarns_( prototypeCubes );
         var triVtxLists = transformSbvtxs_( cube254Pattarns, prototypeCubes );
-        var triIdxLists = makeCubeIdsAndVtxIndexLists_( triVtxLists, baseVtxIndexBySbvtxDict );
+
+        var triIdxLists = makeVtxIndexListsPerCube_( triVtxLists, baseVtxIndexBySbvtxDict );
         
-        return;
+        return (triIdxLists, baseVtxList);
 
 
         (byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[] trivtxs)[] makePrototypeCubes_
@@ -468,14 +502,14 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
             makeBaseVtxIndexBySbvtxDict_( IEnumerable<Vector3> baseVtxList_ )
         {
             var dict = baseVtxList_
-                .Select( ( x, i ) => (sbvtx:((sbyte)x.x, (sbyte)x.y, (sbyte)x.z), i) )
+                .Select( ( x, i ) => (sbvtx:((sbyte)math.sign(x.x), (sbyte)math.sign(x.y), (sbyte)math.sign(x.z)), i) )
                 .ToDictionary( x => x.sbvtx, x => x.i )
                 ;
             return dict;
         }
 
 
-        (byte cubeId, int[] vtxIdxs)[] makeCubeIdsAndVtxIndexLists_(
+        int[][] makeVtxIndexListsPerCube_(
             IEnumerable<(byte cubeId, IEnumerable<(sbyte x, sbyte y, sbyte z)[]> triVtxs)> cubeIdsAndVtxLists_,
             Dictionary<(sbyte x, sbyte y, sbyte z), int> baseVtxIndexBySbvtxDict_
         )
@@ -491,35 +525,4 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
         }
     }
 
-
-    void makeMarchingCubeData( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists, Vector3[] baseVtxList )
-    {
-        
-
-        void makeBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
-        {
-            var buffer = new ComputeBuffer( 12, System.Runtime.InteropServices.Marshal.SizeOf<Vector4>() );
-
-            buffer.SetData( baseVtxList_.Select(v => new Vector4(v.x, v.y, v.z, 1.0f)).ToArray() );
-        }
-
-        Mesh createMesh_()
-        {
-            var mesh = new Mesh();
-            mesh.name = "marching cube unit";
-
-            var qVtx =
-                from i in Enumerable.Range( 0, 12 )
-                select new Vector3( i, 0, 0 )
-                ;
-            var qIdx =
-                from i in Enumerable.Range( 0, 3 * 12 )
-                select i
-                ;
-            mesh.vertices = qVtx.ToArray();
-            mesh.triangles = qIdx.ToArray();
-
-            return mesh;
-        }
-    }
 }
