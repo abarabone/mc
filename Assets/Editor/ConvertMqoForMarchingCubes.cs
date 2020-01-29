@@ -243,7 +243,12 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
 
         var prototypeCubes = makePrototypeCubes_( objectsData );
         var cube254Pattarns = makeCube254Pattarns_( prototypeCubes );
+        var baseVtxList = makeBaseVtxList_();
+        var baseVtxIndexBySbvtxDict = makeBaseVtxIndexBySbvtxDict_( baseVtxList );
 
+        var triVtxLists = transformSbvtxs_( cube254Pattarns, prototypeCubes );
+        var triIdxLists = makeCubeIdsAndVtxIndexLists_( triVtxLists, baseVtxIndexBySbvtxDict );
+        
         return;
 
 
@@ -437,28 +442,33 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
         }
 
 
-        Dictionary<(sbyte x, sbyte y, sbyte z), int>
-            makeBaseVtxIndexBySbvtxDict_()
+
+        Vector3[] makeBaseVtxList_()
         {
-            var sbvtxs = new (sbyte x, sbyte y, sbyte z)[]
+            return new Vector3[]
             {
-                (0, 1, 1),
-                (-1, 1, 0),
-                (1, 1, 0),
-                (0, 1, -1),
+                new Vector3(0, 1, 1) * 0.5f,
+                new Vector3(-1, 1, 0) * 0.5f,
+                new Vector3(1, 1, 0) * 0.5f,
+                new Vector3(0, 1, -1) * 0.5f,
 
-                (-1, 0, 1),
-                (1, 0, 1),
-                (-1, 0, -1),
-                (1, 0, -1),
+                new Vector3(-1, 0, 1) * 0.5f,
+                new Vector3(1, 0, 1) * 0.5f,
+                new Vector3(-1, 0, -1) * 0.5f,
+                new Vector3(1, 0, -1) * 0.5f,
 
-                (0, -1, 1),
-                (-1, -1, 0),
-                (1, -1, 0),
-                (0, -1, -1),
+                new Vector3(0, -1, 1) * 0.5f,
+                new Vector3(-1, -1, 0) * 0.5f,
+                new Vector3(1, -1, 0) * 0.5f,
+                new Vector3(0, -1, -1) * 0.5f,
             };
-            var dict = sbvtxs
-                .Select( ( sbvtx, i ) => (sbvtx, i) )
+        }
+
+        Dictionary<(sbyte x, sbyte y, sbyte z), int>
+            makeBaseVtxIndexBySbvtxDict_( IEnumerable<Vector3> baseVtxList_ )
+        {
+            var dict = baseVtxList_
+                .Select( ( x, i ) => (sbvtx:((sbyte)x.x, (sbyte)x.y, (sbyte)x.z), i) )
                 .ToDictionary( x => x.sbvtx, x => x.i )
                 ;
             return dict;
@@ -479,34 +489,37 @@ public class ConvertMqoForMarchingCubes : MonoBehaviour
                 ;
             return Enumerable.Zip( cubeIdsAndVtxLists_, q, (l,r)=>(l.cubeId, r.ToArray()) ).ToArray();
         }
+    }
 
-        Vector3[] makeBaseVtxList_( Dictionary<(sbyte x, sbyte y, sbyte z), int> baseVtxIndexBySbvtxDict_ )
+
+    void makeMarchingCubeData( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists, Vector3[] baseVtxList )
+    {
+        
+
+        void makeBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
         {
-            var q =
-                from sbvtxAndIndex in baseVtxIndexBySbvtxDict_
-                orderby sbvtxAndIndex.Value
-                select new Vector3( sbvtxAndIndex.Key.x, sbvtxAndIndex.Key.y, sbvtxAndIndex.Key.z ) * 0.5f
-                ;
-            return q.ToArray();
+            var buffer = new ComputeBuffer( 12, System.Runtime.InteropServices.Marshal.SizeOf<Vector4>() );
+
+            buffer.SetData( baseVtxList_.Select(v => new Vector4(v.x, v.y, v.z, 1.0f)).ToArray() );
         }
 
-        void makeMarchingCubeData_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_, Vector3[] baseVtxList_ )
+        Mesh createMesh_()
         {
+            var mesh = new Mesh();
+            mesh.name = "marching cube unit";
 
-            var q =
-                from x in cubeIdsAndVtxIndexLists_
-                select
+            var qVtx =
+                from i in Enumerable.Range( 0, 12 )
+                select new Vector3( i, 0, 0 )
                 ;
+            var qIdx =
+                from i in Enumerable.Range( 0, 3 * 12 )
+                select i
+                ;
+            mesh.vertices = qVtx.ToArray();
+            mesh.triangles = qIdx.ToArray();
 
-            int[] aaa_(int[] vtxIds)
-            {
-                var idx = new int[4];
-                for( var i = 0; i < vtxIds.Length; i += 3 )
-                {
-                    vtxIds[ i + 2 ] << 8 | vtxIds[ i + 1 ] << 4 | vtxIds[ i + 0 ]
-
-                }
-            }
+            return mesh;
         }
     }
 }
