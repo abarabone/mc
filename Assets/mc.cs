@@ -14,110 +14,146 @@ namespace mc
 
     public class MarchingCubeAsset : ScriptableObject
     {
-        public (byte cubeId, int[] vertexIndices)[] CubeIdsAndVtxIndexLists;
-        public Dictionary<byte, int[]> vs;
-        public int a;
         public Vector3[] BaseVertexList;
+        public CubeWrapper[] CubeIndexLists;
+
+        [ System.Serializable]
+        public struct CubeWrapper// タプルがシリアライズできないので
+        {
+            public byte cubeId;
+            public int[] indices;
+        }
+        public (byte cubeId, int[] vtxIdxs)[] CubeIdsAndIndexLists =>
+            this.CubeIndexLists.Select( x => (x.cubeId, x.indices) ).ToArray();
     }
 
 
     public class mc : MonoBehaviour
     {
         public MarchingCubeAsset MarchingCubeAsset;
-        public Material mat;
+        public Material Material;
 
-        ComputeBuffer mcb;
+        
+        Mesh mesh;
+        ComputeBuffer baseVtxs;
+        ComputeBuffer idxLists;
+        ComputeBuffer instances;
+        ComputeBuffer args;
 
-        void Start()
+        void Awake()
         {
-            convertMqoToMarchingCubesData();
+            var res = convertMqoToMarchingCubesData();
+
+            this.baseVtxs = res.basevtxs;
+            this.idxLists = res.idxLists;
+            this.instances = res.instance;
         }
 
         private void OnDestroy()
         {
-
+            if( this.baseVtxs != null ) this.baseVtxs.Dispose();
+            if( this.idxLists != null ) this.idxLists.Dispose();
+            if( this.instances != null ) this.instances.Dispose();
         }
 
-
-
-        void convertMqoToMarchingCubesData()
+        private void Update()
         {
-            var res = this.MarchingCubeAsset;
-            Debug.Log( res.BaseVertexList.Length );//.CubeIdsAndVtxIndexLists.Length );
-            //using( var f = new StreamReader( path ) )
-            //{
-            //    var s = f.ReadToEnd();
-            //    var objdata = convertToObjectsData( s );
+            var mesh = this.mesh;
+            var mat = this.Material;
+            var args = this.args;
 
-            //    var cubes = convertObjectDataToMachingCubesData( objdata );
-            //    var resouce = createMarchingCubesResources( cubes.cubeIdsAndVtxIndexLists, cubes.baseVtxList );
+            //var vectorOffset = offset.pVectorOffsetInBuffer - nativeBuffer.pBuffer;
+            //mat.SetInt( "BoneVectorOffset", (int)vectorOffset );
+            ////mat.SetInt( "BoneLengthEveryInstance", mesh.bindposes.Length );
+            ////mat.SetBuffer( "BoneVectorBuffer", computeBuffer );
 
-            //}
+            var instanceCount = 1;
+            var argparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
+            args.SetData( ref argparams );
+
+            var bounds = new Bounds() { center = Vector3.zero, size = Vector3.one * 1000.0f };
+            Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, args );
         }
 
-        static (ComputeBuffer basevtxs, ComputeBuffer cubeid, ComputeBuffer instance, Mesh mesh)
-        createMarchingCubesResources( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists, Vector3[] baseVtxList )
+
+        (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, Mesh mesh)
+        convertMqoToMarchingCubesData()
         {
+            var asset = this.MarchingCubeAsset;
 
-            var instance = createCubeIdInstancingShaderBuffer_( 10000 );
-            var basevtxs = createBaseVtxShaderBuffer_( baseVtxList );
-            var cubeid = createIdxListsShaderBuffer_( cubeIdsAndVtxIndexLists );
-            var mesh = createMesh_();
+            var res = createMarchingCubesResources(asset.CubeIdsAndIndexLists, asset.BaseVertexList);
 
-            return (basevtxs, cubeid, instance, mesh);
+            return res;
 
 
-
-            ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
+            (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, Mesh mesh)
+            createMarchingCubesResources( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndIndexLists, Vector3[] baseVtxList )
             {
-                var buffer = new ComputeBuffer( maxUnitLength, Marshal.SizeOf<byte>() );
 
-                return buffer;
-            }
+                var instance = createCubeIdInstancingShaderBuffer_( 10000 );
+                var basevtxs = createBaseVtxShaderBuffer_( baseVtxList );
+                var cubeid = createIdxListsShaderBuffer_( cubeIdsAndIndexLists );
+                var mesh = createMesh_();
+
+                return (basevtxs, cubeid, instance, mesh);
 
 
-            ComputeBuffer createIdxListsShaderBuffer_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_ )
-            {
-                var buffer = new ComputeBuffer( 254 * 12, Marshal.SizeOf<byte>() );
 
-                var q =
-                    from x in cubeIdsAndVtxIndexLists_
-                    orderby x.cubeId
-                    select x.vtxIdxs.Concat( Enumerable.Repeat( -1, 12 - x.vtxIdxs.Length ) )
-                    ;
-                buffer.SetData( q.Cast<byte>().ToArray() );
+                ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
+                {
+                    var buffer = new ComputeBuffer( maxUnitLength, Marshal.SizeOf<byte>() );
+                    buffer.name = "Instances";
 
-                return buffer;
-            }
+                    return buffer;
+                }
 
-            ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
-            {
-                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector4>() );
 
-                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+                ComputeBuffer createIdxListsShaderBuffer_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_ )
+                {
+                    var buffer = new ComputeBuffer( 254 * 12, Marshal.SizeOf<int>() );
+                    buffer.name = "IdxList";
 
-                return buffer;
-            }
+                    var q =
+                        from x in cubeIdsAndVtxIndexLists_
+                        orderby x.cubeId
+                        select x.vtxIdxs.Concat( Enumerable.Repeat( -1, 12 - x.vtxIdxs.Length ) )
+                        ;
+                    buffer.SetData( q.Cast<int>().ToArray() );
 
-            Mesh createMesh_()
-            {
-                var mesh_ = new Mesh();
-                mesh_.name = "marching cube unit";
+                    return buffer;
+                }
 
-                var qVtx =
-                    from i in Enumerable.Range( 0, 12 )
-                    select new Vector3( i, 0, 0 )
-                    ;
-                var qIdx =
-                    from i in Enumerable.Range( 0, 3 * 12 )
-                    select i
-                    ;
-                mesh_.vertices = qVtx.ToArray();
-                mesh_.triangles = qIdx.ToArray();
+                ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
+                {
+                    var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector4>() );
+                    buffer.name = "BaseVtxList";
 
-                return mesh_;
+                    buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+
+                    return buffer;
+                }
+
+                Mesh createMesh_()
+                {
+                    var mesh_ = new Mesh();
+                    mesh_.name = "marching cube unit";
+
+                    var qVtx =
+                        from i in Enumerable.Range( 0, 12 )
+                        select new Vector3( i, 0, 0 )
+                        ;
+                    var qIdx =
+                        from i in Enumerable.Range( 0, 3 * 12 )
+                        select i
+                        ;
+                    mesh_.vertices = qVtx.ToArray();
+                    mesh_.triangles = qIdx.ToArray();
+
+                    return mesh_;
+                }
             }
         }
+
 
     }
 

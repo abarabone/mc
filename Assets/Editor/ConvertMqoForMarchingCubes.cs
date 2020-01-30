@@ -60,13 +60,13 @@ static public class ConvertMqoForMarchingCubes
             var objdata = convertToObjectsData( s );
             var cubes = convertObjectDataToMachingCubesData( objdata );
 
-            save( Selection.objects, cubes.cubeIdsAndVtxIndexLists, cubes.baseVtxList );
+            save( Selection.objects, cubes.cubesAndIndexLists, cubes.baseVtxList );
         }
     }
 
     static void save(
         UnityEngine.Object[] selectedObjects,
-        (byte cubeId, int[] vertexIndices)[] cubeIdsAndVtxIndexLists,
+        (byte cubeId, int[] indices)[] cubeIdsAndIndexLists,
         Vector3[] baseVertexList
     )
     {
@@ -84,7 +84,10 @@ static public class ConvertMqoForMarchingCubes
 
         // アセットとして生成
         var asset = ScriptableObject.CreateInstance<MarchingCubeAsset>();
-        asset.CubeIdsAndVtxIndexLists = cubeIdsAndVtxIndexLists;
+        var qCubeIndexLists = from x in cubeIdsAndIndexLists
+                select new MarchingCubeAsset.CubeWrapper { cubeId = x.cubeId, indices = x.indices }
+                ;
+        asset.CubeIndexLists = qCubeIndexLists.ToArray();
         asset.BaseVertexList = baseVertexList;
         AssetDatabase.CreateAsset( asset, dstFilePath );
         AssetDatabase.Refresh();
@@ -270,7 +273,7 @@ static public class ConvertMqoForMarchingCubes
         }
     }
 
-    static (int[][] cubeIdsAndVtxIndexLists, Vector3[] baseVtxList)
+    static ((byte cubeId, int[] indices)[] cubesAndIndexLists, Vector3[] baseVtxList)
     convertObjectDataToMachingCubesData( (string name, Vector3[] vtxs, int[][] tris)[] objectsData )
     {
 
@@ -509,7 +512,7 @@ static public class ConvertMqoForMarchingCubes
         }
 
 
-        int[][] makeVtxIndexListsPerCube_(
+        (byte cubeId, int[] indices)[] makeVtxIndexListsPerCube_(
             IEnumerable<(byte cubeId, IEnumerable<(sbyte x, sbyte y, sbyte z)[]> triVtxs)> cubeIdsAndVtxLists_,
             Dictionary<(sbyte x, sbyte y, sbyte z), int> baseVtxIndexBySbvtxDict_
         )
@@ -521,7 +524,9 @@ static public class ConvertMqoForMarchingCubes
                     from vtx in triVtx
                     select baseVtxIndexBySbvtxDict_[ vtx ]
                 ;
-            return Enumerable.Zip( cubeIdsAndVtxLists_, q, (l,r)=>(l.cubeId, r.ToArray()) ).ToArray();
+            return Enumerable.Zip( cubeIdsAndVtxLists_, q, (l, r)=>(l.cubeId, indices:r.ToArray()) )
+                .ToArray()
+                ;
         }
     }
 

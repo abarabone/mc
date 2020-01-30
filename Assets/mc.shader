@@ -23,7 +23,7 @@
             struct appdata
             {
                 float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
+                //float2 uv : TEXCOORD0;
             };
 
             struct v2f
@@ -36,29 +36,36 @@
             sampler2D _MainTex;
             float4 _MainTex_ST;
 
-			StructuredBuffer<int4> mcb;
+			StructuredBuffer<int4> Instances;
+			StructuredBuffer<int> IdxList;
+			StructuredBuffer<float4> BaseVtxList;
 
-			int get_mcb(int instanceId, float3 index )
-			{
-				const int4 mask[] =
-				{
-					int4(1,0,0,0),
-					int4(0,1,0,0),
-					int4(0,0,1,0),
-					int4(0,0,0,1),
-				};
-				int4 a = mcb[instanceId] * mask[index.x];
-				int b = a.x + a.y + a.z + a.w;
-				int c = (b >> (int)index.y) & 0xf;
-				return c;
-			}
+
+			//int get_mcb(int instanceId, float3 index )
+			//{
+			//	const int4 mask[] =
+			//	{
+			//		int4(1,0,0,0),
+			//		int4(0,1,0,0),
+			//		int4(0,0,1,0),
+			//		int4(0,0,0,1),
+			//	};
+			//	int4 a = mcb[instanceId] * mask[index.x];
+			//	int b = a.x + a.y + a.z + a.w;
+			//	int c = (b >> (int)index.y) & 0xf;
+			//	return c;
+			//}
 
             v2f vert (appdata v)
             {
                 v2f o;
+
+				int iv = IdxList[v.vertex.x];
+				float4 lv = BaseVtxList[iv];
+
 				//v.vertex.x = get_mcb(0, v.vertex.xyz);
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.vertex = UnityObjectToClipPos(lv);
+                //o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
             }
