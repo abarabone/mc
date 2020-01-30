@@ -1,4 +1,4 @@
-﻿Shader "Unlit/mc"
+﻿Shader "Custom/mc"
 {
     Properties
     {
@@ -13,12 +13,14 @@
         {
             CGPROGRAM
 
-            #pragma vertex vert
-            #pragma fragment frag
-            // make fog work
-            #pragma multi_compile_fog
-
-            #include "UnityCG.cginc"
+			#pragma target 5.0
+			#pragma vertex vert
+			#pragma fragment frag
+			#pragma multi_compile_instancing
+			//#pragma multi_compile_fog
+			#include "UnityCG.cginc"
+			//#include "AutoLight.cginc"
+			
 
             struct appdata
             {
@@ -56,16 +58,18 @@
 			//	return c;
 			//}
 
-            v2f vert (appdata v)
+            v2f vert (appdata v, uint i : SV_InstanceID)
             {
                 v2f o;
 
-				int iv = IdxList[v.vertex.x];
+				int iv = IdxList[i * 12 + v.vertex.x];
 				float4 lv = BaseVtxList[iv];
+
+				lv.x += i;
 
 				//v.vertex.x = get_mcb(0, v.vertex.xyz);
                 o.vertex = UnityObjectToClipPos(lv);
-                //o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.uv = TRANSFORM_TEX(o.vertex.xy, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
             }

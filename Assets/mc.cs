@@ -47,6 +47,12 @@ namespace mc
             this.baseVtxs = res.basevtxs;
             this.idxLists = res.idxLists;
             this.instances = res.instance;
+            this.args = ComputeShaderUtility.CreateIndirectArgumentsBuffer();
+            this.mesh = res.mesh;
+
+            this.Material.SetBuffer( "BaseVtxList", this.baseVtxs );
+            this.Material.SetBuffer( "IdxList", this.idxLists );
+            this.Material.SetBuffer( "Instances", this.instances );
         }
 
         private void OnDestroy()
@@ -54,6 +60,7 @@ namespace mc
             if( this.baseVtxs != null ) this.baseVtxs.Dispose();
             if( this.idxLists != null ) this.idxLists.Dispose();
             if( this.instances != null ) this.instances.Dispose();
+            if( this.args != null ) this.args.Dispose();
         }
 
         private void Update()
@@ -67,7 +74,7 @@ namespace mc
             ////mat.SetInt( "BoneLengthEveryInstance", mesh.bindposes.Length );
             ////mat.SetBuffer( "BoneVectorBuffer", computeBuffer );
 
-            var instanceCount = 1;
+            var instanceCount = 12;
             var argparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             args.SetData( ref argparams );
 
@@ -101,8 +108,7 @@ namespace mc
 
                 ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
                 {
-                    var buffer = new ComputeBuffer( maxUnitLength, Marshal.SizeOf<byte>() );
-                    buffer.name = "Instances";
+                    var buffer = new ComputeBuffer( maxUnitLength, Marshal.SizeOf<int>() );
 
                     return buffer;
                 }
@@ -111,14 +117,15 @@ namespace mc
                 ComputeBuffer createIdxListsShaderBuffer_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_ )
                 {
                     var buffer = new ComputeBuffer( 254 * 12, Marshal.SizeOf<int>() );
-                    buffer.name = "IdxList";
 
                     var q =
                         from x in cubeIdsAndVtxIndexLists_
+                            //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
+                            //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
                         orderby x.cubeId
-                        select x.vtxIdxs.Concat( Enumerable.Repeat( -1, 12 - x.vtxIdxs.Length ) )
+                        select x.vtxIdxs.Concat( Enumerable.Repeat( 0, 12 - x.vtxIdxs.Length ) )
                         ;
-                    buffer.SetData( q.Cast<int>().ToArray() );
+                    buffer.SetData( q.SelectMany(x=>x).Cast<int>().ToArray() );
 
                     return buffer;
                 }
@@ -126,7 +133,6 @@ namespace mc
                 ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
                 {
                     var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector4>() );
-                    buffer.name = "BaseVtxList";
 
                     buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
 
@@ -143,7 +149,7 @@ namespace mc
                         select new Vector3( i, 0, 0 )
                         ;
                     var qIdx =
-                        from i in Enumerable.Range( 0, 3 * 12 )
+                        from i in Enumerable.Range( 0, 3 * 4 )
                         select i
                         ;
                     mesh_.vertices = qVtx.ToArray();
