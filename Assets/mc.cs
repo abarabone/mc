@@ -35,39 +35,44 @@ namespace mc
 
         
         Mesh mesh;
-        ComputeBuffer baseVtxs;
-        ComputeBuffer idxLists;
-        ComputeBuffer instances;
-        ComputeBuffer args;
+        ComputeBuffer baseVtxsBuffer;
+        ComputeBuffer idxListsBuffer;
+        ComputeBuffer instancesBuffer;
+        ComputeBuffer argsBuffer;
+
+        int[] cubeInstances;
 
         void Awake()
         {
             var res = convertMqoToMarchingCubesData();
 
-            this.baseVtxs = res.basevtxs;
-            this.idxLists = res.idxLists;
-            this.instances = res.instance;
-            this.args = ComputeShaderUtility.CreateIndirectArgumentsBuffer();
+            this.baseVtxsBuffer = res.basevtxs;
+            this.idxListsBuffer = res.idxLists;
+            this.instancesBuffer = res.instance;
+            this.argsBuffer = ComputeShaderUtility.CreateIndirectArgumentsBuffer();
             this.mesh = res.mesh;
 
-            this.Material.SetBuffer( "BaseVtxList", this.baseVtxs );
-            this.Material.SetBuffer( "IdxList", this.idxLists );
-            this.Material.SetBuffer( "Instances", this.instances );
+            this.Material.SetBuffer( "BaseVtxList", this.baseVtxsBuffer );
+            this.Material.SetBuffer( "IdxList", this.idxListsBuffer );
+            this.Material.SetBuffer( "Instances", this.instancesBuffer );
+
+            this.cubeInstances = Enumerable.Range( 0, 300 ).ToArray();
+            this.instancesBuffer.SetData( this.cubeInstances );
         }
 
         private void OnDestroy()
         {
-            if( this.baseVtxs != null ) this.baseVtxs.Dispose();
-            if( this.idxLists != null ) this.idxLists.Dispose();
-            if( this.instances != null ) this.instances.Dispose();
-            if( this.args != null ) this.args.Dispose();
+            if( this.baseVtxsBuffer != null ) this.baseVtxsBuffer.Dispose();
+            if( this.idxListsBuffer != null ) this.idxListsBuffer.Dispose();
+            if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
+            if( this.argsBuffer != null ) this.argsBuffer.Dispose();
         }
 
         private void Update()
         {
             var mesh = this.mesh;
             var mat = this.Material;
-            var args = this.args;
+            var args = this.argsBuffer;
 
             //var vectorOffset = offset.pVectorOffsetInBuffer - nativeBuffer.pBuffer;
             //mat.SetInt( "BoneVectorOffset", (int)vectorOffset );

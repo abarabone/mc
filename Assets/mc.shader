@@ -62,10 +62,12 @@
             {
                 v2f o;
 
-				int iv = IdxList[i * 12 + v.vertex.x];
-				float4 lv = BaseVtxList[iv];
+				int cubeId = Instances[i];
+				int vtxIndex = IdxList[cubeId * 12];
 
-				lv.x += i;
+				float4 lvtx = BaseVtxList[vtxIndex];
+
+				lvtx.x += i;
 
 				//v.vertex.x = get_mcb(0, v.vertex.xyz);
                 o.vertex = UnityObjectToClipPos(lv);
