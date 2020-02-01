@@ -12,22 +12,6 @@ namespace mc
 
     using vc = Vector3;
 
-    public class MarchingCubeAsset : ScriptableObject
-    {
-        public Vector3[] BaseVertexList;
-        public CubeWrapper[] CubeIndexLists;
-
-        [ System.Serializable]
-        public struct CubeWrapper// タプルがシリアライズできないので
-        {
-            public byte cubeId;
-            public int[] indices;
-        }
-        public (byte cubeId, int[] vtxIdxs)[] CubeIdsAndIndexLists =>
-            this.CubeIndexLists.Select( x => (x.cubeId, x.indices) ).ToArray();
-    }
-
-
     public class mc : MonoBehaviour
     {
         public MarchingCubeAsset MarchingCubeAsset;

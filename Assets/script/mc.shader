@@ -63,14 +63,14 @@
                 v2f o;
 
 				int cubeId = Instances[i];
-				int vtxIndex = IdxList[cubeId * 12];
+				int vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
 
 				float4 lvtx = BaseVtxList[vtxIndex];
 
 				lvtx.x += i;
 
 				//v.vertex.x = get_mcb(0, v.vertex.xyz);
-                o.vertex = UnityObjectToClipPos(lv);
+                o.vertex = UnityObjectToClipPos(lvtx);
                 o.uv = TRANSFORM_TEX(o.vertex.xy, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
