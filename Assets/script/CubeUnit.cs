@@ -36,7 +36,10 @@ namespace mc
         [FieldOffset( 1 )] CubeUnit unit1;
         [FieldOffset( 2 )] CubeUnit unit2;
         [FieldOffset( 3 )] CubeUnit unit3;
-        
+        [FieldOffset( 4 )] CubeUnit unit4;
+        [FieldOffset( 5 )] CubeUnit unit5;
+        [FieldOffset( 6 )] CubeUnit unit6;
+        [FieldOffset( 7 )] CubeUnit unit7;
 
         //public uint this[ int x, int y, int z ]
         //{
