@@ -64,4 +64,40 @@ namespace mc
 
         }
     }
+
+
+    public class CubeGridUnit
+    {
+        public int xLength, zLength, yLength;
+
+        public 
+
+        uint[] units;
+
+        public uint GetCube( int x, int y, int z )
+        {
+            var zofs = this.xLength;
+            var yofs = this.xLength * this.zLength;
+
+            var _x0 = (uint)( x + 0 );
+            var _x1 = (uint)( x + 1 );
+            var _z0 = (uint)(( z + 0 ) * zofs);
+            var _z1 = (uint)(( z + 1 ) * zofs);
+            var _y0 = (uint)(( y + 0 ) * yofs);
+            var _y1 = (uint)(( y + 1 ) * yofs);
+
+            var _ix = new uint4( _x0, _x1, _x0, _x1 );
+            var _iz = new uint4( _z0, _z0, _z1, _z1 );
+
+            var i0123 = _ix + _iz + _y0;//new uint4( _y0, _y0, _y0, _y0 );
+            var i4567 = _ix + _iz + _y1;// new uint4( _y1, _y1, _y1, _y1 );
+
+            var g0123 = i0123 >> 5;
+            var b0123 = i0123 & 0x1f;
+            var unit0123 = new uint4( this.units[ g0123.x ], this.units[ g0123.y ], this.units[ g0123.z ], this.units[ g0123.w ] );
+            var res0123 = (unit0123 >> b0123) & 1;
+
+            return ();
+        }
+    }
 }
