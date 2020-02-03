@@ -78,7 +78,7 @@ namespace mc
             this.yLength = y;
             this.zLength = z;
             this.units = //new uint[ (x>>5) * z * y ];
-            Enumerable.Repeat( (uint)0, 32 ).Concat( Enumerable.Repeat( (uint)0xffffffff, 32 ) ).ToArray();
+            Enumerable.Repeat( (uint)0, 32 ).Concat( Enumerable.Repeat( (uint)0xffffffef, 32 ) ).ToArray();
         }
 
         public uint GetCube( int x, int y, int z )
