@@ -62,7 +62,7 @@
             {
                 v2f o;
 
-				int cubeId = Instances[i];
+				int cubeId = Instances[i] - 1;
 				int vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
 
 				float4 lvtx = BaseVtxList[vtxIndex];

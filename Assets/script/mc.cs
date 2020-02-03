@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
+using System;
 
 namespace mc
 {
@@ -40,8 +41,12 @@ namespace mc
             this.Material.SetBuffer( "IdxList", this.idxListsBuffer );
             this.Material.SetBuffer( "Instances", this.instancesBuffer );
 
+            var c = new CubeGrid( 32, 32, 32 );
             this.cubeInstances = Enumerable.Range( 0, 300 ).ToArray();
+            for( var i= 0; i < 12; i++ ) this.cubeInstances[ i ] = (int)c.GetCube( i, 0, 0 );
             this.instancesBuffer.SetData( this.cubeInstances );
+
+            Debug.Log( Convert.ToString( c.GetCube( 0, 0, 0 ), 2 ).PadLeft( 8, '0' ) );
         }
 
         private void OnDestroy()

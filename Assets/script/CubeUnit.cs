@@ -59,20 +59,27 @@ namespace mc
     {
         uint[] units;
 
-        public this[int x, int y, int z]
-        {
+        //public this[int x, int y, int z]
+        //{
 
-        }
+        //}
     }
 
 
-    public class CubeGridUnit
+    public class CubeGrid
     {
         public int xLength, zLength, yLength;
 
-        public 
-
         uint[] units;
+
+        public CubeGrid( int x, int y, int z )
+        {
+            this.xLength = x;
+            this.yLength = y;
+            this.zLength = z;
+            this.units = //new uint[ (x>>5) * z * y ];
+            Enumerable.Repeat( (uint)0, 32 ).Concat( Enumerable.Repeat( (uint)0xffffffff, 32 ) ).ToArray();
+        }
 
         public uint GetCube( int x, int y, int z )
         {
@@ -80,24 +87,51 @@ namespace mc
             var yofs = this.xLength * this.zLength;
 
             var _x0 = (uint)( x + 0 );
-            var _x1 = (uint)( x + 1 );
-            var _z0 = (uint)(( z + 0 ) * zofs);
-            var _z1 = (uint)(( z + 1 ) * zofs);
-            var _y0 = (uint)(( y + 0 ) * yofs);
-            var _y1 = (uint)(( y + 1 ) * yofs);
+            var _z0 = (uint)( ( z + 0 ) * zofs );
+            var _z1 = (uint)( ( z + 1 ) * zofs );
+            var _y0 = (uint)( ( y + 0 ) * yofs );
+            var _y1 = (uint)( ( y + 1 ) * yofs );
 
-            var _ix = new uint4( _x0, _x1, _x0, _x1 );
-            var _iz = new uint4( _z0, _z0, _z1, _z1 );
+            var _ix = new uint4( _x0, _x0, _x0, _x0 );
+            var _iz = new uint4( _z0, _z1, _z0, _z1 );
+            var _iy = new uint4( _y0, _y0, _y1, _y1 );
 
-            var i0123 = _ix + _iz + _y0;//new uint4( _y0, _y0, _y0, _y0 );
-            var i4567 = _ix + _iz + _y1;// new uint4( _y1, _y1, _y1, _y1 );
+            var i = _ix + _iz + _iy;
+            var igrid = i >> 5;
+            var ibit = i & 0x1f;
 
-            var g0123 = i0123 >> 5;
-            var b0123 = i0123 & 0x1f;
-            var unit0123 = new uint4( this.units[ g0123.x ], this.units[ g0123.y ], this.units[ g0123.z ], this.units[ g0123.w ] );
-            var res0123 = (unit0123 >> b0123) & 1;
+            var unit01 = ( this.units[ igrid.x ] >> (int)ibit.x ) & 0b11;
+            var unit23 = ( this.units[ igrid.y ] >> (int)ibit.y ) & 0b11;
+            var unit45 = ( this.units[ igrid.z ] >> (int)ibit.z ) & 0b11;
+            var unit67 = ( this.units[ igrid.w ] >> (int)ibit.w ) & 0b11;
 
-            return ();
+            return (unit67 << 6) | (unit45 << 4) | (unit23 << 2) | (unit01 << 0);
         }
+        //public uint GetCube_( int x, int y, int z )
+        //{
+        //    var zofs = this.xLength;
+        //    var yofs = this.xLength * this.zLength;
+
+        //    var _x0 = (uint)( x + 0 );
+        //    var _x1 = (uint)( x + 1 );
+        //    var _z0 = (uint)(( z + 0 ) * zofs);
+        //    var _z1 = (uint)(( z + 1 ) * zofs);
+        //    var _y0 = (uint)(( y + 0 ) * yofs);
+        //    var _y1 = (uint)(( y + 1 ) * yofs);
+
+        //    var _ix = new uint4( _x0, _x1, _x0, _x1 );
+        //    var _iz = new uint4( _z0, _z0, _z1, _z1 );
+
+        //    var i0123 = _ix + _iz + _y0;//new uint4( _y0, _y0, _y0, _y0 );
+        //    var i4567 = _ix + _iz + _y1;// new uint4( _y1, _y1, _y1, _y1 );
+
+        //    var g0123 = i0123 >> 5;
+        //    var b0123 = i0123 & 0x1f;
+
+        //    var unit0 = this.units[ g0123.x ];
+        //    var res0 = (unit0 >> (int)b0123.x) & 1;
+
+        //    return ();
+        //}
     }
 }
