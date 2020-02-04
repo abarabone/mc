@@ -78,11 +78,22 @@ namespace mc
             this.yLength = (uint)y;
             this.zLength = (uint)z;
             this.units = //new uint[ (x>>5) * z * y ];
-            Enumerable
-                .Repeat( (uint)0, 32 )
-                .Concat( Enumerable.Repeat( (uint)0xffffffff, 32 ) )
-                .Repeat(16)
-                .ToArray();
+            //Enumerable
+            //    .Repeat( (uint)0x_0000_0000, 32 )
+            //    .Concat( Enumerable.Repeat( (uint)0x_5fff_ffff, 32 ) )
+            //    .Repeat(16)
+            //    .ToArray();
+            new uint[]
+            {
+                (uint)0b_101,
+                (uint)0b_101, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
+                (uint)0b_101,
+                (uint)0b_101,
+                //(uint)0b_111,
+                //(uint)0b_101, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
+                //(uint)0b_101,
+                //(uint)0b_110,
+            };
         }
 
         public uint GetCube( int x, int y, int z )
@@ -109,6 +120,11 @@ namespace mc
             var unit67 = ( this.units[ igrid.w ] >> (int)ibit.w ) & 0b11;
 
             return (unit67 << 6) | (unit45 << 4) | (unit23 << 2) | (unit01 << 0);
+        }
+
+        public void SetCube( int x, int y, int z, uint cube )
+        {
+
         }
     }
 

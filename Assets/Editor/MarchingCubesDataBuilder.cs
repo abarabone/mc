@@ -78,10 +78,10 @@ namespace mc
 
                 var stds = prototypeId;
                 var revs = qReverseId_( prototypeId );//.ToArray();
-                                                      //var flips = qFlipId_X_( standardId );//.ToArray();
+                //var flips = qFlipId_X_( prototypeId );//.ToArray();//
                 var rotstds = rot_( stds );
                 var rotrevs = rot_( revs );
-                //var rotFlips = rot_( flips );
+                //var rotFlips = rot_( flips );//
                 var qId =
                     from x in rotstds.Concat( rotrevs )//.Concat( rotFlips )
                 group x by (x.id, x.primaryId) into g
@@ -196,9 +196,9 @@ namespace mc
                         from trivtx in proto.trivtxs
                         select new[]
                         {
-                        transform_( pat, trivtx.v0 ),
-                        transform_( pat, trivtx.v1 ),
-                        transform_( pat, trivtx.v2 ),
+                            transform_( pat, trivtx.v0 ),
+                            transform_( pat, trivtx.v1 ),
+                            transform_( pat, trivtx.v2 ),
                         }
                     ;
                 return Enumerable.Zip( cubePattarns, q, ( l, r ) => (l.id, l.isReverseTriangle ? r.Reverse() : r) );

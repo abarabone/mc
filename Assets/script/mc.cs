@@ -25,7 +25,7 @@ namespace mc
         ComputeBuffer instancesBuffer;
         ComputeBuffer argsBuffer;
 
-        int[] cubeInstances;
+        uint[] cubeInstances;
 
         void Awake()
         {
@@ -43,14 +43,16 @@ namespace mc
             this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
             var c = new CubeGrid( 32, 32, 32 );
-            this.cubeInstances = Enumerable.Range( 0, 300 ).ToArray();
-            for( var iz= 0; iz < 31; i++ )
-                for( var i = 0; iy < 31; i++ )
-                    for( var i = 0; ix < 31; i++ )
-                        this.cubeInstances[ i ] = (int)c.GetCube( i, 0, 0 );
+            this.cubeInstances = new uint[] { c.GetCube(0,0,0), (1<<8)|c.GetCube( 1, 0, 0 ) };
+            //this.cubeInstances = new uint[32*32*32];
+            //var iii = 0;
+            //for( var iy = 0; iy < 31; iy++ )
+            //    for( var iz= 0; iz < 31; iz++ )
+            //        for( var ix = 0; ix < 31; ix++ )
+            //            this.cubeInstances[ iii++ ] = (uint)(iz<<24) | (uint)(iy<<16) | (uint)(ix<<8) | c.GetCube( ix, iy, iz );
             this.instancesBuffer.SetData( this.cubeInstances );
 
-            for(var i=0; i<32; i++ )
+            for(var i=0; i<2; i++ )
             Debug.Log( Convert.ToString( c.GetCube( i, 0, 0 ), 2 ).PadLeft( 8, '0' ) );
         }
 
@@ -73,7 +75,7 @@ namespace mc
             ////mat.SetInt( "BoneLengthEveryInstance", mesh.bindposes.Length );
             ////mat.SetBuffer( "BoneVectorBuffer", computeBuffer );
 
-            var instanceCount = 12;
+            var instanceCount = 2;// 31*31*31;
             var argparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             args.SetData( ref argparams );
 
@@ -96,7 +98,7 @@ namespace mc
             createMarchingCubesResources( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndIndexLists, Vector3[] baseVtxList )
             {
 
-                var instance = createCubeIdInstancingShaderBuffer_( 10000 );
+                var instance = createCubeIdInstancingShaderBuffer_( 32*32*32 );
                 var basevtxs = createBaseVtxShaderBuffer_( baseVtxList );
                 var cubeid = createIdxListsShaderBuffer_( cubeIdsAndIndexLists );
                 var mesh = createMesh_();

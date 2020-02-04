@@ -62,16 +62,18 @@
             {
                 v2f o;
 
-				int cubeId = Instances[i] - 1;
+				uint data = Instances[i];
+
+				int cubeId = (data & 0xff) - 1;
 				int vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
 
-				float4 lvtx = BaseVtxList[vtxIndex];
-
-				lvtx.x += i;
+				float4 unitpos = float4( (data>>8) & 0xff, (data>>16) & 0xff, (data>>24) & 0xff, 0 );
+				unitpos *= float4(1, -1, -1, 1);
+				float4 lvtx = unitpos + BaseVtxList[vtxIndex];
 
 				//v.vertex.x = get_mcb(0, v.vertex.xyz);
 				o.vertex = mul(UNITY_MATRIX_VP,lvtx);//UnityObjectToClipPos(lvtx);
-                o.uv = TRANSFORM_TEX(o.vertex.xy, _MainTex);
+                o.uv = TRANSFORM_TEX(lvtx.xy, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
             }
