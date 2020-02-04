@@ -70,7 +70,7 @@
 				lvtx.x += i;
 
 				//v.vertex.x = get_mcb(0, v.vertex.xyz);
-                o.vertex = UnityObjectToClipPos(lvtx);
+				o.vertex = mul(UNITY_MATRIX_VP,lvtx);//UnityObjectToClipPos(lvtx);
                 o.uv = TRANSFORM_TEX(o.vertex.xy, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;

@@ -71,13 +71,13 @@ namespace mc
                 from x in qFloatEx.Token()
                 from y in qFloatEx.Token()
                 from z in qFloatEx.Token()
-                select new Vector3( Math.Sign( -x ) * 0.5f, Math.Sign( y ) * 0.5f, Math.Sign( z ) * 0.5f )
+                select new Vector3( Math.Sign( -x ) * 0.5f, Math.Sign( y ) * 0.5f, Math.Sign( z ) * 0.5f )// X軸反転
                 ;
             var qIdx =
                 from corner_length in Parse.Decimal.Token().Select( x => int.Parse( x ) )
                 from index_body in Parse.Numeric.Or( Parse.WhiteSpace ).Many().Contained( Parse.String( "V(" ), Parse.Char( ')' ) ).Token().Text()
                 from _ in Parse.AnyChar.Until( Parse.LineEnd )
-                select (corner_length, indices: index_body.Split( ' ' ).Select( x => int.Parse( x ) ).ToArray())
+                select (corner_length, indices: index_body.Split( ' ' ).Select( x => int.Parse( x ) ).Reverse().ToArray())// X軸反転ゆえの面反転
                 ;
 
             var data = objectTexts

@@ -40,13 +40,18 @@ namespace mc
             this.Material.SetBuffer( "BaseVtxList", this.baseVtxsBuffer );
             this.Material.SetBuffer( "IdxList", this.idxListsBuffer );
             this.Material.SetBuffer( "Instances", this.instancesBuffer );
+            this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
             var c = new CubeGrid( 32, 32, 32 );
             this.cubeInstances = Enumerable.Range( 0, 300 ).ToArray();
-            for( var i= 0; i < 12; i++ ) this.cubeInstances[ i ] = (int)c.GetCube( i, 0, 0 );
+            for( var iz= 0; iz < 31; i++ )
+                for( var i = 0; iy < 31; i++ )
+                    for( var i = 0; ix < 31; i++ )
+                        this.cubeInstances[ i ] = (int)c.GetCube( i, 0, 0 );
             this.instancesBuffer.SetData( this.cubeInstances );
 
-            Debug.Log( Convert.ToString( c.GetCube( 0, 0, 0 ), 2 ).PadLeft( 8, '0' ) );
+            for(var i=0; i<32; i++ )
+            Debug.Log( Convert.ToString( c.GetCube( i, 0, 0 ), 2 ).PadLeft( 8, '0' ) );
         }
 
         private void OnDestroy()
