@@ -98,8 +98,9 @@ namespace mc
                     f.WriteLine( idGroups.Length );
                     var ss =
                         from g in idGroups
-                            //from p in g
-                    let p = g.First()
+                        where g.Key.primaryId == 240//
+                        //from p in g
+                        let p = g.First()
                         let id = Convert.ToString( p.id, 2 ).PadLeft( 8, '0' )
                         let primaryId = Convert.ToString( p.primaryId, 2 ).PadLeft( 8, '0' )
                         select (id, primaryId, p.dir, p.up)
@@ -111,7 +112,7 @@ namespace mc
                 return idsAndPattarns;
 
 
-                // 右ねじの回転方向とする
+                // 左ねじの回転方向とする
                 IEnumerable<CubePattarn> qRotId_AxisZ_( IEnumerable<CubePattarn> src ) =>
                     from x in src
                     let z0 = x.id & 0b_0000_0101
@@ -205,10 +206,14 @@ namespace mc
 
                 (sbyte x, sbyte y, sbyte z) transform_( CubePattarn cube, Vector3 protoVtx )
                 {
-                    var vtx = (x: Math.Sign( protoVtx.x ), y: Math.Sign( protoVtx.y ), z: Math.Sign( protoVtx.z ));
+                    var vtx = (x: math.sign( protoVtx.x ), y: math.sign( protoVtx.y ), z: math.sign( protoVtx.z ));
                     var fwd = cube.dir;
                     var up = cube.up;
-                    var side = (x: fwd.y * up.z - fwd.z * up.y, y: fwd.z * up.x - fwd.x * up.z, z: fwd.x * up.y - fwd.y * up.x);
+                    var side = (
+                        x: - fwd.y * up.z + fwd.z * up.y, 
+                        y: - fwd.z * up.x + fwd.x * up.z, 
+                        z: - fwd.x * up.y + fwd.y * up.x
+                    );
                     var x = vtx.x * side.x + vtx.y * side.y + vtx.z * side.z;
                     var y = vtx.x * up.x + vtx.y * up.y + vtx.z * up.z;
                     var z = vtx.x * fwd.x + vtx.y * fwd.y + vtx.z * fwd.z;
