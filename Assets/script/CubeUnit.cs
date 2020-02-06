@@ -81,7 +81,7 @@ namespace mc
             //Enumerable
             //    .Repeat( (uint)0x_0000_0000, 32 )
             //    .Concat( Enumerable.Repeat( (uint)0x_5fff_ffff, 32 ) )
-            //    .Repeat(16)
+            //    .Repeat( 16 )
             //    .ToArray();
             new uint[]
             {

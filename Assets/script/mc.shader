@@ -67,6 +67,7 @@
 				int cubeId = (data & 0xff) - 1;
 				int vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
 
+				//float4 unitpos = float4(0,0,0,0);
 				float4 unitpos = float4( (data>>8) & 0xff, (data>>16) & 0xff, (data>>24) & 0xff, 0 );
 				unitpos *= float4(1, -1, -1, 1);
 				float4 lvtx = unitpos + BaseVtxList[vtxIndex];

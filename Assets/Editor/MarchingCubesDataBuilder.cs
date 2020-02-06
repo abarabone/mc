@@ -209,10 +209,11 @@ namespace mc
                     var vtx = (x: math.sign( protoVtx.x ), y: math.sign( protoVtx.y ), z: math.sign( protoVtx.z ));
                     var fwd = cube.dir;
                     var up = cube.up;
+                    //var side = cube.side;
                     var side = (
-                        x: - fwd.y * up.z + fwd.z * up.y, 
-                        y: - fwd.z * up.x + fwd.x * up.z, 
-                        z: - fwd.x * up.y + fwd.y * up.x
+                        x: -fwd.y * up.z + fwd.z * up.y,
+                        y: -fwd.z * up.x + fwd.x * up.z,
+                        z: -fwd.x * up.y + fwd.y * up.x
                     );
                     var x = vtx.x * side.x + vtx.y * side.y + vtx.z * side.z;
                     var y = vtx.x * up.x + vtx.y * up.y + vtx.z * up.z;
@@ -283,6 +284,7 @@ namespace mc
             public bool isReverseTriangle;
             public (sbyte x, sbyte y, sbyte z) dir;
             public (sbyte x, sbyte y, sbyte z) up;
+            public (sbyte x, sbyte y, sbyte z) side;
             public CubePattarn( byte id )
             {
                 this.primaryId = id;
@@ -290,6 +292,7 @@ namespace mc
                 this.isReverseTriangle = false;
                 this.dir = (0, 0, 1);
                 this.up = (0, 1, 0);
+                this.side = (1, 0, 0);
             }
             public CubePattarn( CubePattarn src, byte id )
             {
@@ -298,26 +301,30 @@ namespace mc
             }
             public CubePattarn RotX()
             {
-                this.dir = (this.dir.x, this.dir.z, (sbyte)-this.dir.y);
-                this.up = (this.up.x, this.up.z, (sbyte)-this.up.y);
+                this.dir = (this.dir.x, (sbyte)-this.dir.z, this.dir.y);
+                this.up = (this.up.x, (sbyte)-this.up.z, this.up.y);
+                this.side = (this.side.x, (sbyte)-this.side.z, this.side.y);
                 return this;
             }
             public CubePattarn RotY()
             {
-                this.dir = ((sbyte)-this.dir.z, this.dir.y, this.dir.x);
-                this.up = ((sbyte)-this.up.z, this.up.y, this.up.x);
+                this.dir = (this.dir.z, this.dir.y, (sbyte)-this.dir.x);
+                this.up = (this.up.z, this.up.y, (sbyte)-this.up.x);
+                this.side = (this.side.z, this.side.y, (sbyte)-this.side.x);
                 return this;
             }
             public CubePattarn RotZ()
             {
-                this.dir = (this.dir.y, (sbyte)-this.dir.x, this.dir.z);
-                this.up = (this.up.y, (sbyte)-this.up.x, this.up.z);
+                this.dir = ((sbyte)-this.dir.y, this.dir.x, this.dir.z);
+                this.up = ((sbyte)-this.up.y, this.up.x, this.up.z);
+                this.side = ((sbyte)-this.side.y, this.side.x, this.side.z);
                 return this;
             }
             public CubePattarn FlipX()
             {
                 this.dir.x = (sbyte)-this.dir.x;
                 this.up.x = (sbyte)-this.up.x;
+                this.side.x = (sbyte)-this.side.x;
                 this.isReverseTriangle ^= true;
                 return this;
             }
@@ -325,6 +332,7 @@ namespace mc
             {
                 this.dir.y = (sbyte)-this.dir.y;
                 this.up.y = (sbyte)-this.up.y;
+                this.side.y = (sbyte)-this.side.y;
                 this.isReverseTriangle ^= true;
                 return this;
             }
@@ -332,6 +340,7 @@ namespace mc
             {
                 this.dir.z = (sbyte)-this.dir.z;
                 this.up.z = (sbyte)-this.up.z;
+                this.side.z = (sbyte)-this.side.z;
                 this.isReverseTriangle ^= true;
                 return this;
             }
@@ -339,6 +348,7 @@ namespace mc
             {
                 this.dir = ((sbyte)-this.dir.x, (sbyte)-this.dir.y, (sbyte)-this.dir.z);
                 this.up = ((sbyte)-this.up.x, (sbyte)-this.up.y, (sbyte)-this.up.z);
+                this.side = ((sbyte)-this.side.x, (sbyte)-this.side.y, (sbyte)-this.side.z);
                 this.isReverseTriangle ^= true;
                 return this;
             }
