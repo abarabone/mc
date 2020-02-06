@@ -71,7 +71,7 @@ namespace mc
                 from x in qFloatEx.Token()
                 from y in qFloatEx.Token()
                 from z in qFloatEx.Token()
-                select new Vector3( Math.Sign( -x ) * 0.5f, Math.Sign( y ) * 0.5f, Math.Sign( z ) * 0.5f )// X軸反転
+                select new Vector3( -x, y, z )// X軸反転
                 ;
             var qIdx =
                 from corner_length in Parse.Decimal.Token().Select( x => int.Parse( x ) )

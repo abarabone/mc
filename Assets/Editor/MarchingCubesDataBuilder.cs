@@ -11,11 +11,38 @@ namespace mc
     static public class MarchingCubesDataBuilder
     {
 
-        static public ((byte cubeId, int[] indices)[] cubesAndIndexLists, Vector3[] baseVtxList)
-        ConvertObjectDataToMachingCubesData( (string name, Vector3[] vtxs, int[][] tris)[] objectsData )
+
+
+        static public Vector3[] MakeBaseVtxList()
+        {
+            return new Vector3[]
+            {
+                new Vector3(0, 1, 1) * 0.5f,
+                new Vector3(-1, 1, 0) * 0.5f,
+                new Vector3(1, 1, 0) * 0.5f,
+                new Vector3(0, 1, -1) * 0.5f,
+
+                new Vector3(-1, 0, 1) * 0.5f,
+                new Vector3(1, 0, 1) * 0.5f,
+                new Vector3(-1, 0, -1) * 0.5f,
+                new Vector3(1, 0, -1) * 0.5f,
+
+                new Vector3(0, -1, 1) * 0.5f,
+                new Vector3(-1, -1, 0) * 0.5f,
+                new Vector3(1, -1, 0) * 0.5f,
+                new Vector3(0, -1, -1) * 0.5f,
+            };
+        }
+
+
+
+        static public (byte cubeId, int[] indices)[]
+        ConvertObjectDataToMachingCubesData(
+            (string name, Vector3[] vtxs, int[][] tris)[] objectsData,
+            Vector3[] baseVtxList
+        )
         {
 
-            var baseVtxList = makeBaseVtxList_();
             var baseVtxIndexBySbvtxDict = makeBaseVtxIndexBySbvtxDict_( baseVtxList );
 
             var prototypeCubes = makePrototypeCubes_( objectsData );
@@ -24,7 +51,12 @@ namespace mc
 
             var triIdxLists = makeVtxIndexListsPerCube_( triVtxLists, baseVtxIndexBySbvtxDict );
 
-            return (triIdxLists, baseVtxList);
+            using( var f = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
+            {
+
+                f.Write
+            }
+            return triIdxLists;
 
 
             (byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[] trivtxs)[] makePrototypeCubes_
@@ -84,30 +116,31 @@ namespace mc
                 //var rotFlips = rot_( flips );//
                 var qId =
                     from x in rotstds.Concat( rotrevs )//.Concat( rotFlips )
-                group x by (x.id, x.primaryId) into g
+                    group x by (x.id, x.primaryId) into g
+                    //group x by x.id into g
                     orderby g.Key
                     select g
                     ;
                 var idsAndPattarns = qId.Select( x => x.First() ).ToArray();
 
-                // 確認
-                using( var f = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
-                {
-                    var idGroups = qId.ToArray();
+                //// 確認
+                //using( var f = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
+                //{
+                //    var idGroups = qId.ToArray();
 
-                    f.WriteLine( idGroups.Length );
-                    var ss =
-                        from g in idGroups
-                        where g.Key.primaryId == 240//
-                        //from p in g
-                        let p = g.First()
-                        let id = Convert.ToString( p.id, 2 ).PadLeft( 8, '0' )
-                        let primaryId = Convert.ToString( p.primaryId, 2 ).PadLeft( 8, '0' )
-                        select (id, primaryId, p.dir, p.up)
-                        ;
-                    var s = string.Join( "\r\n", ss );
-                    f.WriteLine( s );
-                }
+                //    f.WriteLine( idGroups.Length );
+                //    var ss =
+                //        from g in idGroups
+                //        //where g.Key.primaryId == 240//
+                //        //from p in g
+                //        let p = g.First()
+                //        let id = Convert.ToString( p.id, 2 ).PadLeft( 8, '0' )
+                //        let primaryId = Convert.ToString( p.primaryId, 2 ).PadLeft( 8, '0' )
+                //        select (id, primaryId, p.dir, p.up, p.side)
+                //        ;
+                //    var s = string.Join( "\r\n", ss );
+                //    f.WriteLine( s );
+                //}
 
                 return idsAndPattarns;
 
@@ -138,24 +171,24 @@ namespace mc
                     select new CubePattarn( x, (byte)( y0 << 1 | y1 << 2 | y2 >> 1 | y3 >> 2 ) ).RotY()
                     ;
 
-                IEnumerable<CubePattarn> qFlipId_X_( IEnumerable<CubePattarn> src ) =>
-                    from x in src
-                    let l = x.id & 0b_0101_0101
-                    let r = x.id & 0b_1010_1010
-                    select new CubePattarn( x, (byte)( ( l << 1 ) | ( r >> 1 ) ) ).FlipX()
-                    ;
-                IEnumerable<CubePattarn> qFlipId_Y_( IEnumerable<CubePattarn> src ) =>
-                    from x in src
-                    let u = x.id & 0b_0000_1111
-                    let d = x.id & 0b_1111_0000
-                    select new CubePattarn( x, (byte)( ( u << 4 ) | ( d >> 4 ) ) ).FlipY()
-                    ;
-                IEnumerable<CubePattarn> qFlipId_Z_( IEnumerable<CubePattarn> src ) =>
-                    from x in src
-                    let f = x.id & 0b_0011_0011
-                    let b = x.id & 0b_1100_1100
-                    select new CubePattarn( x, (byte)( ( f << 2 ) | ( b >> 2 ) ) ).FlipZ()
-                    ;
+                //IEnumerable<CubePattarn> qFlipId_X_( IEnumerable<CubePattarn> src ) =>
+                //    from x in src
+                //    let l = x.id & 0b_0101_0101
+                //    let r = x.id & 0b_1010_1010
+                //    select new CubePattarn( x, (byte)( ( l << 1 ) | ( r >> 1 ) ) ).FlipX()
+                //    ;
+                //IEnumerable<CubePattarn> qFlipId_Y_( IEnumerable<CubePattarn> src ) =>
+                //    from x in src
+                //    let u = x.id & 0b_0000_1111
+                //    let d = x.id & 0b_1111_0000
+                //    select new CubePattarn( x, (byte)( ( u << 4 ) | ( d >> 4 ) ) ).FlipY()
+                //    ;
+                //IEnumerable<CubePattarn> qFlipId_Z_( IEnumerable<CubePattarn> src ) =>
+                //    from x in src
+                //    let f = x.id & 0b_0011_0011
+                //    let b = x.id & 0b_1100_1100
+                //    select new CubePattarn( x, (byte)( ( f << 2 ) | ( b >> 2 ) ) ).FlipZ()
+                //    ;
 
                 IEnumerable<CubePattarn> qReverseId_( IEnumerable<CubePattarn> src ) =>
                     from x in src
@@ -206,15 +239,15 @@ namespace mc
 
                 (sbyte x, sbyte y, sbyte z) transform_( CubePattarn cube, Vector3 protoVtx )
                 {
-                    var vtx = (x: math.sign( protoVtx.x ), y: math.sign( protoVtx.y ), z: math.sign( protoVtx.z ));
+                    var vtx = math.sign(protoVtx);
                     var fwd = cube.dir;
                     var up = cube.up;
-                    //var side = cube.side;
-                    var side = (
-                        x: -fwd.y * up.z + fwd.z * up.y,
-                        y: -fwd.z * up.x + fwd.x * up.z,
-                        z: -fwd.x * up.y + fwd.y * up.x
-                    );
+                    var side = cube.side;
+                    //var side = (
+                    //    x: -fwd.y * up.z + fwd.z * up.y,
+                    //    y: -fwd.z * up.x + fwd.x * up.z,
+                    //    z: -fwd.x * up.y + fwd.y * up.x
+                    //);
                     var x = vtx.x * side.x + vtx.y * side.y + vtx.z * side.z;
                     var y = vtx.x * up.x + vtx.y * up.y + vtx.z * up.z;
                     var z = vtx.x * fwd.x + vtx.y * fwd.y + vtx.z * fwd.z;
@@ -223,33 +256,12 @@ namespace mc
             }
 
 
-
-            Vector3[] makeBaseVtxList_()
-            {
-                return new Vector3[]
-                {
-                new Vector3(0, 1, 1) * 0.5f,
-                new Vector3(-1, 1, 0) * 0.5f,
-                new Vector3(1, 1, 0) * 0.5f,
-                new Vector3(0, 1, -1) * 0.5f,
-
-                new Vector3(-1, 0, 1) * 0.5f,
-                new Vector3(1, 0, 1) * 0.5f,
-                new Vector3(-1, 0, -1) * 0.5f,
-                new Vector3(1, 0, -1) * 0.5f,
-
-                new Vector3(0, -1, 1) * 0.5f,
-                new Vector3(-1, -1, 0) * 0.5f,
-                new Vector3(1, -1, 0) * 0.5f,
-                new Vector3(0, -1, -1) * 0.5f,
-                };
-            }
-
             Dictionary<(sbyte x, sbyte y, sbyte z), int>
                 makeBaseVtxIndexBySbvtxDict_( IEnumerable<Vector3> baseVtxList_ )
             {
                 var dict = baseVtxList_
-                    .Select( ( x, i ) => (sbvtx: ((sbyte)math.sign( x.x ), (sbyte)math.sign( x.y ), (sbyte)math.sign( x.z )), i) )
+                    .Select( x => math.sign(x) )
+                    .Select( ( x, i ) => (sbvtx: ((sbyte)x.x, (sbyte)x.y, (sbyte)x.z), i) )
                     .ToDictionary( x => x.sbvtx, x => x.i )
                     ;
                 return dict;
@@ -284,7 +296,7 @@ namespace mc
             public bool isReverseTriangle;
             public (sbyte x, sbyte y, sbyte z) dir;
             public (sbyte x, sbyte y, sbyte z) up;
-            public (sbyte x, sbyte y, sbyte z) side;
+            public (sbyte x, sbyte y, sbyte z) side;// reverse 時に必要
             public CubePattarn( byte id )
             {
                 this.primaryId = id;

@@ -57,9 +57,11 @@ static public class ConvertMqoForMarchingCubes
         {
             var s = f.ReadToEnd();
             var objdata = MqoParser.ConvertToObjectsData( s );
-            var cubes = MarchingCubesDataBuilder.ConvertObjectDataToMachingCubesData( objdata );
+            var baseVtxList = MarchingCubesDataBuilder.MakeBaseVtxList();
+            var cubesAndIndexLists =
+                MarchingCubesDataBuilder.ConvertObjectDataToMachingCubesData( objdata, baseVtxList );
 
-            save( Selection.objects, cubes.cubesAndIndexLists, cubes.baseVtxList );
+            save( Selection.objects, cubesAndIndexLists, baseVtxList );
         }
     }
 
