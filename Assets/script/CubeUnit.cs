@@ -78,26 +78,26 @@ namespace mc
             this.yLength = (uint)y;
             this.zLength = (uint)z;
             this.units = //new uint[ (x>>5) * z * y ];
-            //Enumerable
-            //    .Repeat( (uint)0x_0000_0000, 32 )
-            //    .Concat( Enumerable.Repeat( (uint)0x_5fff_ffff, 32 ) )
-            //    .Repeat( 16 )
-            //    .ToArray();
-            new uint[]
-            {
-                (uint)0b_0101,
-                (uint)0b_0101, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
-                (uint)0b_0101,
-                (uint)0b_0101,
-                //(uint)0b_1011,
-                //(uint)0b_0000, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
-                //(uint)0b_1011,
-                //(uint)0b_0000,
-                //(uint)0b_111,
-                //(uint)0b_101, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
-                //(uint)0b_101,
-                //(uint)0b_110,
-            };
+            Enumerable
+                .Repeat( (uint)0x_0000_0000, 32 )
+                .Concat( Enumerable.Repeat( (uint)0x_ffff_ffff, 32 ) )
+                .Repeat( 16 )
+                .ToArray();
+            //new uint[]
+            //{
+            //    (uint)0b_0101,
+            //    (uint)0b_0101, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
+            //    (uint)0b_0101,
+            //    (uint)0b_0101,
+            //    //(uint)0b_1011,
+            //    //(uint)0b_0000, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
+            //    //(uint)0b_1011,
+            //    //(uint)0b_0000,
+            //    //(uint)0b_111,
+            //    //(uint)0b_101, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
+            //    //(uint)0b_101,
+            //    //(uint)0b_110,
+            //};
         }
 
         public uint GetCube( int x, int y, int z )

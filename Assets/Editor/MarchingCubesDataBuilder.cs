@@ -50,12 +50,7 @@ namespace mc
             var triVtxLists = transformSbvtxs_( cube254Pattarns, prototypeCubes );
 
             var triIdxLists = makeVtxIndexListsPerCube_( triVtxLists, baseVtxIndexBySbvtxDict );
-
-            using( var f = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
-            {
-
-                f.Write
-            }
+            
             return triIdxLists;
 
 
@@ -90,11 +85,11 @@ namespace mc
                 var vtxsAndIds = qVtxAndId.ToArray();
 
 
-                // 確認
-                foreach( var x in qExtractedData )
-                {
-                    Debug.Log( $"{Convert.ToString( x.cubeId, 2 ).PadLeft( 8, '0' )}" );
-                }
+                //// 確認
+                //foreach( var x in qExtractedData )
+                //{
+                //    Debug.Log( $"{Convert.ToString( x.cubeId, 2 ).PadLeft( 8, '0' )}" );
+                //}
 
                 return vtxsAndIds;
             }
@@ -109,11 +104,11 @@ namespace mc
                 var prototypeId = qPrototypeId.ToArray();
 
                 var stds = prototypeId;
-                var revs = qReverseId_( prototypeId );//.ToArray();
-                //var flips = qFlipId_X_( prototypeId );//.ToArray();//
-                var rotstds = rot_( stds );
-                var rotrevs = rot_( revs );
-                //var rotFlips = rot_( flips );//
+                var revs = prototypeId.Select( x => x.Reverse() );//.ToArray();
+                //var flips = prototypeId.Select( x => x.FlipX() );//.ToArray();//
+                var rotstds = rotAllPattarn_( stds );
+                var rotrevs = rotAllPattarn_( revs );
+                //var rotFlips = rotAllPattarn_( flips );//
                 var qId =
                     from x in rotstds.Concat( rotrevs )//.Concat( rotFlips )
                     group x by (x.id, x.primaryId) into g
@@ -145,71 +140,21 @@ namespace mc
                 return idsAndPattarns;
 
 
-                // 左ねじの回転方向とする
-                IEnumerable<CubePattarn> qRotId_AxisZ_( IEnumerable<CubePattarn> src ) =>
-                    from x in src
-                    let z0 = x.id & 0b_0000_0101
-                    let z1 = x.id & 0b_0101_0000
-                    let z2 = x.id & 0b_1010_0000
-                    let z3 = x.id & 0b_0000_1010
-                    select new CubePattarn( x, (byte)( z0 << 4 | z1 << 1 | z2 >> 4 | z3 >> 1 ) ).RotZ()
-                    ;
-                IEnumerable<CubePattarn> qRotId_AxisX_( IEnumerable<CubePattarn> src ) =>
-                    from x in src
-                    let x0 = x.id & 0b_0000_0011
-                    let x1 = x.id & 0b_0011_0000
-                    let x2 = x.id & 0b_1100_0000
-                    let x3 = x.id & 0b_0000_1100
-                    select new CubePattarn( x, (byte)( x0 << 4 | x1 << 2 | x2 >> 4 | x3 >> 2 ) ).RotX()
-                    ;
-                IEnumerable<CubePattarn> qRotId_AxisY_( IEnumerable<CubePattarn> src ) =>
-                    from x in src
-                    let y0 = x.id & 0b_0001_0001
-                    let y1 = x.id & 0b_0010_0010
-                    let y2 = x.id & 0b_1000_1000
-                    let y3 = x.id & 0b_0100_0100
-                    select new CubePattarn( x, (byte)( y0 << 1 | y1 << 2 | y2 >> 1 | y3 >> 2 ) ).RotY()
-                    ;
-
-                //IEnumerable<CubePattarn> qFlipId_X_( IEnumerable<CubePattarn> src ) =>
-                //    from x in src
-                //    let l = x.id & 0b_0101_0101
-                //    let r = x.id & 0b_1010_1010
-                //    select new CubePattarn( x, (byte)( ( l << 1 ) | ( r >> 1 ) ) ).FlipX()
-                //    ;
-                //IEnumerable<CubePattarn> qFlipId_Y_( IEnumerable<CubePattarn> src ) =>
-                //    from x in src
-                //    let u = x.id & 0b_0000_1111
-                //    let d = x.id & 0b_1111_0000
-                //    select new CubePattarn( x, (byte)( ( u << 4 ) | ( d >> 4 ) ) ).FlipY()
-                //    ;
-                //IEnumerable<CubePattarn> qFlipId_Z_( IEnumerable<CubePattarn> src ) =>
-                //    from x in src
-                //    let f = x.id & 0b_0011_0011
-                //    let b = x.id & 0b_1100_1100
-                //    select new CubePattarn( x, (byte)( ( f << 2 ) | ( b >> 2 ) ) ).FlipZ()
-                //    ;
-
-                IEnumerable<CubePattarn> qReverseId_( IEnumerable<CubePattarn> src ) =>
-                    from x in src
-                    select new CubePattarn( x, (byte)( x.id ^ 0b_1111_1111 ) ).Reverse()
-                    ;
-
-                CubePattarn[] rot_( IEnumerable<CubePattarn> src )
+                CubePattarn[] rotAllPattarn_( IEnumerable<CubePattarn> src )
                 {
-                    var rotx0 = qRotId_AxisX_( src ).ToArray();
-                    var rotx1 = qRotId_AxisX_( rotx0 ).ToArray();
-                    var rotx2 = qRotId_AxisX_( rotx1 ).ToArray();
+                    var rotx0 = src.Select( x => x.RotX() ).ToArray();
+                    var rotx1 = rotx0.Select( x => x.RotX() ).ToArray();
+                    var rotx2 = rotx1.Select( x => x.RotX() ).ToArray();
                     var rotx = src.Concat( rotx0 ).Concat( rotx1 ).Concat( rotx2 );//.ToArray();
 
-                    var roty0 = qRotId_AxisY_( rotx ).ToArray();
-                    var roty1 = qRotId_AxisY_( roty0 ).ToArray();
-                    var roty2 = qRotId_AxisY_( roty1 ).ToArray();
+                    var roty0 = rotx.Select( x => x.RotY() ).ToArray();
+                    var roty1 = roty0.Select( x => x.RotY() ).ToArray();
+                    var roty2 = roty1.Select( x => x.RotY() ).ToArray();
                     var rotxy = rotx.Concat( roty0 ).Concat( roty1 ).Concat( roty2 );//.ToArray();
 
-                    var rotz0 = qRotId_AxisZ_( rotxy ).ToArray();
-                    var rotz1 = qRotId_AxisZ_( rotz0 ).ToArray();
-                    var rotz2 = qRotId_AxisZ_( rotz1 ).ToArray();
+                    var rotz0 = rotxy.Select( x => x.RotZ() ).ToArray();
+                    var rotz1 = rotz0.Select( x => x.RotZ() ).ToArray();
+                    var rotz2 = rotz1.Select( x => x.RotZ() ).ToArray();
                     var rotxyz = rotxy.Concat( rotz0 ).Concat( rotz1 ).Concat( rotz2 );//.ToArray();
 
                     return rotxyz.ToArray();
@@ -248,9 +193,9 @@ namespace mc
                     //    y: -fwd.z * up.x + fwd.x * up.z,
                     //    z: -fwd.x * up.y + fwd.y * up.x
                     //);
-                    var x = vtx.x * side.x + vtx.y * side.y + vtx.z * side.z;
-                    var y = vtx.x * up.x + vtx.y * up.y + vtx.z * up.z;
-                    var z = vtx.x * fwd.x + vtx.y * fwd.y + vtx.z * fwd.z;
+                    var x = vtx.x * side.x + vtx.y * up.x + vtx.z * fwd.x;
+                    var y = vtx.x * side.y + vtx.y * up.y + vtx.z * fwd.y;
+                    var z = vtx.x * side.z + vtx.y * up.z + vtx.z * fwd.z;
                     return ((sbyte)x, (sbyte)y, (sbyte)z);
                 }
             }
@@ -293,74 +238,115 @@ namespace mc
         {
             public byte primaryId;
             public byte id;
-            public bool isReverseTriangle;
             public (sbyte x, sbyte y, sbyte z) dir;
             public (sbyte x, sbyte y, sbyte z) up;
             public (sbyte x, sbyte y, sbyte z) side;// reverse 時に必要
+            public bool isReverseTriangle;
             public CubePattarn( byte id )
             {
                 this.primaryId = id;
                 this.id = id;
-                this.isReverseTriangle = false;
                 this.dir = (0, 0, 1);
                 this.up = (0, 1, 0);
                 this.side = (1, 0, 0);
+                this.isReverseTriangle = false;
             }
             public CubePattarn( CubePattarn src, byte id )
             {
                 this = src;
                 this.id = id;
             }
+            // 左ねじの回転方向とする
             public CubePattarn RotX()
             {
+                var x0 = this.id & 0b_0000_0011;
+                var x1 = this.id & 0b_0011_0000;
+                var x2 = this.id & 0b_1100_0000;
+                var x3 = this.id & 0b_0000_1100;
+                this.id = (byte)( x0 << 4 | x1 << 2 | x2 >> 4 | x3 >> 2 );
+
                 this.dir = (this.dir.x, (sbyte)-this.dir.z, this.dir.y);
                 this.up = (this.up.x, (sbyte)-this.up.z, this.up.y);
                 this.side = (this.side.x, (sbyte)-this.side.z, this.side.y);
+
                 return this;
             }
             public CubePattarn RotY()
             {
+                var y0 = this.id & 0b_0001_0001;
+                var y1 = this.id & 0b_0010_0010;
+                var y2 = this.id & 0b_1000_1000;
+                var y3 = this.id & 0b_0100_0100;
+                this.id = (byte)( y0 << 1 | y1 << 2 | y2 >> 1 | y3 >> 2 );
+
                 this.dir = (this.dir.z, this.dir.y, (sbyte)-this.dir.x);
                 this.up = (this.up.z, this.up.y, (sbyte)-this.up.x);
                 this.side = (this.side.z, this.side.y, (sbyte)-this.side.x);
+
                 return this;
             }
             public CubePattarn RotZ()
             {
+
+                var z0 = this.id & 0b_0000_0101;
+                var z1 = this.id & 0b_0101_0000;
+                var z2 = this.id & 0b_1010_0000;
+                var z3 = this.id & 0b_0000_1010;
+                this.id = (byte)( z0 << 4 | z1 << 1 | z2 >> 4 | z3 >> 1 );
+                
                 this.dir = ((sbyte)-this.dir.y, this.dir.x, this.dir.z);
                 this.up = ((sbyte)-this.up.y, this.up.x, this.up.z);
                 this.side = ((sbyte)-this.side.y, this.side.x, this.side.z);
+
                 return this;
             }
             public CubePattarn FlipX()
             {
+                var l = this.id & 0b_0101_0101;
+                var r = this.id & 0b_1010_1010;
+                this.id = (byte)( ( l << 1 ) | ( r >> 1 ) );
+
                 this.dir.x = (sbyte)-this.dir.x;
                 this.up.x = (sbyte)-this.up.x;
                 this.side.x = (sbyte)-this.side.x;
+
                 this.isReverseTriangle ^= true;
                 return this;
             }
             public CubePattarn FlipY()
             {
+                var u = this.id & 0b_0000_1111;
+                var d = this.id & 0b_1111_0000;
+                this.id = (byte)( ( u << 4 ) | ( d >> 4 ) );
+
                 this.dir.y = (sbyte)-this.dir.y;
                 this.up.y = (sbyte)-this.up.y;
                 this.side.y = (sbyte)-this.side.y;
+
                 this.isReverseTriangle ^= true;
                 return this;
             }
             public CubePattarn FlipZ()
             {
+                var f = this.id & 0b_0011_0011;
+                var b = this.id & 0b_1100_1100;
+                this.id = (byte)( ( f << 2 ) | ( b >> 2 ) );
+
                 this.dir.z = (sbyte)-this.dir.z;
                 this.up.z = (sbyte)-this.up.z;
                 this.side.z = (sbyte)-this.side.z;
+
                 this.isReverseTriangle ^= true;
                 return this;
             }
             public CubePattarn Reverse()
             {
+                this.id = (byte)( this.id ^ 0b_1111_1111 );
+
                 this.dir = ((sbyte)-this.dir.x, (sbyte)-this.dir.y, (sbyte)-this.dir.z);
                 this.up = ((sbyte)-this.up.x, (sbyte)-this.up.y, (sbyte)-this.up.z);
                 this.side = ((sbyte)-this.side.x, (sbyte)-this.side.y, (sbyte)-this.side.z);
+
                 this.isReverseTriangle ^= true;
                 return this;
             }

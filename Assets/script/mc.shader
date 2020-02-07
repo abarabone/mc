@@ -13,11 +13,10 @@
         {
             CGPROGRAM
 
-			#pragma target 5.0
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma multi_compile_instancing
-			//#pragma multi_compile_fog
+			#pragma multi_compile_fog
 			#include "UnityCG.cginc"
 			//#include "AutoLight.cginc"
 			
@@ -33,6 +32,7 @@
                 float2 uv : TEXCOORD0;
                 UNITY_FOG_COORDS(1)
                 float4 vertex : SV_POSITION;
+				fixed4 color : COLOR;
             };
 
             sampler2D _MainTex;
@@ -68,21 +68,24 @@
 				int vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
 
 				//float4 unitpos = float4(0,0,0,0);
-				float4 unitpos = float4( (data>>8) & 0xff, (data>>16) & 0xff, (data>>24) & 0xff, 0 );
-				unitpos *= float4(1, -1, -1, 1);
+				uint4 unitpos = uint4((data >> 24) & 0xff, 0, 0, 0);// , (data >> 16) & 0xff, (data >> 24) & 0xff, 0 );
+				//float4 unitpos = float4(0, (data >> 16) & 0xff, 0, 0);
+				//unitpos *= float4(1, -1, -1, 1);
 				float4 lvtx = unitpos + BaseVtxList[vtxIndex];
 
 				//v.vertex.x = get_mcb(0, v.vertex.xyz);
 				o.vertex = mul(UNITY_MATRIX_VP,lvtx);//UnityObjectToClipPos(lvtx);
-                o.uv = TRANSFORM_TEX(lvtx.xy, _MainTex);
+				o.uv = lvtx.xy; TRANSFORM_TEX(lvtx.xy, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
+				
+				o.color = fixed4(unitpos.y,1,1,1);
 				return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
             {
                 // sample the texture
-                fixed4 col = tex2D(_MainTex, i.uv);
+				fixed4 col = tex2D(_MainTex, i.uv);// *i.color;
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
