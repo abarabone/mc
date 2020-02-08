@@ -38,7 +38,7 @@
             sampler2D _MainTex;
             float4 _MainTex_ST;
 
-			StructuredBuffer<int4> Instances;
+			StructuredBuffer<uint> Instances;
 			StructuredBuffer<int> IdxList;
 			StructuredBuffer<float4> BaseVtxList;
 
@@ -68,10 +68,10 @@
 				int vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
 
 				//float4 unitpos = float4(0,0,0,0);
-				uint4 unitpos = uint4((data >> 24) & 0xff, 0, 0, 0);// , (data >> 16) & 0xff, (data >> 24) & 0xff, 0 );
+				int4 unitpos = int4((data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff, 0 );
 				//float4 unitpos = float4(0, (data >> 16) & 0xff, 0, 0);
-				//unitpos *= float4(1, -1, -1, 1);
-				float4 lvtx = unitpos + BaseVtxList[vtxIndex];
+				unitpos *= int4(1, -1, -1, 1);
+				float4 lvtx = unitpos + BaseVtxList[vtxIndex];// *float4(-1, 1, 1, 1);;
 
 				//v.vertex.x = get_mcb(0, v.vertex.xyz);
 				o.vertex = mul(UNITY_MATRIX_VP,lvtx);//UnityObjectToClipPos(lvtx);

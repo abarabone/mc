@@ -78,8 +78,8 @@ namespace mc
             this.yLength = (uint)y;
             this.zLength = (uint)z;
             this.units = //new uint[ (x>>5) * z * y ];
-            Enumerable
-                .Repeat( (uint)0x_0000_0000, 32 )
+            Enumerable.Empty<uint>()
+                .Concat( Enumerable.Repeat( (uint)0x_0000_0001, 32 ) )
                 .Concat( Enumerable.Repeat( (uint)0x_ffff_ffff, 32 ) )
                 .Repeat( 16 )
                 .ToArray();

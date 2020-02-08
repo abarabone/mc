@@ -76,7 +76,7 @@ namespace mc
             ////mat.SetInt( "BoneLengthEveryInstance", mesh.bindposes.Length );
             ////mat.SetBuffer( "BoneVectorBuffer", computeBuffer );
 
-            var instanceCount = 31;// *31*31;
+            var instanceCount = 31 *31*31;
             var argparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             args.SetData( ref argparams );
 
