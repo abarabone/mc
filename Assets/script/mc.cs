@@ -43,17 +43,22 @@ namespace mc
             this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
             var c = new CubeGrid( 32, 32, 32 );
-            //this.cubeInstances = new uint[] { c.GetCube( 0, 0, 0 ), ( 1 << 8 ) | c.GetCube( 1, 0, 0 ) };
-            this.cubeInstances = new uint[ 31 * 31 * 31 ];
-            var iii = 0;
-            for( var iy = 0; iy < 31; iy++ )
-                for( var iz = 0; iz < 31; iz++ )
-                    for( var ix = 0; ix < 31; ix++ )
-                        this.cubeInstances[ iii++ ] = (uint)( iz << 24 ) | (uint)( iy << 16 ) | (uint)( ix << 8 ) | c.GetCube( ix, iy, iz );
+            this.cubeInstances = new uint[]
+            {
+                ( 0 << 8 ) | 0b_0011_0000,
+                ( 1 << 8 ) | 0b_1100_1111,
+                ( 2 << 8 ) | 0b_0011_1111,
+                ( 3 << 8 ) | 0b_0111_0111,
+                ( 4 << 8 ) | 0b_1111_0101,
+            };
+            //this.cubeInstances = new uint[ 31 * 31 * 31 ];
+            //var iii = 0;
+            //for( var iy = 0; iy < 31; iy++ )
+            //    for( var iz = 0; iz < 31; iz++ )
+            //        for( var ix = 0; ix < 31; ix++ )
+            //            this.cubeInstances[ iii++ ] = (uint)( iz << 24 ) | (uint)( iy << 16 ) | (uint)( ix << 8 ) | c.GetCube( ix, iy, iz );
             this.instancesBuffer.SetData( this.cubeInstances );
 
-            for(var i=0; i<2; i++ )
-            Debug.Log( Convert.ToString( c.GetCube( i, 0, 0 ), 2 ).PadLeft( 8, '0' ) );
             foreach( var x in this.cubeInstances ) Debug.Log($"{x & 0xff} {( x >> 8 ) & 0xff} {( x >> 16 ) & 0xff} {( x >> 24 ) & 0xff}");
         }
 
@@ -76,7 +81,7 @@ namespace mc
             ////mat.SetInt( "BoneLengthEveryInstance", mesh.bindposes.Length );
             ////mat.SetBuffer( "BoneVectorBuffer", computeBuffer );
 
-            var instanceCount = 31 *31*31;
+            var instanceCount = 5;// 31 *31*31;
             var argparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             args.SetData( ref argparams );
 

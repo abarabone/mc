@@ -85,9 +85,10 @@ static public class ConvertMqoForMarchingCubes
 
         // アセットとして生成
         var asset = ScriptableObject.CreateInstance<MarchingCubeAsset>();
-        var qCubeIndexLists = from x in cubeIdsAndIndexLists
-                select new MarchingCubeAsset.CubeWrapper { cubeId = x.cubeId, indices = x.indices }
-                ;
+        var qCubeIndexLists =
+            from x in cubeIdsAndIndexLists
+            select new MarchingCubeAsset.CubeWrapper { cubeId = x.cubeId, indices = x.indices }
+            ;
         asset.CubeIndexLists = qCubeIndexLists.ToArray();
         asset.BaseVertexList = baseVertexList;
         AssetDatabase.CreateAsset( asset, dstFilePath );

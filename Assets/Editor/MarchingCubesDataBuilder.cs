@@ -287,7 +287,6 @@ namespace mc
             }
             public CubePattarn RotZ()
             {
-
                 var z0 = this.id & 0b_0000_0101;
                 var z1 = this.id & 0b_0101_0000;
                 var z2 = this.id & 0b_1010_0000;
@@ -343,9 +342,9 @@ namespace mc
             {
                 this.id = (byte)( this.id ^ 0b_1111_1111 );
 
-                this.dir = ((sbyte)-this.dir.x, (sbyte)-this.dir.y, (sbyte)-this.dir.z);
-                this.up = ((sbyte)-this.up.x, (sbyte)-this.up.y, (sbyte)-this.up.z);
-                this.side = ((sbyte)-this.side.x, (sbyte)-this.side.y, (sbyte)-this.side.z);
+                //this.dir = ((sbyte)-this.dir.x, (sbyte)-this.dir.y, (sbyte)-this.dir.z);
+                //this.up = ((sbyte)-this.up.x, (sbyte)-this.up.y, (sbyte)-this.up.z);
+                //this.side = ((sbyte)-this.side.x, (sbyte)-this.side.y, (sbyte)-this.side.z);
 
                 this.isReverseTriangle ^= true;
                 return this;
