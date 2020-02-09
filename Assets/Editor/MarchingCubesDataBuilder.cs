@@ -54,7 +54,7 @@ namespace mc
             return triIdxLists;
 
 
-            (byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[] trivtxs)[] makePrototypeCubes_
+            (byte id, IEnumerable<(Vector3 v0, Vector3 v1, Vector3 v2)> trivtxs)[] makePrototypeCubes_
                 ( (string name, Vector3[] vtxs, int[][] tris)[] objectsData_ )
             {
                 var qExtractedData =
@@ -80,7 +80,7 @@ namespace mc
 
                 var qVtxAndId =
                     from x in Enumerable.Zip( qId, qTriVtx, ( l, r ) => (id: l, trivtx: r) )
-                    select (x.id, trivtxs: x.trivtx.ToArray())
+                    select (x.id, trivtxs: x.trivtx)
                     ;
                 var vtxsAndIds = qVtxAndId.ToArray();
 
@@ -95,7 +95,7 @@ namespace mc
             }
 
             CubePattarn[] makeCube254Pattarns_
-                ( IEnumerable<(byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[])> prototypeCubes_ )
+                ( IEnumerable<(byte id, IEnumerable<(Vector3 v0, Vector3 v1, Vector3 v2)>)> prototypeCubes_ )
             {
                 var qPrototypeId =
                     from cube in prototypeCubes_
@@ -162,9 +162,9 @@ namespace mc
             }
 
 
-            IEnumerable<(byte cubeId, IEnumerable<(sbyte x, sbyte y, sbyte z)[]> triVtxs)> transformSbvtxs_(
+            IEnumerable<(byte cubeId, IEnumerable<IEnumerable<(sbyte x, sbyte y, sbyte z)>> triVtxs)> transformSbvtxs_(
                 IEnumerable<CubePattarn> cubePattarns,
-                IEnumerable<(byte id, (Vector3 v0, Vector3 v1, Vector3 v2)[] trivtxs)> prototypeCubes_
+                IEnumerable<(byte id, IEnumerable<(Vector3 v0, Vector3 v1, Vector3 v2)> trivtxs)> prototypeCubes_
             )
             {
 
@@ -180,7 +180,8 @@ namespace mc
                             transform_( pat, trivtx.v2 ),
                         }
                     ;
-                return Enumerable.Zip( cubePattarns, q, ( l, r ) => (l.id, l.isReverseTriangle ? r.Reverse() : r) );
+                return Enumerable.Zip( cubePattarns, q,
+                    ( l, r ) => (l.id, l.isReverseTriangle ? r.Select(x=>x.Reverse()) : r) );
 
                 (sbyte x, sbyte y, sbyte z) transform_( CubePattarn cube, Vector3 protoVtx )
                 {
@@ -214,7 +215,7 @@ namespace mc
 
 
             (byte cubeId, int[] indices)[] makeVtxIndexListsPerCube_(
-                IEnumerable<(byte cubeId, IEnumerable<(sbyte x, sbyte y, sbyte z)[]> triVtxs)> cubeIdsAndVtxLists_,
+                IEnumerable<(byte cubeId, IEnumerable<IEnumerable<(sbyte x, sbyte y, sbyte z)>> triVtxs)> cubeIdsAndVtxLists_,
                 Dictionary<(sbyte x, sbyte y, sbyte z), int> baseVtxIndexBySbvtxDict_
             )
             {

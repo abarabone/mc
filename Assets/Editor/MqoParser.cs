@@ -77,7 +77,7 @@ namespace mc
                 from corner_length in Parse.Decimal.Token().Select( x => int.Parse( x ) )
                 from index_body in Parse.Numeric.Or( Parse.WhiteSpace ).Many().Contained( Parse.String( "V(" ), Parse.Char( ')' ) ).Token().Text()
                 from _ in Parse.AnyChar.Until( Parse.LineEnd )
-                select (corner_length, indices: index_body.Split( ' ' ).Select( x => int.Parse( x ) ).Reverse().ToArray())// X軸反転ゆえの面反転
+                select (corner_length, indices: index_body.Split( ' ' ).Select( x => int.Parse( x ) ).ToArray())// インデックスは逆まわりなので、反転は不要
                 ;
 
             var data = objectTexts

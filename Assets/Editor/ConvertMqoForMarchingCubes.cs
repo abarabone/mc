@@ -13,7 +13,7 @@ using mc;
 static public class ConvertMqoForMarchingCubes
 {
 
-    //[MenuItem( "Assets/Convert Mqo For Marching Cubes" )]
+    [MenuItem( "Assets/Convert Mqo To Meshes" )]
     static public void CreateMesh()
     {
         if( Selection.objects == null ) return;
