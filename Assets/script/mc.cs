@@ -51,12 +51,13 @@ namespace mc
             //    ( 3 << 8 ) | 0b_0111_0111,
             //    ( 4 << 8 ) | 0b_1111_0101,
             //};
-            this.cubeInstances = new uint[ 31 * 31 * 31 ];
-            var iii = 0;
-            for( var iy = 0; iy < 31; iy++ )
-                for( var iz = 0; iz < 31; iz++ )
-                    for( var ix = 0; ix < 31; ix++ )
-                        this.cubeInstances[ iii++ ] = (uint)( iz << 24 ) | (uint)( iy << 16 ) | (uint)( ix << 8 ) | c.GetCube( ix, iy, iz );
+            //this.cubeInstances = new uint[ 31 * 31 * 31 ];
+            //var iii = 0;
+            //for( var iy = 0; iy < 31; iy++ )
+            //    for( var iz = 0; iz < 31; iz++ )
+            //        for( var ix = 0; ix < 31; ix++ )
+            //            this.cubeInstances[ iii++ ] = (uint)( iz << 24 ) | (uint)( iy << 16 ) | (uint)( ix << 8 ) | c.GetCube( ix, iy, iz );
+            this.cubeInstances = c.GetCubesRect();
             this.instancesBuffer.SetData( this.cubeInstances );
 
             foreach( var x in this.cubeInstances ) Debug.Log($"{x & 0xff} {( x >> 8 ) & 0xff} {( x >> 16 ) & 0xff} {( x >> 24 ) & 0xff}");
@@ -81,7 +82,7 @@ namespace mc
             ////mat.SetInt( "BoneLengthEveryInstance", mesh.bindposes.Length );
             ////mat.SetBuffer( "BoneVectorBuffer", computeBuffer );
 
-            var instanceCount = 31 *31*31;
+            var instanceCount = 16;// 31 *31*31;
             var argparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             args.SetData( ref argparams );
 

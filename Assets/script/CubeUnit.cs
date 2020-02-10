@@ -83,21 +83,6 @@ namespace mc
                 .Concat( Enumerable.Repeat( (uint)0x_ffff_ffff, 32 ) )
                 .Repeat( 16 )
                 .ToArray();
-            //new uint[]
-            //{
-            //    (uint)0b_0101,
-            //    (uint)0b_0101, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
-            //    (uint)0b_0101,
-            //    (uint)0b_0101,
-            //    //(uint)0b_1011,
-            //    //(uint)0b_0000, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
-            //    //(uint)0b_1011,
-            //    //(uint)0b_0000,
-            //    //(uint)0b_111,
-            //    //(uint)0b_101, 3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,3,4,5,6,7,8,9,0, 1,2,
-            //    //(uint)0b_101,
-            //    //(uint)0b_110,
-            //};
         }
 
         public uint GetCube( int x, int y, int z )
@@ -125,28 +110,48 @@ namespace mc
 
             return (unit67 << 6) | (unit45 << 4) | (unit23 << 2) | (unit01 << 0);
         }
-        public uint[] GetCubesRect( Rect rc )
+        public uint[] GetCubesRect()// Rect rc )
         {
             var y0z0 = this.units[ 0 ];
             var y0z1 = this.units[ 1 ];
             var y1z0 = this.units[ 32 + 0 ];
             var y1z1 = this.units[ 32 + 1 ];
             {
-                var m1100 = 0b_11001100__11001100_11001100_11001100;
+                var m1100 = 0b_11001100__11001100_11001100_11001100u;
                 var m0011 = m1100 >> 2;
-                var y0_fdb97531 = y0z0 & m1100 >> 2 | y0z1 & m1100;
-                var y0_eca86420 = y0z0 & m0011 | y0z1 & m0011 << 2;
-                var y1_fdb97531 = y1z0 & m1100 >> 2 | y1z1 & m1100;
-                var y1_eca86420 = y1z0 & m0011 | y1z1 & m0011 << 2;
+                var y0_eca86420 = y0z0 & m0011 | (y0z1 & m0011) << 2;
+                var y0_fdb97531 = (y0z0 & m1100) >> 2 | y0z1 & m1100;
+                var y1_eca86420 = y1z0 & m0011 | (y1z1 & m0011) << 2;
+                var y1_fdb97531 = (y1z0 & m1100) >> 2 | y1z1 & m1100;
 
-                var mf0 = 0x_f0f0_f0f0;
-                var m0f = 0x_0f0f_0f0f;
-                var _d840 = y0_eca86420 & mf0 >> 4 | y1_eca86420 & mf0;
-                var _ca62 = y0_eca86420 & mf0 | y1_eca86420 & mf0 >> 4;
-                var _ = y0_eca86420 & mf0 >> 4 | y1_eca86420 & m0f;
-                var _ba62 = y0_eca86420 & m0f | y1_eca86420 & mf0 >> 4;
+                var mf0 = 0x_f0f0_f0f0u;
+                var m0f = 0x_0f0f_0f0fu;
+                var _c840 = y0_eca86420 & m0f | (y1_eca86420 & m0f) << 4;
+                var _ea62 = (y0_eca86420 & mf0) >> 4 | y1_eca86420 & mf0;
+                var _d951 = y0_fdb97531 & m0f | (y1_fdb97531 & m0f) << 4;
+                var _fb73 = (y0_fdb97531 & mf0) >> 4 | y1_fdb97531 & mf0;
+
+                var res = new uint[]
+                {
+                    0 << 8 | _c840 & 0xff,
+                    1 << 8 | _d951 & 0xff,
+                    2 << 8 | _ea62 & 0xff,
+                    3 << 8 | _fb73 & 0xff,
+                    4 << 8 | _c840 & 0xff00 >> 8,
+                    5 << 8 | _d951 & 0xff00 >> 8,
+                    6 << 8 | _ea62 & 0xff00 >> 8,
+                    7 << 8 | _fb73 & 0xff00 >> 8,
+                    8 << 8 | _c840 & 0xff0000 >> 16,
+                    9 << 8 | _d951 & 0xff0000 >> 16,
+                    10 << 8 | _ea62 & 0xff0000 >> 16,
+                    11 << 8 | _fb73 & 0xff0000 >> 16,
+                    12 << 8 | _c840 & 0xff000000 >> 24,
+                    13 << 8 | _d951 & 0xff000000 >> 24,
+                    14 << 8 | _ea62 & 0xff000000 >> 24,
+                    15 << 8 | _fb73 & 0xff000000 >> 24,
+                };
+                return res;
             }
-
         }
         public void SetCube( int x, int y, int z, uint cube )
         {

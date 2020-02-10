@@ -10,12 +10,12 @@ namespace mc
     static public class CubeUtiilty
     {
 
-        static public uint[] MakeCubeInstancingData( CubeGrid grid )
-        {
+        //static public uint[] MakeCubeInstancingData( CubeGrid grid )
+        //{
 
-            grid.
+        //    //grid.
 
-        }
+        //}
 
     }
 }
