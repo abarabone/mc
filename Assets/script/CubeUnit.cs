@@ -125,7 +125,29 @@ namespace mc
 
             return (unit67 << 6) | (unit45 << 4) | (unit23 << 2) | (unit01 << 0);
         }
+        public uint[] GetCubesRect( Rect rc )
+        {
+            var y0z0 = this.units[ 0 ];
+            var y0z1 = this.units[ 1 ];
+            var y1z0 = this.units[ 32 + 0 ];
+            var y1z1 = this.units[ 32 + 1 ];
+            {
+                var m1100 = 0b_11001100__11001100_11001100_11001100;
+                var m0011 = m1100 >> 2;
+                var y0_fdb97531 = y0z0 & m1100 >> 2 | y0z1 & m1100;
+                var y0_eca86420 = y0z0 & m0011 | y0z1 & m0011 << 2;
+                var y1_fdb97531 = y1z0 & m1100 >> 2 | y1z1 & m1100;
+                var y1_eca86420 = y1z0 & m0011 | y1z1 & m0011 << 2;
 
+                var mf0 = 0x_f0f0_f0f0;
+                var m0f = 0x_0f0f_0f0f;
+                var _d840 = y0_eca86420 & mf0 >> 4 | y1_eca86420 & mf0;
+                var _ca62 = y0_eca86420 & mf0 | y1_eca86420 & mf0 >> 4;
+                var _ = y0_eca86420 & mf0 >> 4 | y1_eca86420 & m0f;
+                var _ba62 = y0_eca86420 & m0f | y1_eca86420 & mf0 >> 4;
+            }
+
+        }
         public void SetCube( int x, int y, int z, uint cube )
         {
 
