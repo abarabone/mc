@@ -113,39 +113,38 @@ namespace mc
         public uint[] GetCubesRect()// Rect rc )
         {
 
-            var iy = new int4( 0, 0, 1, 1 );
-            var iz = new int4( 0, 1, 0, 1 );
-            uint4 loadLine_( int iy, int iz )
+            var iy_ = new int4( 0, 0, 1, 1 );
+            var iz_ = new int4( 0, 1, 0, 1 );
+            var l = loadLine_( iy_, iz_ );
+            return makeCubesLineX_( l.c0, l.c1, l.c2, l.c3,iy_,iz_).Select( x => new[] { x.x, x.y, x.z, x.w } ).SelectMany( x => x ).ToArray();
+
+
+            uint4x4 loadLine_( int4 iy, int4 iz )
             {
                 uint4 y0z0, y0z1, y1z0, y1z1;
 
-                var y0z0.x = this.units[ iy * ( 32 + 0 ) + iz + 0 ];
-                var y0z1 = this.units[ iy * ( 32 + 0 ) + iz + 1 ];
-                var y1z0 = this.units[ iy * ( 32 + 1 ) + iz + 0 ];
-                var y1z1 = this.units[ iy * ( 32 + 1 ) + iz + 1 ];
+                y0z0.x = this.units[ iy.x * ( 32 + 0 ) + iz.x + 0 ];
+                y0z1.x = this.units[ iy.x * ( 32 + 0 ) + iz.x + 1 ];
+                y1z0.x = this.units[ iy.x * ( 32 + 1 ) + iz.x + 0 ];
+                y1z1.x = this.units[ iy.x * ( 32 + 1 ) + iz.x + 1 ];
 
-                var y0z0 = this.units[ iy * ( 32 + 0 ) + iz + 0 ];
-                var y0z1 = this.units[ iy * ( 32 + 0 ) + iz + 1 ];
-                var y1z0 = this.units[ iy * ( 32 + 1 ) + iz + 0 ];
-                var y1z1 = this.units[ iy * ( 32 + 1 ) + iz + 1 ];
+                y0z0.y = this.units[ iy.y * ( 32 + 0 ) + iz.y + 0 ];
+                y0z1.y = this.units[ iy.y * ( 32 + 0 ) + iz.y + 1 ];
+                y1z0.y = this.units[ iy.y * ( 32 + 1 ) + iz.y + 0 ];
+                y1z1.y = this.units[ iy.y * ( 32 + 1 ) + iz.y + 1 ];
 
-                var y0z0 = this.units[ iy * ( 32 + 0 ) + iz + 0 ];
-                var y0z1 = this.units[ iy * ( 32 + 0 ) + iz + 1 ];
-                var y1z0 = this.units[ iy * ( 32 + 1 ) + iz + 0 ];
-                var y1z1 = this.units[ iy * ( 32 + 1 ) + iz + 1 ];
+                y0z0.z = this.units[ iy.z * ( 32 + 0 ) + iz.z + 0 ];
+                y0z1.z = this.units[ iy.z * ( 32 + 0 ) + iz.z + 1 ];
+                y1z0.z = this.units[ iy.z * ( 32 + 1 ) + iz.z + 0 ];
+                y1z1.z = this.units[ iy.z * ( 32 + 1 ) + iz.z + 1 ];
 
-                var y0z0 = this.units[ iy * ( 32 + 0 ) + iz + 0 ];
-                var y0z1 = this.units[ iy * ( 32 + 0 ) + iz + 1 ];
-                var y1z0 = this.units[ iy * ( 32 + 1 ) + iz + 0 ];
-                var y1z1 = this.units[ iy * ( 32 + 1 ) + iz + 1 ];
+                y0z0.w = this.units[ iy.w * ( 32 + 0 ) + iz.w + 0 ];
+                y0z1.w = this.units[ iy.w * ( 32 + 0 ) + iz.w + 1 ];
+                y1z0.w = this.units[ iy.w * ( 32 + 1 ) + iz.w + 0 ];
+                y1z1.w = this.units[ iy.w * ( 32 + 1 ) + iz.w + 1 ];
 
-                return new uint4( y0z0, y0z1, y1z0, y1z1 );
+                return new uint4x4( y0z0, y0z1, y1z0, y1z1 );
             }
-
-            var 
-            var mtline = new uint4x4( loadLine_( 0, 0 ), loadLine_( 0, 1 ), loadLine_( 1, 0 ), loadLine_( 1, 1 ) );
-            var i = math.transpose( mtline );
-            return makeCubesLineX_(i.c0,i.c1,i.c2,i.c3,).Select(x=>new[]{x.x,x.y,x.z,x.w}).SelectMany(x=>x).ToArray();
 
             uint4[] makeCubesLineX_( uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1, int4 iy, int4 iz )
             {
@@ -172,7 +171,7 @@ namespace mc
 
                 var res = new uint4[]
                 {
-                    0 << 8 | i_c840 & 0xff,
+                    iz_ << 24 | iy_ << 16 | 0 << 8 | i_c840 & 0xff,
                     1 << 8 | j_dc985410 & 0xff,
                     2 << 8 | i_d951 & 0xff,
                     3 << 8 | j_ed9a6521 & 0xff,
