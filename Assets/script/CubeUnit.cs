@@ -112,10 +112,21 @@ namespace mc
         }
         public uint[] GetCubesRect()// Rect rc )
         {
-            var y0z0 = this.units[ 0 ];
-            var y0z1 = this.units[ 1 ];
-            var y1z0 = this.units[ 32 + 0 ];
-            var y1z1 = this.units[ 32 + 1 ];
+            var _iy = 0;
+            var _iz = 0;
+            var _y0z0 = this.units[ iy * ( 32 + 0 ) + iz + 0 ];
+            var _y0z1 = this.units[ iy * ( 32 + 0 ) + iz + 1 ];
+            var _y1z0 = this.units[ iy * ( 32 + 1 ) + iz + 0 ];
+            var _y1z1 = this.units[ iy * ( 32 + 1 ) + iz + 1 ];
+
+            var one = new uint4( 1, 1, 1, 1 );
+            var i0 = one * _y0z0;
+            var i1 = one * _y0z1;
+            var i2 = one * _y1z0;
+            var i3 = one * _y1z1;
+            return makeCubesLineX_(i0,i1,i2,i3,(int4)one*_iy,(int4)one*_iz).Select(x=>new[]{x.x,x.y,x.z,x.w}).SelectMany(x=>x).ToArray();
+
+            uint4[] makeCubesLineX_( uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1, int4 iy, int4 iz )
             {
                 var m1100 = 0b_11001100__11001100_11001100_11001100u;
                 var m0011 = m1100 >> 2;
@@ -126,29 +137,54 @@ namespace mc
 
                 var mf0 = 0x_f0f0_f0f0u;
                 var m0f = 0x_0f0f_0f0fu;
-                var _c840 = y0_eca86420 & m0f | (y1_eca86420 & m0f) << 4;
-                var _ea62 = (y0_eca86420 & mf0) >> 4 | y1_eca86420 & mf0;
-                var _d951 = y0_fdb97531 & m0f | (y1_fdb97531 & m0f) << 4;
-                var _fb73 = (y0_fdb97531 & mf0) >> 4 | y1_fdb97531 & mf0;
+                var i_c840 = y0_eca86420 & m0f | (y1_eca86420 & m0f) << 4;
+                var i_ea62 = (y0_eca86420 & mf0) >> 4 | y1_eca86420 & mf0;
+                var i_d951 = y0_fdb97531 & m0f | (y1_fdb97531 & m0f) << 4;
+                var i_fb73 = (y0_fdb97531 & mf0) >> 4 | y1_fdb97531 & mf0;
 
-                var res = new uint[]
+                var m55 = 0x_5555_5555u;
+                var maa = 0x_aaaa_aaaau;
+                var j_dc985410 = ( i_d951 & m55 ) << 1 | ( i_c840 & maa ) >> 1;
+                var j_ed9a6521 = ( i_ea62 & m55 ) << 1 | ( i_d951 & maa ) >> 1;
+                var j_feba7632 = ( i_fb73 & m55 ) << 1 | ( i_ea62 & maa ) >> 1;
+                var j_cb8743 = ( i_c840>>8 & 0x_55_5555u ) << 1 | ( i_fb73 & 0x_aa_aaaau ) >> 1;
+
+                var res = new uint4[]
                 {
-                    0 << 8 | _c840 & 0xff,
-                    1 << 8 | _d951 & 0xff,
-                    2 << 8 | _ea62 & 0xff,
-                    3 << 8 | _fb73 & 0xff,
-                    4 << 8 | _c840 & 0xff00 >> 8,
-                    5 << 8 | _d951 & 0xff00 >> 8,
-                    6 << 8 | _ea62 & 0xff00 >> 8,
-                    7 << 8 | _fb73 & 0xff00 >> 8,
-                    8 << 8 | _c840 & 0xff0000 >> 16,
-                    9 << 8 | _d951 & 0xff0000 >> 16,
-                    10 << 8 | _ea62 & 0xff0000 >> 16,
-                    11 << 8 | _fb73 & 0xff0000 >> 16,
-                    12 << 8 | _c840 & 0xff000000 >> 24,
-                    13 << 8 | _d951 & 0xff000000 >> 24,
-                    14 << 8 | _ea62 & 0xff000000 >> 24,
-                    15 << 8 | _fb73 & 0xff000000 >> 24,
+                    0 << 8 | i_c840 & 0xff,
+                    1 << 8 | j_dc985410 & 0xff,
+                    2 << 8 | i_d951 & 0xff,
+                    3 << 8 | j_ed9a6521 & 0xff,
+                    4 << 8 | i_ea62 & 0xff,
+                    5 << 8 | j_feba7632 & 0xff,
+                    6 << 8 | i_fb73 & 0xff,
+                    7 << 8 | j_cb8743 & 0xff,
+                    
+                    8 << 8 | (i_c840 & 0xff00) >> 8,
+                    9 << 8 | (j_dc985410 & 0xff00) >> 8,
+                    10 << 8 | (i_d951 & 0xff00) >> 8,
+                    11 << 8 | (j_ed9a6521 & 0xff00) >> 8,
+                    12 << 8 | (i_ea62 & 0xff00) >> 8,
+                    13 << 8 | (j_feba7632 & 0xff00) >> 8,
+                    14 << 8 | (i_fb73 & 0xff00) >> 8,
+                    15 << 8 | (j_cb8743 & 0xff00) >> 8,
+
+                    16 << 8 | (i_c840 & 0xff0000) >> 16,
+                    17 << 8 | (j_dc985410 & 0xff0000) >> 16,
+                    18 << 8 | (i_d951 & 0xff0000) >> 16,
+                    19 << 8 | (j_ed9a6521 & 0xff0000) >> 16,
+                    20 << 8 | (i_ea62 & 0xff0000) >> 16,
+                    21 << 8 | (j_feba7632 & 0xff0000) >> 16,
+                    22 << 8 | (i_fb73 & 0xff0000) >> 16,
+                    23 << 8 | (j_cb8743 & 0xff0000) >> 16,
+                    24 << 8 | (i_c840 & 0xff0000) >> 16,
+
+                    25 << 8 | (j_dc985410 & 0xff000000) >> 24,
+                    26 << 8 | (i_d951 & 0xff000000) >> 24,
+                    27 << 8 | (j_ed9a6521 & 0xff000000) >> 24,
+                    28 << 8 | (i_ea62 & 0xff000000) >> 24,
+                    29 << 8 | (j_feba7632 & 0xff000000) >> 24,
+                    30 << 8 | (i_fb73 & 0xff000000) >> 24,
                 };
                 return res;
             }
