@@ -57,10 +57,10 @@ namespace mc
             //    for( var iz = 0; iz < 31; iz++ )
             //        for( var ix = 0; ix < 31; ix++ )
             //            this.cubeInstances[ iii++ ] = (uint)( iz << 24 ) | (uint)( iy << 16 ) | (uint)( ix << 8 ) | c.GetCube( ix, iy, iz );
-            this.cubeInstances = c.GetCubesRect();
+            this.cubeInstances = c.GetAllCubes();
             this.instancesBuffer.SetData( this.cubeInstances );
 
-            foreach( var x in this.cubeInstances ) Debug.Log($"{x & 0xff} {( x >> 8 ) & 0xff} {( x >> 16 ) & 0xff} {( x >> 24 ) & 0xff}");
+            //foreach( var x in this.cubeInstances ) Debug.Log($"{x & 0xff} {( x >> 8 ) & 0xff} {( x >> 16 ) & 0xff} {( x >> 24 ) & 0xff}");
         }
 
         private void OnDestroy()
