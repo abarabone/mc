@@ -79,8 +79,8 @@ namespace mc
             this.zLength = (uint)z;
             this.units = //new uint[ (x>>5) * z * y ];
             Enumerable.Empty<uint>()
-                .Concat( Enumerable.Repeat( (uint)0x_0000_0001, 32 ) )
                 .Concat( Enumerable.Repeat( (uint)0x_ffff_ffff, 32 ) )
+                .Concat( Enumerable.Repeat( (uint)0x_0000_0001, 32 ) )
                 .Repeat( 16 )
                 .ToArray();
         }
@@ -116,32 +116,39 @@ namespace mc
             var iy_ = new int4( 0, 0, 1, 1 );
             var iz_ = new int4( 0, 1, 0, 1 );
             var l = loadLine_( iy_, iz_ );
-            return makeCubesLineX_( l.c0, l.c1, l.c2, l.c3,iy_,iz_).Select( x => new[] { x.x, x.y, x.z, x.w } ).SelectMany( x => x ).ToArray();
+            var iy2_ = new int4( 2, 2, 3, 3 );
+            var iz2_ = new int4( 0, 1, 0, 1 );
+            var l2 = loadLine_( iy2_, iz2_ );
+            return makeCubesLineX_(l.c0, l.c1, l.c2, l.c3, iy_, iz_)
+                .Concat( makeCubesLineX_( l2.c0, l2.c1, l2.c2, l2.c3, iy2_, iz2_ ) )
+                .Select( x => new[] { x.x, x.y, x.z, x.w } )
+                .SelectMany( x => x )
+                .ToArray();
 
 
             uint4x4 loadLine_( int4 iy, int4 iz )
             {
                 uint4 y0z0, y0z1, y1z0, y1z1;
 
-                y0z0.x = this.units[ iy.x * ( 32 + 0 ) + iz.x + 0 ];
-                y0z1.x = this.units[ iy.x * ( 32 + 0 ) + iz.x + 1 ];
-                y1z0.x = this.units[ iy.x * ( 32 + 1 ) + iz.x + 0 ];
-                y1z1.x = this.units[ iy.x * ( 32 + 1 ) + iz.x + 1 ];
+                y0z0.x = this.units[ ( iy.x + 0 ) * 32 + iz.x + 0 ];
+                y0z1.x = this.units[ ( iy.x + 0 ) * 32 + iz.x + 1 ];
+                y1z0.x = this.units[ ( iy.x + 1 ) * 32 + iz.x + 0 ];
+                y1z1.x = this.units[ ( iy.x + 1 ) * 32 + iz.x + 1 ];
 
-                y0z0.y = this.units[ iy.y * ( 32 + 0 ) + iz.y + 0 ];
-                y0z1.y = this.units[ iy.y * ( 32 + 0 ) + iz.y + 1 ];
-                y1z0.y = this.units[ iy.y * ( 32 + 1 ) + iz.y + 0 ];
-                y1z1.y = this.units[ iy.y * ( 32 + 1 ) + iz.y + 1 ];
+                y0z0.y = this.units[ ( iy.y + 0 ) * 32 + iz.y + 0 ];
+                y0z1.y = this.units[ ( iy.y + 0 ) * 32 + iz.y + 1 ];
+                y1z0.y = this.units[ ( iy.y + 1 ) * 32 + iz.y + 0 ];
+                y1z1.y = this.units[ ( iy.y + 1 ) * 32 + iz.y + 1 ];
 
-                y0z0.z = this.units[ iy.z * ( 32 + 0 ) + iz.z + 0 ];
-                y0z1.z = this.units[ iy.z * ( 32 + 0 ) + iz.z + 1 ];
-                y1z0.z = this.units[ iy.z * ( 32 + 1 ) + iz.z + 0 ];
-                y1z1.z = this.units[ iy.z * ( 32 + 1 ) + iz.z + 1 ];
+                y0z0.z = this.units[ ( iy.z + 0 ) * 32 + iz.z + 0 ];
+                y0z1.z = this.units[ ( iy.z + 0 ) * 32 + iz.z + 1 ];
+                y1z0.z = this.units[ ( iy.z + 1 ) * 32 + iz.z + 0 ];
+                y1z1.z = this.units[ ( iy.z + 1 ) * 32 + iz.z + 1 ];
 
-                y0z0.w = this.units[ iy.w * ( 32 + 0 ) + iz.w + 0 ];
-                y0z1.w = this.units[ iy.w * ( 32 + 0 ) + iz.w + 1 ];
-                y1z0.w = this.units[ iy.w * ( 32 + 1 ) + iz.w + 0 ];
-                y1z1.w = this.units[ iy.w * ( 32 + 1 ) + iz.w + 1 ];
+                y0z0.w = this.units[ ( iy.w + 0 ) * 32 + iz.w + 0 ];
+                y0z1.w = this.units[ ( iy.w + 0 ) * 32 + iz.w + 1 ];
+                y1z0.w = this.units[ ( iy.w + 1 ) * 32 + iz.w + 0 ];
+                y1z1.w = this.units[ ( iy.w + 1 ) * 32 + iz.w + 1 ];
 
                 return new uint4x4( y0z0, y0z1, y1z0, y1z1 );
             }
@@ -150,28 +157,42 @@ namespace mc
             {
                 var m1100 = 0b_11001100__11001100_11001100_11001100u;
                 var m0011 = m1100 >> 2;
+                // --dc--98--54--10--dc--98--54--10
+                // fe--ba--76--32--fe--ba--76--32--
                 var y0_eca86420 = y0z0 & m0011 | (y0z1 & m0011) << 2;
                 var y0_fdb97531 = (y0z0 & m1100) >> 2 | y0z1 & m1100;
                 var y1_eca86420 = y1z0 & m0011 | (y1z1 & m0011) << 2;
                 var y1_fdb97531 = (y1z0 & m1100) >> 2 | y1z1 & m1100;
+                // dcdc989854541010dcdc989854541010
+                // fefebaba76763232fefebaba76763232
 
                 var mf0 = 0x_f0f0_f0f0u;
                 var m0f = 0x_0f0f_0f0fu;
+                // dcdc----5454----dcdc----5454----
+                // ----9898----1010----9898----1010
+                // fefe----7676----fefe----7676----
+                // ----baba----3232----baba----3232
                 var i_c840 = y0_eca86420 & m0f | (y1_eca86420 & m0f) << 4;
                 var i_ea62 = (y0_eca86420 & mf0) >> 4 | y1_eca86420 & mf0;
                 var i_d951 = y0_fdb97531 & m0f | (y1_fdb97531 & m0f) << 4;
                 var i_fb73 = (y0_fdb97531 & mf0) >> 4 | y1_fdb97531 & mf0;
+                // dcdcdcdc54545454dcdcdcdc54545454
+                // 98989898101010109898989810101010
+                // fefefefe76767676fefefefe76767676
+                // babababa32323232babababa32323232
 
                 var m55 = 0x_5555_5555u;
                 var maa = 0x_aaaa_aaaau;
+                // 
                 var j_dc985410 = ( i_d951 & m55 ) << 1 | ( i_c840 & maa ) >> 1;
                 var j_ed9a6521 = ( i_ea62 & m55 ) << 1 | ( i_d951 & maa ) >> 1;
                 var j_feba7632 = ( i_fb73 & m55 ) << 1 | ( i_ea62 & maa ) >> 1;
                 var j_cb8743 = ( i_c840>>8 & 0x_55_5555u ) << 1 | ( i_fb73 & 0x_aa_aaaau ) >> 1;
 
+
                 var res = new uint4[]
                 {
-                    iz_ << 24 | iy_ << 16 | 0 << 8 | i_c840 & 0xff,
+                    0 << 8 | i_c840 & 0xff,
                     1 << 8 | j_dc985410 & 0xff,
                     2 << 8 | i_d951 & 0xff,
                     3 << 8 | j_ed9a6521 & 0xff,
@@ -197,8 +218,8 @@ namespace mc
                     21 << 8 | (j_feba7632 & 0xff0000) >> 16,
                     22 << 8 | (i_fb73 & 0xff0000) >> 16,
                     23 << 8 | (j_cb8743 & 0xff0000) >> 16,
-                    24 << 8 | (i_c840 & 0xff0000) >> 16,
 
+                    24 << 8 | (i_c840 & 0xff0000) >> 24,
                     25 << 8 | (j_dc985410 & 0xff000000) >> 24,
                     26 << 8 | (i_d951 & 0xff000000) >> 24,
                     27 << 8 | (j_ed9a6521 & 0xff000000) >> 24,
@@ -206,7 +227,15 @@ namespace mc
                     29 << 8 | (j_feba7632 & 0xff000000) >> 24,
                     30 << 8 | (i_fb73 & 0xff000000) >> 24,
                 };
-                return res;
+                var q =
+                    from i in res
+                    let x = (uint)iz.x << 24 | (uint)iy.x << 16 | i.x
+                    let y = (uint)iz.y << 24 | (uint)iy.y << 16 | i.y
+                    let z = (uint)iz.z << 24 | (uint)iy.z << 16 | i.z
+                    let w = (uint)iz.w << 24 | (uint)iy.w << 16 | i.w
+                    select new uint4( x, y, z, w )
+                    ;
+                return q.ToArray();
             }
         }
         public void SetCube( int x, int y, int z, uint cube )
