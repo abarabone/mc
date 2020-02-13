@@ -61,6 +61,15 @@ namespace mc
             this.instancesBuffer.SetData( this.cubeInstances );
 
             //foreach( var x in this.cubeInstances ) Debug.Log($"{x & 0xff} {( x >> 8 ) & 0xff} {( x >> 16 ) & 0xff} {( x >> 24 ) & 0xff}");
+
+            var idxLists = this.MarchingCubeAsset.CubeIdsAndIndexLists.Select( x => x.vtxIdxs ).ToArray();
+            var vtxList = this.MarchingCubeAsset.BaseVertexList.Select(x => new float3(x.x,x.y,x.z)).ToArray();
+            var (i,v) = c.MakeCollisionMeshData( this.cubeInstances, idxLists, vtxList );
+            var mesh = new Mesh();
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.vertices = v.Select(x=>new Vector3(x.x,x.y,x.z)).ToArray();
+            mesh.triangles = i;
+            new GameObject( "new" ).AddComponent<MeshFilter>().mesh = mesh;
         }
 
         private void OnDestroy()

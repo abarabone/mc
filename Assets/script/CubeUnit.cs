@@ -344,12 +344,41 @@ namespace mc
                 return (_98109810, _a921a921, _ba32ba32, _cb43cb43, _dc54dc54, _ed65ed65, _fe76fe76, ___870f87);
             }
 
-            (int[] tris, float3[] vtxs) MakeCollisionMeshData()
-            {
-
-            }
         }
 
+        public (int[] tris, float3[] vtxs) MakeCollisionMeshData( uint[] cubeInstances, int[][] srcIdxLists, float3[] srcVtxList )
+        {
+            var dstIdxs = new List<int>();
+            var dstVtxs = new List<float3>();
+
+            var vtxOffset = 0;
+            for( var i = 0; i < cubeInstances.Length; i++ )
+            {
+                vtxOffset = addCube_( cubeInstances[ i ], vtxOffset );
+            }
+
+            return (dstIdxs.ToArray(), dstVtxs.ToArray());
+
+
+            int addCube_( uint cubeInstance, int vtxOffset_ )
+            {
+                var cubeId = cubeInstance & 0xff;
+                if( cubeId == 0 || cubeId == 255 ) return vtxOffset_;
+
+                var center = new float3( cubeInstance >> 8 & 0xff, cubeInstance >> 16 & 0xff, cubeInstance >> 24 & 0xff );
+
+                var srcIdxList = srcIdxLists[ cubeId ];
+
+                for( var i = 0; i < srcIdxList.Length; i++ )
+                {
+                    var srcIdx = srcIdxList[ i ];
+                    dstIdxs.Add( vtxOffset_ + srcIdx );
+                }
+
+                dstVtxs.AddRange( srcVtxList.Select(x=> center + x) );
+                return vtxOffset_ + 12;
+            }
+        }
 
         public class CubeGrid32x32x32
         {
