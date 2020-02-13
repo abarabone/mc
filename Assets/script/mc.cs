@@ -64,12 +64,12 @@ namespace mc
 
             var idxLists = this.MarchingCubeAsset.CubeIdsAndIndexLists.Select( x => x.vtxIdxs ).ToArray();
             var vtxList = this.MarchingCubeAsset.BaseVertexList.Select(x => new float3(x.x,x.y,x.z)).ToArray();
-            var (i,v) = c.MakeCollisionMeshData( this.cubeInstances, idxLists, vtxList );
+            var (i,v) = CubeUtiilty.MakeCollisionMeshData( this.cubeInstances, idxLists, vtxList );
             var mesh = new Mesh();
             mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             mesh.vertices = v.Select(x=>new Vector3(x.x,x.y,x.z)).ToArray();
             mesh.triangles = i;
-            new GameObject( "new" ).AddComponent<MeshFilter>().mesh = mesh;
+            new GameObject( "new" ).AddComponent<MeshCollider>().sharedMesh = mesh;
         }
 
         private void OnDestroy()
