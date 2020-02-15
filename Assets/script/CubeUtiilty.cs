@@ -11,6 +11,17 @@ namespace mc
     static public class CubeUtiilty
     {
 
+
+        static public uint GetCube(  )
+        {
+            var i = new int3( 1, 1, 1 );
+
+            var ii = ( i.x & 0b_100 ) << 2 | ( i.x & 0b_10) << 1;
+        }
+
+
+
+
         static public (int[] tris, float3[] vtxs) MakeCollisionMeshData
             ( uint[] cubeInstances, int[][] srcIdxLists, float3[] srcVtxList )
         {

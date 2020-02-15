@@ -44,9 +44,14 @@ namespace mc
             this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
             this.cubeGrids = new GridArray( 1, 1, 1 );
-            this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3(-1,-1,-1), new int3(2,2,2) );
+            this.cubeGrids.FillCubes( GridArray.DefaultBlankCube, new int3(-1,-1,-1), new int3(2,2,2) );
 
             var c = this.cubeGrids[0,0,0];
+            c[ 1, 1, 1 ] = 1;
+            c[ 1, 1, 2 ] = 1;
+            c[ 1, 3, 1 ] = 1;
+            c[ 1, 2, 2 ] = 1;
+            c[ 1, 5, 2 ] = 1;
             this.cubeInstances = c.SampleAllCubes();
             this.instancesBuffer.SetData( this.cubeInstances );
 
