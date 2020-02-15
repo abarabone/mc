@@ -12,27 +12,20 @@ namespace mc
     
     public class CubeGrid
     {
-        public uint xLength, zLength, yLength;
+        public int3 Length;
 
         uint[] units;
 
         public CubeGrid( int x, int y, int z )
         {
-            this.xLength = (uint)x;
-            this.yLength = (uint)y;
-            this.zLength = (uint)z;
-            this.units = //new uint[ (x>>5) * z * y ];
-            Enumerable.Empty<uint>()
-                .Concat( Enumerable.Repeat( (uint)0x_ffff_f5ff, 32 ) )
-                .Concat( Enumerable.Repeat( (uint)0x_0070_6001, 32 ) )
-                .Repeat( 16 )
-                .ToArray();
+            this.Length = new int3(x, y, z);
+            this.units = new uint[ (x>>5) * z * y ];
         }
 
         public uint GetCube( int x, int y, int z )
         {
-            var zofs = this.xLength;
-            var yofs = this.xLength * this.zLength;
+            var zofs = (uint)this.Length.x;
+            var yofs = (uint)( this.Length.x * this.Length.z );
 
             var _x = (uint)( x + 0 );
             var _zzyy = new uint4( (uint)z, (uint)z, (uint)y, (uint)y );
@@ -56,7 +49,7 @@ namespace mc
         }
         public uint[] GetCubesRect()// Rect rc )
         {
-
+            // ちゅうとはんぱ
             var iy_ = new int4( 0, 0, 1, 1 );
             var iz_ = new int4( 0, 1, 0, 1 );
             var l = loadLine_( iy_, iz_ );
@@ -190,13 +183,87 @@ namespace mc
                 return q.ToArray();
             }
         }
-        public void SetCube( int x, int y, int z, uint cube )
-        {
+    }
 
+
+    public class CubeGrid32x32x32
+    {
+        public const int unitLength = 32;
+
+        uint[] units;
+
+
+        public CubeGrid32x32x32()
+        {
+            this.units = Enumerable.Empty<uint>()
+                .Concat( Enumerable.Repeat( (uint)0x_ffff_f5ff, 32 ) )
+                .Concat( Enumerable.Repeat( (uint)0x_0070_6001, 32 ) )
+                .Repeat( 16 )
+                .ToArray();
+        }
+
+        public CubeGrid32x32x32( bool isFillAll )
+        {
+            this.units = new uint[ 1 * 32 * 32 ];
+            if( isFillAll )
+                System.Buffer.SetByte( this.units, 0, 0xff );
+            else
+                System.Array.Clear( this.units, 0, this.units.Length );
         }
 
 
-        public uint[] GetAllCubes()
+        public uint this[ int ix, int iy, int iz ]
+        {
+            get
+            {
+                return (uint)( this.units[(iy<<5) + iz] & 1<<ix );
+            }
+            set
+            {
+                var ( iy << 5 ) + iz;
+                var b = this.units[ ( iy << 5 ) + iz ] & 1 << ix;
+                value;
+            }
+        }
+        public uint[] this[ int3 leftTop, int3 length3 ]
+        {
+            get
+            {
+
+            }
+            set
+            {
+
+            }
+        }
+
+
+        public uint SampleCube( int x, int y, int z )
+        {
+            var _x0 = (uint)( x + 0 );
+            var _z0 = (uint)( ( z + 0 ) << 5 );
+            var _z1 = (uint)( ( z + 1 ) << 5 );
+            var _y0 = (uint)( ( y + 0 ) << 10 );
+            var _y1 = (uint)( ( y + 1 ) << 10 );
+
+            var _ix = new uint4( _x0, _x0, _x0, _x0 );
+            var _iz = new uint4( _z0, _z1, _z0, _z1 );
+            var _iy = new uint4( _y0, _y0, _y1, _y1 );
+
+            var i = _ix + _iz + _iy;
+            var igrid = i >> 5;
+            var ibit = i & 0x1f;
+
+            var unit01 = ( this.units[ igrid.x ] >> (int)ibit.x ) & 0b11;
+            var unit23 = ( this.units[ igrid.y ] >> (int)ibit.y ) & 0b11;
+            var unit45 = ( this.units[ igrid.z ] >> (int)ibit.z ) & 0b11;
+            var unit67 = ( this.units[ igrid.w ] >> (int)ibit.w ) & 0b11;
+
+            return ( unit67 << 6 ) | ( unit45 << 4 ) | ( unit23 << 2 ) | ( unit01 << 0 );
+        }
+
+
+        public uint[] SampleAllCubes()
         {
             var outputCubes = new List<uint>( 32 * 32 );
 
@@ -212,7 +279,7 @@ namespace mc
 
                     var i = 0;
                     var ix = 0;
-                    for( var ipack = 0;  ipack < 32/8; ipack++ )
+                    for( var ipack = 0; ipack < 32 / 8; ipack++ )
                     {
                         addCubeIfVisible_( cubes._98109810 >> i, outputCubes, ix++, iy, iz );
                         addCubeIfVisible_( cubes._a921a921 >> i, outputCubes, ix++, iy, iz );
@@ -288,43 +355,6 @@ namespace mc
                 return (_98109810, _a921a921, _ba32ba32, _cb43cb43, _dc54dc54, _ed65ed65, _fe76fe76, ___870f87);
             }
 
-        }
-
-        public class CubeGrid32x32x32
-        {
-            public const int unitLength = 32;
-
-            uint[] units;
-
-            public CubeGrid32x32x32()
-            {
-                this.units = //new uint[ (x>>5) * z * y ];
-                Enumerable.Repeat( (uint)0, 32 ).Concat( Enumerable.Repeat( (uint)0xffffffef, 32 ) ).ToArray();
-            }
-
-            public uint GetCube( int x, int y, int z )
-            {
-                var _x0 = (uint)( x + 0 );
-                var _z0 = (uint)( ( z + 0 ) << 5 );
-                var _z1 = (uint)( ( z + 1 ) << 5 );
-                var _y0 = (uint)( ( y + 0 ) << 10 );
-                var _y1 = (uint)( ( y + 1 ) << 10 );
-
-                var _ix = new uint4( _x0, _x0, _x0, _x0 );
-                var _iz = new uint4( _z0, _z1, _z0, _z1 );
-                var _iy = new uint4( _y0, _y0, _y1, _y1 );
-
-                var i = _ix + _iz + _iy;
-                var igrid = i >> 5;
-                var ibit = i & 0x1f;
-
-                var unit01 = ( this.units[ igrid.x ] >> (int)ibit.x ) & 0b11;
-                var unit23 = ( this.units[ igrid.y ] >> (int)ibit.y ) & 0b11;
-                var unit45 = ( this.units[ igrid.z ] >> (int)ibit.z ) & 0b11;
-                var unit67 = ( this.units[ igrid.w ] >> (int)ibit.w ) & 0b11;
-
-                return ( unit67 << 6 ) | ( unit45 << 4 ) | ( unit23 << 2 ) | ( unit01 << 0 );
-            }
         }
     }
 }

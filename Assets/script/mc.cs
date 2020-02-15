@@ -18,6 +18,7 @@ namespace mc
         public MarchingCubeAsset MarchingCubeAsset;
         public Material Material;
 
+        GridArray cubeGrids;
         
         Mesh mesh;
         ComputeBuffer baseVtxsBuffer;
@@ -42,22 +43,11 @@ namespace mc
             this.Material.SetBuffer( "Instances", this.instancesBuffer );
             this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
-            var c = new CubeGrid( 32, 32, 32 );
-            //this.cubeInstances = new uint[]
-            //{
-            //    ( 0 << 8 ) | 0b_0011_0000,
-            //    ( 1 << 8 ) | 0b_1100_1111,
-            //    ( 2 << 8 ) | 0b_0011_1111,
-            //    ( 3 << 8 ) | 0b_0111_0111,
-            //    ( 4 << 8 ) | 0b_1111_0101,
-            //};
-            //this.cubeInstances = new uint[ 31 * 31 * 31 ];
-            //var iii = 0;
-            //for( var iy = 0; iy < 31; iy++ )
-            //    for( var iz = 0; iz < 31; iz++ )
-            //        for( var ix = 0; ix < 31; ix++ )
-            //            this.cubeInstances[ iii++ ] = (uint)( iz << 24 ) | (uint)( iy << 16 ) | (uint)( ix << 8 ) | c.GetCube( ix, iy, iz );
-            this.cubeInstances = c.GetAllCubes();
+            this.cubeGrids = new GridArray( 1, 1, 1 );
+            this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3(-1,-1,-1), new int3(2,2,2) );
+
+            var c = this.cubeGrids[0,0,0];
+            this.cubeInstances = c.SampleAllCubes();
             this.instancesBuffer.SetData( this.cubeInstances );
 
             //foreach( var x in this.cubeInstances ) Debug.Log($"{x & 0xff} {( x >> 8 ) & 0xff} {( x >> 16 ) & 0xff} {( x >> 24 ) & 0xff}");

@@ -49,25 +49,6 @@ namespace mc
             }
         }
 
-        static public void SpreadCubes( this GridArray grids, float3 topLeft, float3 bottomRight )
-        {
-
-        }
-
-        static public CubeGrid DefaultBlankCube => ;
-
-        static class DefaultCubes
-        {
-            static public CubeGrid DefaultBlankCube;
-            static public CubeGrid DefaultBlankCube;
-            static DefaultCubes()
-            {
-                DefaultBlankCube = new CubeGrid( 32, 32, 32 );
-                DefaultBlankCube.SetCube
-            }
-        }
-
-        static public void Get
     }
 
 }
