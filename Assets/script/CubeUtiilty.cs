@@ -88,11 +88,6 @@ namespace mc
                     var y1z0r = current_right.units[ ( iy + 1 ) * 32 + iz + 0 ];
                     var y1z1r = current_right.units[ ( iy + 1 ) * 32 + iz + 1 ];
 
-                    y0z0 |= y0z0r >> 31 & 1;
-                    y0z1 |= y0z1r >> 31 & 1;
-                    y1z0 |= y1z0r >> 31 & 1;
-                    y1z1 |= y1z1r >> 31 & 1;
-
                     var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
                     addCubeX_( cubes, iy, iz );
                 }
@@ -107,11 +102,6 @@ namespace mc
                     var y0z1r = back____right.units[ ( iy + 0 ) * 32 + 0 + 1 ];
                     var y1z0r = current_right.units[ ( iy + 1 ) * 32 + iz + 0 ];
                     var y1z1r = back____right.units[ ( iy + 1 ) * 32 + 0 + 1 ];
-
-                    y0z0 |= y0z0r >> 31 & 1;
-                    y0z1 |= y0z1r >> 31 & 1;
-                    y1z0 |= y1z0r >> 31 & 1;
-                    y1z1 |= y1z1r >> 31 & 1;
 
                     var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
                     addCubeX_( cubes, iy, iz );
@@ -130,11 +120,6 @@ namespace mc
                     var y0z1r = current_right.units[ ( iy + 0 ) * 32 + iz + 1 ];
                     var y1z0r = under___right.units[ (  0 + 1 ) * 32 + iz + 0 ];
                     var y1z1r = under___right.units[ (  0 + 1 ) * 32 + iz + 1 ];
-
-                    y0z0 |= y0z0r >> 31 & 1;
-                    y0z1 |= y0z1r >> 31 & 1;
-                    y1z0 |= y1z0r >> 31 & 1;
-                    y1z1 |= y1z1r >> 31 & 1;
 
                     var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
                     addCubeX_( cubes, iy, iz );
