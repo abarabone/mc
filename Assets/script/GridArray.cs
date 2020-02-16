@@ -12,7 +12,7 @@ namespace mc
         public int3 GridLength => this.wholeGridLength - 2;
         int3 wholeGridLength;
 
-        CubeGrid32x32x32[] grids;
+        public CubeGrid32x32x32[] grids { get; private set; }
 
         static public CubeGrid32x32x32 DefaultBlankCube { get; } = new CubeGrid32x32x32( isFillAll: false );
         static public CubeGrid32x32x32 DefaultFilledCube { get; } = new CubeGrid32x32x32( isFillAll: true );
