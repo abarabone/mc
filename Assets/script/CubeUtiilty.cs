@@ -67,28 +67,82 @@ namespace mc
         {
             var outputCubes = new List<uint>( 32 * 32 );
 
-            var current         = ga.grids[ igrid + 0 ];
+            var current_        = ga.grids[ igrid + 0 ];
             var current_right   = ga.grids[ igrid + 1 ];
-            var back            = ga.grids[ igrid + ga.GridLength.x + 0 ];
-            var back_right      = ga.grids[ igrid + ga.GridLength.x + 1 ];
-            var under           = ga.grids[ igrid + ga.GridLength.x * ga.GridLength.y + 0 ];
-            var under_right     = ga.grids[ igrid + ga.GridLength.x * ga.GridLength.y + 1 ];
+            var back____        = ga.grids[ igrid + ga.GridLength.x + 0 ];
+            var back____right   = ga.grids[ igrid + ga.GridLength.x + 1 ];
+            var under___        = ga.grids[ igrid + ga.GridLength.x * ga.GridLength.y + 0 ];
+            var under___right   = ga.grids[ igrid + ga.GridLength.x * ga.GridLength.y + 1 ];
 
-            (uint y0z0, uint y0z1, uint y1z0, uint y1z1)
-            loadLineX_( CubeGrid32x32x32 current, CubeGrid32x32x32 , int iy, int iz )
+            for( var iy = 0; iy < 31; iy++ )
             {
-                var y0z0 = ga_y0z0.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                var y0z1 = ga_y0z1.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                var y1z0 = ga_y1z0.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                var y1z1 = ga_y1z1.units[ ( iy + 1 ) * 32 + iz + 1 ];
+                for( var iz = 0; iz < 31; iz++ )
+                {
+                    var y0z0 = current_.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1 = current_.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    var y1z0 = current_.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    var y1z1 = current_.units[ ( iy + 1 ) * 32 + iz + 1 ];
 
-                var y0z0r = ga_y0z0r.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                var y0z1r = ga_y0z1r.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                var y1z0r = ga_y1z0r.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                var y1z1r = ga_y1z1r.units[ ( iy + 1 ) * 32 + iz + 1 ];
+                    var y0z0r = current_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1r = current_right.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    var y1z0r = current_right.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    var y1z1r = current_right.units[ ( iy + 1 ) * 32 + iz + 1 ];
 
-                return (y0z0 | y0z0r & 1, y0z1 | y0z0r & 1, y1z0 | y0z0r & 1, y1z1 | y0z0r & 1);
+                    y0z0 |= y0z0r >> 31 & 1;
+                    y0z1 |= y0z1r >> 31 & 1;
+                    y1z0 |= y1z0r >> 31 & 1;
+                    y1z1 |= y1z1r >> 31 & 1;
+
+                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    addCubeX_( cubes, iy, iz );
+                }
+                {
+                    var iz = 31;
+                    var y0z0 = current_.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1 = back____.units[ ( iy + 0 ) * 32 + 0 + 1 ];
+                    var y1z0 = current_.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    var y1z1 = back____.units[ ( iy + 1 ) * 32 + 0 + 1 ];
+
+                    var y0z0r = current_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1r = back____right.units[ ( iy + 0 ) * 32 + 0 + 1 ];
+                    var y1z0r = current_right.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    var y1z1r = back____right.units[ ( iy + 1 ) * 32 + 0 + 1 ];
+
+                    y0z0 |= y0z0r >> 31 & 1;
+                    y0z1 |= y0z1r >> 31 & 1;
+                    y1z0 |= y1z0r >> 31 & 1;
+                    y1z1 |= y1z1r >> 31 & 1;
+
+                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    addCubeX_( cubes, iy, iz );
+                }
             }
+            {
+                var iy = 31;
+                for( var iz = 0; iz < 31; iz++ )
+                {
+                    var y0z0 = current_.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1 = current_.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    var y1z0 = under___.units[ (  0 + 1 ) * 32 + iz + 0 ];
+                    var y1z1 = under___.units[ (  0 + 1 ) * 32 + iz + 1 ];
+
+                    var y0z0r = current_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1r = current_right.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    var y1z0r = under___right.units[ (  0 + 1 ) * 32 + iz + 0 ];
+                    var y1z1r = under___right.units[ (  0 + 1 ) * 32 + iz + 1 ];
+
+                    y0z0 |= y0z0r >> 31 & 1;
+                    y0z1 |= y0z1r >> 31 & 1;
+                    y1z0 |= y1z0r >> 31 & 1;
+                    y1z1 |= y1z1r >> 31 & 1;
+
+                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    addCubeX_( cubes, iy, iz );
+                }
+            }
+
+            return outputCubes.ToArray();
+
 
             void addCubeX_(
                 (uint _98109810, uint _a921a921, uint _ba32ba32, uint _cb43cb43,
@@ -112,56 +166,15 @@ namespace mc
                 }
                 return;
 
-                void addCubeIfVisible_( uint cube8bit, List<uint> output, int ix, int iy, int iz )
+                void addCubeIfVisible_( uint cube8bit, List<uint> output, int ix_, int iy_, int iz_ )
                 {
                     var cube = cube8bit & 0xff;
                     if( cube == 0 ) return;
 
-                    var posAndCube = (uint)iz << 24 | (uint)iy << 16 | (uint)ix << 8 | cube;
+                    var posAndCube = (uint)iz_ << 24 | (uint)iy_ << 16 | (uint)ix_ << 8 | cube;
                     output.Add( posAndCube );
                 }
             }
-
-
-            for( var iy = 0; iy < 31; iy++ )
-            {
-                for( var iz = 0; iz < 31; iz++ )
-                {
-                    var y0z0 = this.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1 = this.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0 = this.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = this.units[ ( iy + 1 ) * 32 + iz + 1 ];
-
-                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-                    addCubeX_( cubes, iy, iz );
-                }
-                {
-                    var iz = 31;
-                    var y0z0 = this.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1 = back.units[ ( iy + 0 ) * 32 + 0 + 1 ];
-                    var y1z0 = this.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = back.units[ ( iy + 1 ) * 32 + 0 + 1 ];
-
-                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-                    addCubeX_( cubes, iy, iz );
-                }
-            }
-            {
-                var iy = 31;
-                for( var iz = 0; iz < 31; iz++ )
-                {
-                    var y0z0 = this.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1 = this.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0 = under.units[ ( 0 + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = under.units[ ( 0 + 1 ) * 32 + iz + 1 ];
-
-                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-                    addCubeX_( cubes, iy, iz );
-                }
-            }
-
-            return outputCubes.ToArray();
-
 
 
             // あらかじめ共通段階までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある

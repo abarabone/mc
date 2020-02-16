@@ -14,7 +14,7 @@ namespace mc
     {
         public const int unitLength = 32;
 
-        uint[] units;
+        public uint[] units { get; private set; }
 
 
         public CubeGrid32x32x32()
