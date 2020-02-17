@@ -43,15 +43,15 @@ namespace mc
             this.Material.SetBuffer( "Instances", this.instancesBuffer );
             this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
-            this.cubeGrids = new GridArray( 10, 10, 10 );
+            this.cubeGrids = new GridArray( 1, 1, 1 );
             this.cubeGrids.FillCubes( GridArray.DefaultBlankCube, new int3(-1,-1,-1), new int3(2,2,2) );
 
             var c = this.cubeGrids[0,0,0];
-            //c[ 1, 1, 1 ] = 1;
-            //c[ 31, 1, 1 ] = 1;
-            c[ 1, 1, 31 ] = 1;
-            //c[ 1, 31, 1 ] = 1;
-            this.cubeInstances = c.SampleAllCubes( this.cubeGrids[ 1, 0, 0 ], this.cubeGrids[ 0, 1, 0 ], this.cubeGrids[ 0, 0, 1 ] );
+            c[ 1, 1, 1 ] = 1;
+            c[ 31, 1, 1 ] = 1;
+            c[ 31, 31, 31 ] = 1;
+            c[ 1, 31, 1 ] = 1;
+            this.cubeInstances = this.cubeGrids.SampleAllCubes( 3 * 3 + 3 + 1 );
             this.instancesBuffer.SetData( this.cubeInstances );
 
             //foreach( var x in this.cubeInstances ) Debug.Log($"{x & 0xff} {( x >> 8 ) & 0xff} {( x >> 16 ) & 0xff} {( x >> 24 ) & 0xff}");

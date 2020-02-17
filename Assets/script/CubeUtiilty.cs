@@ -69,10 +69,12 @@ namespace mc
 
             var current_        = ga.grids[ igrid + 0 ];
             var current_right   = ga.grids[ igrid + 1 ];
-            var back____        = ga.grids[ igrid + ga.GridLength.x + 0 ];
-            var back____right   = ga.grids[ igrid + ga.GridLength.x + 1 ];
-            var under___        = ga.grids[ igrid + ga.GridLength.x * ga.GridLength.y + 0 ];
-            var under___right   = ga.grids[ igrid + ga.GridLength.x * ga.GridLength.y + 1 ];
+            var back____        = ga.grids[ igrid + ga.wholeGridLength.x + 0 ];
+            var back____right   = ga.grids[ igrid + ga.wholeGridLength.x + 1 ];
+            var under___        = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + 0 ];
+            var under___right   = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + 1 ];
+            var backUnder       = ga.grids[ igrid + ga.wholeGridLength.x + ga.wholeGridLength.x * ga.wholeGridLength.z + 0 ];
+            var backUnder_right = ga.grids[ igrid + ga.wholeGridLength.x + ga.wholeGridLength.x * ga.wholeGridLength.z + 1 ];
 
             for( var iy = 0; iy < 31; iy++ )
             {
@@ -89,6 +91,7 @@ namespace mc
                     var y1z1r = current_right.units[ ( iy + 1 ) * 32 + iz + 1 ];
 
                     var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    cubes.__f870f87 |= ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
                     addCubeX_( cubes, iy, iz );
                 }
                 {
@@ -104,6 +107,7 @@ namespace mc
                     var y1z1r = back____right.units[ ( iy + 1 ) * 32 + 0 + 1 ];
 
                     var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    cubes.__f870f87 |= ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
                     addCubeX_( cubes, iy, iz );
                 }
             }
@@ -113,16 +117,33 @@ namespace mc
                 {
                     var y0z0 = current_.units[ ( iy + 0 ) * 32 + iz + 0 ];
                     var y0z1 = current_.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0 = under___.units[ (  0 + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = under___.units[ (  0 + 1 ) * 32 + iz + 1 ];
+                    var y1z0 = under___.units[ ( 0 + 1 ) * 32 + iz + 0 ];
+                    var y1z1 = under___.units[ ( 0 + 1 ) * 32 + iz + 1 ];
 
                     var y0z0r = current_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
                     var y0z1r = current_right.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0r = under___right.units[ (  0 + 1 ) * 32 + iz + 0 ];
-                    var y1z1r = under___right.units[ (  0 + 1 ) * 32 + iz + 1 ];
+                    var y1z0r = under___right.units[ ( 0 + 1 ) * 32 + iz + 0 ];
+                    var y1z1r = under___right.units[ ( 0 + 1 ) * 32 + iz + 1 ];
 
                     var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    cubes.__f870f87 |= ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
                     addCubeX_( cubes, iy, iz );
+                }
+                {
+                    //var iz = 31;
+                    //var y0z0 = backUnder.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    //var y0z1 = backUnder.units[ ( iy + 0 ) * 32 + 0 + 1 ];
+                    //var y1z0 = backUnder.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    //var y1z1 = backUnder.units[ ( iy + 1 ) * 32 + 0 + 1 ];
+
+                    //var y0z0r = backUnder_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    //var y0z1r = backUnder_right.units[ ( iy + 0 ) * 32 + 0 + 1 ];
+                    //var y1z0r = backUnder_right.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    //var y1z1r = backUnder_right.units[ ( iy + 1 ) * 32 + 0 + 1 ];
+
+                    //var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    //cubes.__f870f87 |= ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
+                    //addCubeX_( cubes, iy, iz );
                 }
             }
 
@@ -131,7 +152,7 @@ namespace mc
 
             void addCubeX_(
                 (uint _98109810, uint _a921a921, uint _ba32ba32, uint _cb43cb43,
-                 uint _dc54dc54, uint _ed65ed65, uint _fe76fe76, uint ___870f87) cubes,
+                 uint _dc54dc54, uint _ed65ed65, uint _fe76fe76, uint __f870f87) cubes,
                 int iy, int iz
             )
             {
@@ -146,7 +167,7 @@ namespace mc
                     addCubeIfVisible_( cubes._dc54dc54 >> i, outputCubes, ix++, iy, iz );
                     addCubeIfVisible_( cubes._ed65ed65 >> i, outputCubes, ix++, iy, iz );
                     addCubeIfVisible_( cubes._fe76fe76 >> i, outputCubes, ix++, iy, iz );
-                    addCubeIfVisible_( cubes.___870f87 >> i, outputCubes, ix++, iy, iz );
+                    addCubeIfVisible_( cubes.__f870f87 >> i, outputCubes, ix++, iy, iz );
                     i += 8;
                 }
                 return;
@@ -164,7 +185,7 @@ namespace mc
 
             // あらかじめ共通段階までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある
             (uint _98109810, uint _a921a921, uint _ba32ba32, uint _cb43cb43,
-             uint _dc54dc54, uint _ed65ed65, uint _fe76fe76, uint ___870f87)
+             uint _dc54dc54, uint _ed65ed65, uint _fe76fe76, uint __f870f87)
             makeCubesLineX_( uint y0z0, uint y0z1, uint y1z0, uint y1z1 )
             {
                 // fedcba9876543210fedcba9876543210
@@ -204,13 +225,13 @@ namespace mc
                 var _a921a921 = ( _ba32ba32 & m55 ) << 1 | ( _98109810 & maa ) >> 1;
                 var _cb43cb43 = ( _dc54dc54 & m55 ) << 1 | ( _ba32ba32 & maa ) >> 1;
                 var _ed65ed65 = ( _fe76fe76 & m55 ) << 1 | ( _dc54dc54 & maa ) >> 1;
-                var ___870f87 = ( _98109810 >> 8 & 0x_55_5555u ) << 1 | ( _fe76fe76 & 0x_aa_aaaau ) >> 1;
+                var __f870f87 = ( _98109810 >> 8 & 0x_55_5555u ) << 1 | ( _fe76fe76 & maa ) >> 1;
                 // a9a9a9a921212121a9a9a9a921212121
                 // cbcbcbcb43434343cbcbcbcb43434343
                 // edededed65656565edededed65656565
-                // --------878787870f0f0f0f87878787
+                // -f-f-f-f878787870f0f0f0f87878787
 
-                return (_98109810, _a921a921, _ba32ba32, _cb43cb43, _dc54dc54, _ed65ed65, _fe76fe76, ___870f87);
+                return (_98109810, _a921a921, _ba32ba32, _cb43cb43, _dc54dc54, _ed65ed65, _fe76fe76, __f870f87);
             }
         }
 

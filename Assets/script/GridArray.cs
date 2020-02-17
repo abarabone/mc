@@ -10,7 +10,7 @@ namespace mc
     {
 
         public int3 GridLength => this.wholeGridLength - 2;
-        int3 wholeGridLength;
+        public int3 wholeGridLength { get; private set; }
 
         public CubeGrid32x32x32[] grids { get; private set; }
 
@@ -42,7 +42,7 @@ namespace mc
                 var i3 = new int3( x, y, z ) + 1;
                 var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
                 var zspan = this.wholeGridLength.x;
-                var i = i3.y* yspan +i3.z * zspan + i3.x;
+                var i = i3.y * yspan + i3.z * zspan + i3.x;
 
                 var grid = this.grids[ i ];
 
