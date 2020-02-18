@@ -51,7 +51,7 @@ namespace mc
             this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3( -1, 2, -1 ), new int3( 11, 11, 11 ) );
             this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3( 2, 0, 3 ), new int3( 1, 2, 1 ) );
 
-            var c = this.cubeGrids[0,0,0];
+            var c = this.cubeGrids[0, 0, 0];
             c[ 1, 1, 1 ] = 1;
             c[ 31, 1, 1 ] = 1;
             c[ 31, 31, 31 ] = 1;
