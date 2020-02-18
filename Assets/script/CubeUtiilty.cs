@@ -204,7 +204,7 @@ namespace mc
                 void addCubeIfVisible_
                     ( uint cube, int gridId__, int ix_, int iy_, int iz_, List<uint> cubeInstances )
                 {
-                    if( cube == 0 ) return;
+                    if( cube == 0 || cube == 255 ) return;
 
                     //var cubeInstance = (uint)iz_ << 24 | (uint)iy_ << 16 | (uint)ix_ << 8 | cube;
                     var cubeInstance = CubeUtiilty.ToCubeInstance(ix_, iy_, iz_, gridId__, cube);

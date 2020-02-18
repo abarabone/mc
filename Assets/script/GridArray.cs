@@ -63,14 +63,14 @@ namespace mc
         public void FillCubes( CubeGrid32x32x32 gridUnit, int3 topLeft, int3 length3 )
         {
             var st = math.max( topLeft + 1, int3.zero );
-            var ed = math.min( st + length3 + 1, this.wholeGridLength - 1 );
+            var ed = math.min( st + length3 - 1, this.wholeGridLength - 1 );
 
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
 
             for( var iy = st.y; iy <= ed.y; iy++ )
                 for( var iz = st.z; iz <= ed.z; iz++ )
-                    for( var ix = st.x; ix <= ed.y; ix++ )
+                    for( var ix = st.x; ix <= ed.x; ix++ )
                     {
                         this.grids[ iy * yspan + iz * zspan + ix ] = gridUnit;
                     }
@@ -90,12 +90,12 @@ namespace mc
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
 
-            for( var iy = 0; iy < this.GridLength.y; iy++ )
-                for( var iz = 0; iz < this.GridLength.z; iz++ )
-                    for( var ix = 0; ix < this.GridLength.x; ix++ )
+            for( var iy = 0; iy < this.wholeGridLength.y-1; iy++ )
+                for( var iz = 0; iz < this.wholeGridLength.z-1; iz++ )
+                    for( var ix = 0; ix < this.wholeGridLength.x-1; ix++ )
                     {
 
-                        var gridset = getGridSet_( ix+1, iy+1, iz+1, yspan, zspan );
+                        var gridset = getGridSet_( ix, iy, iz, yspan, zspan );
 
                         if( !isNeedDraw_( ref gridset ) ) continue;
 
@@ -151,35 +151,40 @@ namespace mc
                 ) g
             )
             {
-
                 if( g.current == GridArray.DefaultBlankCube )
                 {
                     var isNoDraw =
-                        g.current_right != GridArray.DefaultBlankCube ||
-                        g.back != GridArray.DefaultBlankCube ||
-                        g.back_right != GridArray.DefaultBlankCube ||
-                        g.under != GridArray.DefaultBlankCube ||
-                        g.under_right != GridArray.DefaultBlankCube ||
-                        g.backUnder != GridArray.DefaultBlankCube ||
-                        g.backUnder_right != GridArray.DefaultBlankCube
+                        g.current_right == GridArray.DefaultBlankCube &&
+                        g.back == GridArray.DefaultBlankCube &&
+                        g.back_right == GridArray.DefaultBlankCube &&
+                        g.under == GridArray.DefaultBlankCube &&
+                        g.under_right == GridArray.DefaultBlankCube &&
+                        g.backUnder == GridArray.DefaultBlankCube &&
+                        g.backUnder_right == GridArray.DefaultBlankCube
                         ;
                     if( isNoDraw ) return false;
 
                     // ブランク・フィル用のビルド関数も作るべき
+
+                    return true;
                 }
 
                 if( g.current == GridArray.DefaultFilledCube )
                 {
                     var isNoDraw =
-                        g.current_right != GridArray.DefaultFilledCube ||
-                        g.back != GridArray.DefaultFilledCube ||
-                        g.back_right != GridArray.DefaultFilledCube ||
-                        g.under != GridArray.DefaultFilledCube ||
-                        g.under_right != GridArray.DefaultFilledCube ||
-                        g.backUnder != GridArray.DefaultFilledCube ||
-                        g.backUnder_right != GridArray.DefaultFilledCube
+                        g.current_right == GridArray.DefaultFilledCube &&
+                        g.back == GridArray.DefaultFilledCube &&
+                        g.back_right == GridArray.DefaultFilledCube &&
+                        g.under == GridArray.DefaultFilledCube &&
+                        g.under_right == GridArray.DefaultFilledCube &&
+                        g.backUnder == GridArray.DefaultFilledCube &&
+                        g.backUnder_right == GridArray.DefaultFilledCube
                         ;
                     if( isNoDraw ) return false;
+
+                    // ブランク・フィル用のビルド関数も作るべき
+
+                    return true;
                 }
 
                 return true;
