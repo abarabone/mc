@@ -52,10 +52,10 @@
 
 				uint data = Instances[i];
 
-				int cubeId = (data & 0xff) - 1;
-				int vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
+				uint cubeId = (data & 0xff) - 1;
+				uint vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
 
-				int gridId = data >> 8 & 0xff;
+				uint gridId = data >> 8 & 0xff;
 				float4 gridpos = GridPositions[gridId];
 
 				int4 unitpos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0 );

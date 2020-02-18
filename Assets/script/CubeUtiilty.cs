@@ -20,12 +20,12 @@ namespace mc
         //    var ii = ( i.x & 0b_100 ) << 2 | ( i.x & 0b_10) << 1;
         //}
 
-
+        
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static public uint ToCubeInstance(  int ix, int iy, int iz, int gridId, uint cubeId ) =>
         //(uint)iz << 24 | (uint)iy << 16 | (uint)ix << 8 | cubeId;
-        ( (uint)iz << 26 & 0x1f << 26 ) | ( (uint)iy << 21 & 0x1f << 21 ) | ( (uint)ix << 16 & 0x1f << 16 ) | ( (uint)gridId << 8 & 0xff << 8 ) | ( cubeId & 0xff );
-        //(uint)iz << 26 | (uint)iy << 21 | (uint)ix << 16 | (uint)gridId << 8 | cubeId;
+        //(uint)iz << 26 & 0x1fu << 26 | (uint)iy << 21 & 0x1fu << 21 | (uint)ix << 16 & 0x1fu << 16 | (uint)gridId << 8 & 0xffu << 8 | cubeId & 0xff;
+        (uint)iz << 26 | (uint)iy << 21 | (uint)ix << 16 | (uint)gridId << 8 | cubeId;
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static public (float3 center, uint gridId, uint cubeId) FromCubeInstance( uint cubeInstance ) =>
