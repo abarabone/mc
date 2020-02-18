@@ -21,6 +21,16 @@ namespace mc
         //}
 
 
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public uint ToCubeInstance(  int ix, int iy, int iz, int gridId, uint cubeId ) =>
+        //(uint)iz << 24 | (uint)iy << 16 | (uint)ix << 8 | cubeId;
+        ( (uint)iz << 26 & 0x1f << 26 ) | ( (uint)iy << 21 & 0x1f << 21 ) | ( (uint)ix << 16 & 0x1f << 16 ) | ( (uint)gridId << 8 & 0xff << 8 ) | ( cubeId & 0xff );
+        //(uint)iz << 26 | (uint)iy << 21 | (uint)ix << 16 | (uint)gridId << 8 | cubeId;
+
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public (float3 center, uint gridId, uint cubeId) FromCubeInstance( uint cubeInstance ) =>
+            //(new float3( cubeInstance >> 8 & 0xff, -( cubeInstance >> 16 & 0xff ), -( cubeInstance >> 24 & 0xff ) ), cubeInstance & 0xff);
+            (new float3( cubeInstance >> 16 & 0x1f, -(cubeInstance >> 21 & 0x1f ), -(cubeInstance >> 26 & 0x1f ) ), cubeInstance >> 8 & 0xff, cubeInstance & 0xff);
 
 
         static public (int[] tris, float3[] vtxs) MakeCollisionMeshData
@@ -40,10 +50,13 @@ namespace mc
 
             int addCube_( uint cubeInstance, int vtxOffset_ )
             {
-                var cubeId = cubeInstance & 0xff;
-                if( cubeId == 0 || cubeId == 255 ) return vtxOffset_;
+                //var cubeId = cubeInstance & 0xff;
+                //if( cubeId == 0 || cubeId == 255 ) return vtxOffset_;
 
-                var center = new float3( cubeInstance >> 8 & 0xff, -( cubeInstance >> 16 & 0xff ), -( cubeInstance >> 24 & 0xff ) );
+                //var center = new float3( cubeInstance >> 8 & 0xff, -( cubeInstance >> 16 & 0xff ), -( cubeInstance >> 24 & 0xff ) );
+
+                var (center, gridId, cubeId) = CubeUtiilty.FromCubeInstance( cubeInstance );
+                if( cubeId == 0 || cubeId == 255 ) return vtxOffset_;
 
                 var srcIdxList = srcIdxLists[ cubeId - 1 ];
 
@@ -67,128 +80,135 @@ namespace mc
         /// あとでＹＺカリングもしたい
         /// </summary>
         // xyz各32個目のキューブは1bitのために隣のグリッドを見なくてはならず、効率悪いしコードも汚くなる、なんとかならんか？
-        static public void SampleAllCubes( this GridArray ga, int igrid, List<uint> outputCubes )
+        static public bool SampleAllCubes(
+            ref this (
+                CubeGrid32x32x32 current___,
+                CubeGrid32x32x32 current___right,
+                CubeGrid32x32x32 back______,
+                CubeGrid32x32x32 back______right,
+                CubeGrid32x32x32 under_____,
+                CubeGrid32x32x32 under_____right,
+                CubeGrid32x32x32 backUnder_,
+                CubeGrid32x32x32 backUnder_right
+            ) g,
+            int gridId,
+            List<uint> outputCubes
+        )
         {
-            var current___      = ga.grids[ igrid + 0 ];
-            var current___right = ga.grids[ igrid + 1 ];
-            var back______      = ga.grids[ igrid + ga.wholeGridLength.x + 0 ];
-            var back______right = ga.grids[ igrid + ga.wholeGridLength.x + 1 ];
-            var under_____      = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + 0 ];
-            var under_____right = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + 1 ];
-            var backUnder_      = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + ga.wholeGridLength.x + 0 ];
-            var backUnder_right = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + ga.wholeGridLength.x + 1 ];
-
+            var preCubeCount = outputCubes.Count;
+            
             for( var iy = 0; iy < 31; iy++ )
             {
                 for( var iz = 0; iz < 31; iz++ )
                 {
-                    var y0z0 = current___.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1 = current___.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0 = current___.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = current___.units[ ( iy + 1 ) * 32 + iz + 1 ];
+                    var y0z0 = g.current___.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1 = g.current___.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    var y1z0 = g.current___.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    var y1z1 = g.current___.units[ ( iy + 1 ) * 32 + iz + 1 ];
 
                     var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
-                    var y0z0r = current___right.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1r = current___right.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0r = current___right.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1r = current___right.units[ ( iy + 1 ) * 32 + iz + 1 ];
+                    var y0z0r = g.current___right.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1r = g.current___right.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    var y1z0r = g.current___right.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    var y1z1r = g.current___right.units[ ( iy + 1 ) * 32 + iz + 1 ];
 
                     cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
-                    
-                    addCubeFromLineX_( cubes, iy, iz, outputCubes );
+
+                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
                 }
                 {
                     const int iz = 31;
-                    var y0z0 = current___.units[ ( iy + 0 ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y0z1 = back______.units[ ( iy + 0 ) * 32 + ( iz + 1 & 0x1f ) ];
-                    var y1z0 = current___.units[ ( iy + 1 ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y1z1 = back______.units[ ( iy + 1 ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y0z0 = g.current___.units[ ( iy + 0 ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y0z1 = g.back______.units[ ( iy + 0 ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y1z0 = g.current___.units[ ( iy + 1 ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y1z1 = g.back______.units[ ( iy + 1 ) * 32 + ( iz + 1 & 0x1f ) ];
 
                     var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
-                    var y0z0r = current___right.units[ ( iy + 0 ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y0z1r = back______right.units[ ( iy + 0 ) * 32 + ( iz + 1 & 0x1f ) ];
-                    var y1z0r = current___right.units[ ( iy + 1 ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y1z1r = back______right.units[ ( iy + 1 ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y0z0r = g.current___right.units[ ( iy + 0 ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y0z1r = g.back______right.units[ ( iy + 0 ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y1z0r = g.current___right.units[ ( iy + 1 ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y1z1r = g.back______right.units[ ( iy + 1 ) * 32 + ( iz + 1 & 0x1f ) ];
 
                     cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
-                    
-                    addCubeFromLineX_( cubes, iy, iz, outputCubes );
+
+                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
                 }
             }
             {
                 const int iy = 31;
                 for( var iz = 0; iz < 31; iz++ )
                 {
-                    var y0z0 = current___.units[ ( iy + 0 & 0x1f ) * 32 + iz + 0 ];
-                    var y0z1 = current___.units[ ( iy + 0 & 0x1f ) * 32 + iz + 1 ];
-                    var y1z0 = under_____.units[ ( iy + 1 & 0x1f ) * 32 + iz + 0 ];
-                    var y1z1 = under_____.units[ ( iy + 1 & 0x1f ) * 32 + iz + 1 ];
+                    var y0z0 = g.current___.units[ ( iy + 0 & 0x1f ) * 32 + iz + 0 ];
+                    var y0z1 = g.current___.units[ ( iy + 0 & 0x1f ) * 32 + iz + 1 ];
+                    var y1z0 = g.under_____.units[ ( iy + 1 & 0x1f ) * 32 + iz + 0 ];
+                    var y1z1 = g.under_____.units[ ( iy + 1 & 0x1f ) * 32 + iz + 1 ];
 
                     var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
-                    var y0z0r = current___right.units[ ( iy + 0 & 0x1f ) * 32 + iz + 0 ];
-                    var y0z1r = current___right.units[ ( iy + 0 & 0x1f ) * 32 + iz + 1 ];
-                    var y1z0r = under_____right.units[ ( iy + 1 & 0x1f ) * 32 + iz + 0 ];
-                    var y1z1r = under_____right.units[ ( iy + 1 & 0x1f ) * 32 + iz + 1 ];
+                    var y0z0r = g.current___right.units[ ( iy + 0 & 0x1f ) * 32 + iz + 0 ];
+                    var y0z1r = g.current___right.units[ ( iy + 0 & 0x1f ) * 32 + iz + 1 ];
+                    var y1z0r = g.under_____right.units[ ( iy + 1 & 0x1f ) * 32 + iz + 0 ];
+                    var y1z1r = g.under_____right.units[ ( iy + 1 & 0x1f ) * 32 + iz + 1 ];
 
                     cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
 
-                    addCubeFromLineX_( cubes, iy, iz, outputCubes );
+                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
                 }
                 {
                     const int iz = 31;
-                    var y0z0 = current___.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y0z1 = back______.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
-                    var y1z0 = under_____.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y1z1 = backUnder_.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y0z0 = g.current___.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y0z1 = g.back______.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y1z0 = g.under_____.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y1z1 = g.backUnder_.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
 
                     var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
-                    var y0z0r = current___right.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y0z1r = back______right.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
-                    var y1z0r = under_____right.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y1z1r = backUnder_right.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y0z0r = g.current___right.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y0z1r = g.back______right.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y1z0r = g.under_____right.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y1z1r = g.backUnder_right.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
 
                     cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
 
-                    addCubeFromLineX_( cubes, iy, iz, outputCubes );
+                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
                 }
             }
 
-            return;
+            return preCubeCount != outputCubes.Count;
 
 
             void addCubeFromLineX_(
                 (uint _98109810, uint _a921a921, uint _ba32ba32, uint _cb43cb43,
                  uint _dc54dc54, uint _ed65ed65, uint _fe76fe76, uint __f870f87) cubes,
-                int iy, int iz, List<uint> outputCubes_
+                int gridId_, int iy, int iz, List<uint> outputCubes_
             )
             {
                 var i = 0;
                 var ix = 0;
                 for( var ipack = 0; ipack < 32 >> 3; ipack++ )// 8 は 1cube の 8bit
                 {
-                    addCubeIfVisible_( cubes._98109810 >> i, outputCubes_, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._a921a921 >> i, outputCubes_, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._ba32ba32 >> i, outputCubes_, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._cb43cb43 >> i, outputCubes_, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._dc54dc54 >> i, outputCubes_, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._ed65ed65 >> i, outputCubes_, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._fe76fe76 >> i, outputCubes_, ix++, iy, iz );
-                    addCubeIfVisible_( cubes.__f870f87 >> i, outputCubes_, ix++, iy, iz );
+                    addCubeIfVisible_( cubes._98109810 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
+                    addCubeIfVisible_( cubes._a921a921 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
+                    addCubeIfVisible_( cubes._ba32ba32 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
+                    addCubeIfVisible_( cubes._cb43cb43 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
+                    addCubeIfVisible_( cubes._dc54dc54 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
+                    addCubeIfVisible_( cubes._ed65ed65 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
+                    addCubeIfVisible_( cubes._fe76fe76 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
+                    addCubeIfVisible_( cubes.__f870f87 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
                     i += 8;
                 }
                 return;
 
-                void addCubeIfVisible_( uint cube8bit, List<uint> output, int ix_, int iy_, int iz_ )
+                void addCubeIfVisible_
+                    ( uint cube, int gridId__, int ix_, int iy_, int iz_, List<uint> cubeInstances )
                 {
-                    var cube = cube8bit & 0xff;
                     if( cube == 0 ) return;
 
-                    var posAndCube = (uint)iz_ << 24 | (uint)iy_ << 16 | (uint)ix_ << 8 | cube;
-                    output.Add( posAndCube );
+                    //var cubeInstance = (uint)iz_ << 24 | (uint)iy_ << 16 | (uint)ix_ << 8 | cube;
+                    var cubeInstance = CubeUtiilty.ToCubeInstance(ix_, iy_, iz_, gridId__, cube);
+                    cubeInstances.Add( cubeInstance );
                 }
             }
 

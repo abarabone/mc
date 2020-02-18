@@ -12,6 +12,8 @@
         Pass
         {
             CGPROGRAM
+// Upgrade NOTE: excluded shader from DX11, OpenGL ES 2.0 because it uses unsized arrays
+//#pragma exclude_renderers d3d11 gles
 
 			#pragma vertex vert
 			#pragma fragment frag
@@ -41,22 +43,8 @@
 			StructuredBuffer<uint> Instances;
 			StructuredBuffer<int> IdxList;
 			StructuredBuffer<float4> BaseVtxList;
+			StructuredBuffer<float4> GridPositions;
 
-
-			//int get_mcb(int instanceId, float3 index )
-			//{
-			//	const int4 mask[] =
-			//	{
-			//		int4(1,0,0,0),
-			//		int4(0,1,0,0),
-			//		int4(0,0,1,0),
-			//		int4(0,0,0,1),
-			//	};
-			//	int4 a = mcb[instanceId] * mask[index.x];
-			//	int b = a.x + a.y + a.z + a.w;
-			//	int c = (b >> (int)index.y) & 0xf;
-			//	return c;
-			//}
 
             v2f vert (appdata v, uint i : SV_InstanceID)
             {
@@ -67,14 +55,14 @@
 				int cubeId = (data & 0xff) - 1;
 				int vtxIndex = IdxList[cubeId * 12 + v.vertex.x];
 
-				//float4 unitpos = float4(0,0,0,0);
-				int4 unitpos = int4((data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff, 0 );
-				//float4 unitpos = float4(0, (data >> 16) & 0xff, 0, 0);
-				unitpos *= int4(1, -1, -1, 1);
-				float4 lvtx = unitpos + BaseVtxList[vtxIndex];// *float4(-1, 1, 1, 1);;
+				int gridId = data >> 8 & 0xff;
+				float4 gridpos = GridPositions[gridId];
 
-				//v.vertex.x = get_mcb(0, v.vertex.xyz);
-				o.vertex = mul(UNITY_MATRIX_VP,lvtx);//UnityObjectToClipPos(lvtx);
+				int4 unitpos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0 );
+				int4 center = unitpos * int4(1, -1, -1, 1);
+				float4 lvtx = gridpos + center + BaseVtxList[vtxIndex];
+
+				o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 				o.uv = lvtx.xy; TRANSFORM_TEX(lvtx.xy, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
 				

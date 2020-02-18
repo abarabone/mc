@@ -58,12 +58,12 @@ namespace mc
                 return grid;
             }
         }
-        
+
 
         public void FillCubes( CubeGrid32x32x32 gridUnit, int3 topLeft, int3 length3 )
         {
             var st = math.max( topLeft + 1, int3.zero );
-            var ed = math.min( st + length3 + 1, this.wholeGridLength-1 );
+            var ed = math.min( st + length3 + 1, this.wholeGridLength - 1 );
 
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
@@ -81,66 +81,110 @@ namespace mc
         /// とりあえずは全描画、カリングは後で
         /// フィル／ブランクは描画不要、ただし右下後にフィルのくるブランクは、描画必要
         /// </summary>
-        public uint[] BuildCubeInstanceData()
+        public (float4[] gridPositions, uint[] cubeIds) BuildCubeInstanceData()
         {
+
+            var gridPositions = new List<float4>();
             var instanceCubes = new List<uint>();
 
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
 
-            for( var iy = 1; iy <= this.GridLength.y; iy++ )
-                for( var iz = 1; iz <= this.GridLength.z; iz++ )
-                    for( var ix = 1; ix <= this.GridLength.x; ix++ )
+            for( var iy = 0; iy < this.GridLength.y; iy++ )
+                for( var iz = 0; iz < this.GridLength.z; iz++ )
+                    for( var ix = 0; ix < this.GridLength.x; ix++ )
                     {
 
-                        var i = iy * yspan + iz * zspan + ix;
+                        var gridset = getGridSet_( ix+1, iy+1, iz+1, yspan, zspan );
 
-                        var current         = this.grids[ i + 0 ];
-                        var current_right   = this.grids[ i + 1 ];
-                        var back            = this.grids[ i + zspan + 0 ];
-                        var back_right      = this.grids[ i + zspan + 1 ];
-                        var under           = this.grids[ i + yspan + 0 ];
-                        var under_right     = this.grids[ i + yspan + 1 ];
-                        var backUnder       = this.grids[ i + yspan + zspan + 0 ];
-                        var backUnder_right = this.grids[ i + yspan + zspan + 1 ];
+                        if( !isNeedDraw_( ref gridset ) ) continue;
 
-                        if( current == GridArray.DefaultBlankCube )
+
+                        var gridId = gridPositions.Count;
+                        var isCubeAdded = gridset.SampleAllCubes( gridId, instanceCubes );
+                        if( isCubeAdded )
                         {
-                            var isNoDraw =
-                                current_right != GridArray.DefaultBlankCube ||
-                                back != GridArray.DefaultBlankCube ||
-                                back_right != GridArray.DefaultBlankCube ||
-                                under != GridArray.DefaultBlankCube ||
-                                under_right != GridArray.DefaultBlankCube ||
-                                backUnder != GridArray.DefaultBlankCube ||
-                                backUnder_right != GridArray.DefaultBlankCube
-                                ;
-                            //if( isNoDraw ) continue;
-                            
-                            // ブランク・フィル用のビルド関数も作るべき
+                            gridPositions.Add(new float4(ix * 32, -iy * 32, -iz * 32, 0));
                         }
-                        if( current == GridArray.DefaultFilledCube )
-                        {
-                            var isNoDraw =
-                                current_right != GridArray.DefaultFilledCube ||
-                                back != GridArray.DefaultFilledCube ||
-                                back_right != GridArray.DefaultFilledCube ||
-                                under != GridArray.DefaultFilledCube ||
-                                under_right != GridArray.DefaultFilledCube ||
-                                backUnder != GridArray.DefaultFilledCube ||
-                                backUnder_right != GridArray.DefaultFilledCube
-                                ;
-                            //if( isNoDraw ) continue;
-                        }
-
-                        this.SampleAllCubes( i, instanceCubes );
-                        //instanceCubes.AddRange( this.grids[ i ].SampleAllCubes() );
                     }
 
-            return instanceCubes.ToArray();
+            return (gridPositions.ToArray(), instanceCubes.ToArray());
+
+
+            (
+                CubeGrid32x32x32 current,
+                CubeGrid32x32x32 current_right,
+                CubeGrid32x32x32 back,
+                CubeGrid32x32x32 back_right,
+                CubeGrid32x32x32 under,
+                CubeGrid32x32x32 under_right,
+                CubeGrid32x32x32 backUnder,
+                CubeGrid32x32x32 backUnder_right
+            )
+                getGridSet_( int ix, int iy, int iz, int yspan_, int zspan_ )
+            {
+
+                var i = iy * yspan_ + iz * zspan_ + ix;
+
+                var current         = this.grids[ i + 0 ];
+                var current_right   = this.grids[ i + 1 ];
+                var back            = this.grids[ i + zspan_ + 0 ];
+                var back_right      = this.grids[ i + zspan_ + 1 ];
+                var under           = this.grids[ i + yspan_ + 0 ];
+                var under_right     = this.grids[ i + yspan_ + 1 ];
+                var backUnder       = this.grids[ i + yspan_ + zspan_ + 0 ];
+                var backUnder_right = this.grids[ i + yspan_ + zspan_ + 1 ];
+
+                return ( current, current_right, back, back_right, under, under_right, backUnder, backUnder_right );
+            }
+
+            bool isNeedDraw_(
+                ref (
+                    CubeGrid32x32x32 current,
+                    CubeGrid32x32x32 current_right,
+                    CubeGrid32x32x32 back,
+                    CubeGrid32x32x32 back_right,
+                    CubeGrid32x32x32 under,
+                    CubeGrid32x32x32 under_right,
+                    CubeGrid32x32x32 backUnder,
+                    CubeGrid32x32x32 backUnder_right
+                ) g
+            )
+            {
+
+                if( g.current == GridArray.DefaultBlankCube )
+                {
+                    var isNoDraw =
+                        g.current_right != GridArray.DefaultBlankCube ||
+                        g.back != GridArray.DefaultBlankCube ||
+                        g.back_right != GridArray.DefaultBlankCube ||
+                        g.under != GridArray.DefaultBlankCube ||
+                        g.under_right != GridArray.DefaultBlankCube ||
+                        g.backUnder != GridArray.DefaultBlankCube ||
+                        g.backUnder_right != GridArray.DefaultBlankCube
+                        ;
+                    if( isNoDraw ) return false;
+
+                    // ブランク・フィル用のビルド関数も作るべき
+                }
+
+                if( g.current == GridArray.DefaultFilledCube )
+                {
+                    var isNoDraw =
+                        g.current_right != GridArray.DefaultFilledCube ||
+                        g.back != GridArray.DefaultFilledCube ||
+                        g.back_right != GridArray.DefaultFilledCube ||
+                        g.under != GridArray.DefaultFilledCube ||
+                        g.under_right != GridArray.DefaultFilledCube ||
+                        g.backUnder != GridArray.DefaultFilledCube ||
+                        g.backUnder_right != GridArray.DefaultFilledCube
+                        ;
+                    if( isNoDraw ) return false;
+                }
+
+                return true;
+            }
         }
 
     }
-
 }
-

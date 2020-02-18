@@ -25,6 +25,7 @@ namespace mc
         ComputeBuffer idxListsBuffer;
         ComputeBuffer instancesBuffer;
         ComputeBuffer argsBuffer;
+        ComputeBuffer gridPositionBuffer;
 
         uint[] cubeInstances;
 
@@ -35,13 +36,15 @@ namespace mc
             this.baseVtxsBuffer = res.basevtxs;
             this.idxListsBuffer = res.idxLists;
             this.instancesBuffer = res.instance;
+            this.gridPositionBuffer = res.gridposition;
             this.argsBuffer = ComputeShaderUtility.CreateIndirectArgumentsBuffer();
             this.mesh = res.mesh;
 
             this.Material.SetBuffer( "BaseVtxList", this.baseVtxsBuffer );
             this.Material.SetBuffer( "IdxList", this.idxListsBuffer );
             this.Material.SetBuffer( "Instances", this.instancesBuffer );
-            this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
+            this.Material.SetBuffer( "GridPositions", this.gridPositionBuffer );
+            //this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
             this.cubeGrids = new GridArray( 3, 3, 3 );
             this.cubeGrids.FillCubes( GridArray.DefaultBlankCube, new int3( -1, -1, -1 ), new int3( 11, 4, 11 ) );
@@ -52,12 +55,14 @@ namespace mc
             c[ 31, 1, 1 ] = 1;
             c[ 31, 31, 31 ] = 1;
             c[ 1, 31, 1 ] = 1;
-            //for( var iy = 0; iy < 15; iy++ )
-            //    for( var iz = 0; iz < 13; iz++ )
-            //        for( var ix = 0; ix < 13; ix++ )
-            //            c[5+ix, 5+iy, 5+iz] = 1;
-            this.cubeInstances = this.cubeGrids.BuildCubeInstanceData();
-            this.instancesBuffer.SetData( this.cubeInstances );
+            for( var iy = 0; iy < 15; iy++ )
+                for( var iz = 0; iz < 13; iz++ )
+                    for( var ix = 0; ix < 13; ix++ )
+                        c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
+            var (gridPositions, cubeInstances) = this.cubeGrids.BuildCubeInstanceData();
+            this.instancesBuffer.SetData( cubeInstances );
+            this.gridPositionBuffer.SetData( gridPositions );
+            this.cubeInstances = cubeInstances;
 
             var idxLists = this.MarchingCubeAsset.CubeIdsAndIndexLists.Select( x => x.vtxIdxs ).ToArray();
             var vtxList = this.MarchingCubeAsset.BaseVertexList.Select(x => new float3(x.x,x.y,x.z)).ToArray();
@@ -74,6 +79,7 @@ namespace mc
             if( this.baseVtxsBuffer != null ) this.baseVtxsBuffer.Dispose();
             if( this.idxListsBuffer != null ) this.idxListsBuffer.Dispose();
             if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
+            if( this.gridPositionBuffer != null ) this.gridPositionBuffer.Dispose();
             if( this.argsBuffer != null ) this.argsBuffer.Dispose();
         }
 
@@ -97,80 +103,85 @@ namespace mc
         }
 
 
-        (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, Mesh mesh)
+        (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, ComputeBuffer gridposition, Mesh mesh)
         convertMqoToMarchingCubesData()
         {
             var asset = this.MarchingCubeAsset;
 
-            var res = createMarchingCubesResources(asset.CubeIdsAndIndexLists, asset.BaseVertexList);
+            var instance = createCubeIdInstancingShaderBuffer_( 32*32*32*3000 );
+            var basevtxs = createBaseVtxShaderBuffer_( asset.BaseVertexList );
+            var cubeid = createIdxListsShaderBuffer_( asset.CubeIdsAndIndexLists );
+            var gridposition = createGridPositionShaderBuffer_( 3000 );
+            var mesh = createMesh_();
 
-            return res;
+            return (basevtxs, cubeid, instance, gridposition, mesh);
+            //var res = createMarchingCubesResources(asset.CubeIdsAndIndexLists, asset.BaseVertexList);
+
+            //return res;
+            //(ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, ComputeBuffer gridPosition, Mesh mesh)
+            //createMarchingCubesResources( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndIndexLists, Vector3[] baseVtxList )
+            //{
 
 
-            (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, Mesh mesh)
-            createMarchingCubesResources( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndIndexLists, Vector3[] baseVtxList )
+            //}
+
+
+            ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
             {
+                var buffer = new ComputeBuffer( maxUnitLength, Marshal.SizeOf<uint>() );
 
-                var instance = createCubeIdInstancingShaderBuffer_( 32*32*32*1000 );
-                var basevtxs = createBaseVtxShaderBuffer_( baseVtxList );
-                var cubeid = createIdxListsShaderBuffer_( cubeIdsAndIndexLists );
-                var mesh = createMesh_();
+                return buffer;
+            }
 
-                return (basevtxs, cubeid, instance, mesh);
+            ComputeBuffer createGridPositionShaderBuffer_( int maxBufferLength )
+            {
+                var buffer = new ComputeBuffer( maxBufferLength, Marshal.SizeOf<float4>() );
 
+                return buffer;
+            }
 
+            ComputeBuffer createIdxListsShaderBuffer_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_ )
+            {
+                var buffer = new ComputeBuffer( 254 * 12, Marshal.SizeOf<int>() );
 
-                ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
-                {
-                    var buffer = new ComputeBuffer( maxUnitLength, Marshal.SizeOf<uint>() );
-
-                    return buffer;
-                }
-
-
-                ComputeBuffer createIdxListsShaderBuffer_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_ )
-                {
-                    var buffer = new ComputeBuffer( 254 * 12, Marshal.SizeOf<int>() );
-
-                    var q =
-                        from x in cubeIdsAndVtxIndexLists_
-                            //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
-                            //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
+                var q =
+                    from x in cubeIdsAndVtxIndexLists_
+                        //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
+                        //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
                         orderby x.cubeId
-                        select x.vtxIdxs.Concat( Enumerable.Repeat( 0, 12 - x.vtxIdxs.Length ) )
-                        ;
-                    buffer.SetData( q.SelectMany(x=>x).Cast<int>().ToArray() );
+                    select x.vtxIdxs.Concat( Enumerable.Repeat( 0, 12 - x.vtxIdxs.Length ) )
+                    ;
+                buffer.SetData( q.SelectMany( x => x ).Cast<int>().ToArray() );
 
-                    return buffer;
-                }
+                return buffer;
+            }
 
-                ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
-                {
-                    var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector4>() );
+            ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
+            {
+                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector4>() );
 
-                    buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
 
-                    return buffer;
-                }
+                return buffer;
+            }
 
-                Mesh createMesh_()
-                {
-                    var mesh_ = new Mesh();
-                    mesh_.name = "marching cube unit";
+            Mesh createMesh_()
+            {
+                var mesh_ = new Mesh();
+                mesh_.name = "marching cube unit";
 
-                    var qVtx =
-                        from i in Enumerable.Range( 0, 12 )
-                        select new Vector3( i, 0, 0 )
-                        ;
-                    var qIdx =
-                        from i in Enumerable.Range( 0, 3 * 4 )
-                        select i
-                        ;
-                    mesh_.vertices = qVtx.ToArray();
-                    mesh_.triangles = qIdx.ToArray();
+                var qVtx =
+                    from i in Enumerable.Range( 0, 12 )
+                    select new Vector3( i, 0, 0 )
+                    ;
+                var qIdx =
+                    from i in Enumerable.Range( 0, 3 * 4 )
+                    select i
+                    ;
+                mesh_.vertices = qVtx.ToArray();
+                mesh_.triangles = qIdx.ToArray();
 
-                    return mesh_;
-                }
+                return mesh_;
             }
         }
 

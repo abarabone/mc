@@ -19,19 +19,20 @@ namespace mc
 
         public CubeGrid32x32x32()
         {
-            this.units = Enumerable.Empty<uint>()
-                .Concat( Enumerable.Repeat( (uint)0x_ffff_f5ff, 32 ) )
-                .Concat( Enumerable.Repeat( (uint)0x_0070_6001, 32 ) )
-                .Repeat( 16 )
-                .ToArray();
+            this.units = new uint[1 * 32 * 32];
+            //this.units = Enumerable.Empty<uint>()
+            //    .Concat( Enumerable.Repeat( (uint)0x_ffff_f5ff, 32 ) )
+            //    .Concat( Enumerable.Repeat( (uint)0x_0070_6001, 32 ) )
+            //    .Repeat( 16 )
+            //    .ToArray();
         }
 
         public CubeGrid32x32x32( bool isFillAll )
         {
             this.units = new uint[ 1 * 32 * 32 ];
             if( isFillAll )
-                //System.Buffer.SetByte( this.units, 0, 0xff );
-                this.units = Enumerable.Repeat( 0xffffffff, 32 * 32 ).ToArray();
+                System.Buffer.SetByte( this.units, 0, 0xff );
+            //this.units = Enumerable.Repeat( 0xffffffff, 32 * 32 ).ToArray();
             else
                 System.Array.Clear( this.units, 0, this.units.Length );
         }
@@ -91,6 +92,7 @@ namespace mc
         public uint[] SampleAllCubes()
         {
             var outputCubes = new List<uint>( 32 * 32 );
+            var gridId = 0;
 
             for( var iy = 0; iy < 31; iy++ )
                 for( var iz = 0; iz < 31; iz++ )
@@ -106,14 +108,14 @@ namespace mc
                     var ix = 0;
                     for( var ipack = 0; ipack < 32 / 8; ipack++ )
                     {
-                        addCubeIfVisible_( cubes._98109810 >> i, outputCubes, ix++, iy, iz );
-                        addCubeIfVisible_( cubes._a921a921 >> i, outputCubes, ix++, iy, iz );
-                        addCubeIfVisible_( cubes._ba32ba32 >> i, outputCubes, ix++, iy, iz );
-                        addCubeIfVisible_( cubes._cb43cb43 >> i, outputCubes, ix++, iy, iz );
-                        addCubeIfVisible_( cubes._dc54dc54 >> i, outputCubes, ix++, iy, iz );
-                        addCubeIfVisible_( cubes._ed65ed65 >> i, outputCubes, ix++, iy, iz );
-                        addCubeIfVisible_( cubes._fe76fe76 >> i, outputCubes, ix++, iy, iz );
-                        addCubeIfVisible_( cubes.___870f87 >> i, outputCubes, ix++, iy, iz );
+                        addCubeIfVisible_( gridId, cubes._98109810 >> i & 0xff, outputCubes, ix++, iy, iz );
+                        addCubeIfVisible_( gridId, cubes._a921a921 >> i & 0xff, outputCubes, ix++, iy, iz );
+                        addCubeIfVisible_( gridId, cubes._ba32ba32 >> i & 0xff, outputCubes, ix++, iy, iz );
+                        addCubeIfVisible_( gridId, cubes._cb43cb43 >> i & 0xff, outputCubes, ix++, iy, iz );
+                        addCubeIfVisible_( gridId, cubes._dc54dc54 >> i & 0xff, outputCubes, ix++, iy, iz );
+                        addCubeIfVisible_( gridId, cubes._ed65ed65 >> i & 0xff, outputCubes, ix++, iy, iz );
+                        addCubeIfVisible_( gridId, cubes._fe76fe76 >> i & 0xff, outputCubes, ix++, iy, iz );
+                        addCubeIfVisible_( gridId, cubes.___870f87 >> i & 0xff, outputCubes, ix++, iy, iz );
                         i += 8;
                     }
                 }
@@ -121,13 +123,13 @@ namespace mc
             return outputCubes.ToArray();
 
 
-            void addCubeIfVisible_( uint cube8bit, List<uint> output, int ix, int iy, int iz )
+            void addCubeIfVisible_( int gridId_, uint cubeId, List<uint> output, int ix, int iy, int iz )
             {
-                var cube = cube8bit & 0xff;
-                if( cube == 0 ) return;
+                if( cubeId == 0 ) return;
 
-                var posAndCube = (uint)iz << 24 | (uint)iy << 16 | (uint)ix << 8 | cube;
-                output.Add( posAndCube );
+                //var cubeInstance = (uint)iz << 24 | (uint)iy << 16 | (uint)ix << 8 | cube;
+                var cubeInstance = CubeUtiilty.ToCubeInstance( ix, iy, iz, gridId_, cubeId );
+                output.Add( cubeInstance );
             }
 
             (uint _98109810, uint _a921a921, uint _ba32ba32, uint _cb43cb43,
