@@ -30,7 +30,8 @@ namespace mc
         {
             this.units = new uint[ 1 * 32 * 32 ];
             if( isFillAll )
-                System.Buffer.SetByte( this.units, 0, 0xff );
+                //System.Buffer.SetByte( this.units, 0, 0xff );
+                this.units = Enumerable.Repeat( 0xffffffff, 32 * 32 ).ToArray();
             else
                 System.Array.Clear( this.units, 0, this.units.Length );
         }
@@ -46,7 +47,7 @@ namespace mc
             {
                 var i = ( iy << 5 ) + iz;
                 var b = this.units[ i ];
-                this.units[ i ] = b ^ b ^ (value & 1) << ix;
+                this.units[ i ] |= b ^ b ^ (value & 1) << ix;
             }
         }
         //public uint[] this[ int3 leftTop, int3 length3 ]

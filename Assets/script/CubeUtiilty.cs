@@ -5,6 +5,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace mc
 {
@@ -61,113 +62,122 @@ namespace mc
         }
 
 
-
-
-        static public uint[] SampleAllCubes( this GridArray ga, int igrid )
+        /// <summary>
+        /// native contener 化必要、とりあえずは配列で動作チェック
+        /// あとでＹＺカリングもしたい
+        /// </summary>
+        // xyz各32個目のキューブは1bitのために隣のグリッドを見なくてはならず、効率悪いしコードも汚くなる、なんとかならんか？
+        static public void SampleAllCubes( this GridArray ga, int igrid, List<uint> outputCubes )
         {
-            var outputCubes = new List<uint>( 32 * 32 );
-
-            var current_        = ga.grids[ igrid + 0 ];
-            var current_right   = ga.grids[ igrid + 1 ];
-            var back____        = ga.grids[ igrid + ga.wholeGridLength.x + 0 ];
-            var back____right   = ga.grids[ igrid + ga.wholeGridLength.x + 1 ];
-            var under___        = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + 0 ];
-            var under___right   = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + 1 ];
-            var backUnder       = ga.grids[ igrid + ga.wholeGridLength.x + ga.wholeGridLength.x * ga.wholeGridLength.z + 0 ];
-            var backUnder_right = ga.grids[ igrid + ga.wholeGridLength.x + ga.wholeGridLength.x * ga.wholeGridLength.z + 1 ];
+            var current___      = ga.grids[ igrid + 0 ];
+            var current___right = ga.grids[ igrid + 1 ];
+            var back______      = ga.grids[ igrid + ga.wholeGridLength.x + 0 ];
+            var back______right = ga.grids[ igrid + ga.wholeGridLength.x + 1 ];
+            var under_____      = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + 0 ];
+            var under_____right = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + 1 ];
+            var backUnder_      = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + ga.wholeGridLength.x + 0 ];
+            var backUnder_right = ga.grids[ igrid + ga.wholeGridLength.x * ga.wholeGridLength.z + ga.wholeGridLength.x + 1 ];
 
             for( var iy = 0; iy < 31; iy++ )
             {
                 for( var iz = 0; iz < 31; iz++ )
                 {
-                    var y0z0 = current_.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1 = current_.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0 = current_.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = current_.units[ ( iy + 1 ) * 32 + iz + 1 ];
+                    var y0z0 = current___.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1 = current___.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    var y1z0 = current___.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    var y1z1 = current___.units[ ( iy + 1 ) * 32 + iz + 1 ];
 
-                    var y0z0r = current_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1r = current_right.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0r = current_right.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1r = current_right.units[ ( iy + 1 ) * 32 + iz + 1 ];
+                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
-                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-                    cubes.__f870f87 |= ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
-                    addCubeX_( cubes, iy, iz );
+                    var y0z0r = current___right.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    var y0z1r = current___right.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    var y1z0r = current___right.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    var y1z1r = current___right.units[ ( iy + 1 ) * 32 + iz + 1 ];
+
+                    cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
+                    
+                    addCubeFromLineX_( cubes, iy, iz, outputCubes );
                 }
                 {
-                    var iz = 31;
-                    var y0z0 = current_.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1 = back____.units[ ( iy + 0 ) * 32 + 0 + 1 ];
-                    var y1z0 = current_.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = back____.units[ ( iy + 1 ) * 32 + 0 + 1 ];
+                    const int iz = 31;
+                    var y0z0 = current___.units[ ( iy + 0 ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y0z1 = back______.units[ ( iy + 0 ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y1z0 = current___.units[ ( iy + 1 ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y1z1 = back______.units[ ( iy + 1 ) * 32 + ( iz + 1 & 0x1f ) ];
 
-                    var y0z0r = current_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1r = back____right.units[ ( iy + 0 ) * 32 + 0 + 1 ];
-                    var y1z0r = current_right.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1r = back____right.units[ ( iy + 1 ) * 32 + 0 + 1 ];
+                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
-                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-                    cubes.__f870f87 |= ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
-                    addCubeX_( cubes, iy, iz );
+                    var y0z0r = current___right.units[ ( iy + 0 ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y0z1r = back______right.units[ ( iy + 0 ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y1z0r = current___right.units[ ( iy + 1 ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y1z1r = back______right.units[ ( iy + 1 ) * 32 + ( iz + 1 & 0x1f ) ];
+
+                    cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
+                    
+                    addCubeFromLineX_( cubes, iy, iz, outputCubes );
                 }
             }
             {
-                var iy = 31;
+                const int iy = 31;
                 for( var iz = 0; iz < 31; iz++ )
                 {
-                    var y0z0 = current_.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1 = current_.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0 = under___.units[ ( 0 + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = under___.units[ ( 0 + 1 ) * 32 + iz + 1 ];
+                    var y0z0 = current___.units[ ( iy + 0 & 0x1f ) * 32 + iz + 0 ];
+                    var y0z1 = current___.units[ ( iy + 0 & 0x1f ) * 32 + iz + 1 ];
+                    var y1z0 = under_____.units[ ( iy + 1 & 0x1f ) * 32 + iz + 0 ];
+                    var y1z1 = under_____.units[ ( iy + 1 & 0x1f ) * 32 + iz + 1 ];
 
-                    var y0z0r = current_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1r = current_right.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0r = under___right.units[ ( 0 + 1 ) * 32 + iz + 0 ];
-                    var y1z1r = under___right.units[ ( 0 + 1 ) * 32 + iz + 1 ];
+                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
-                    var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-                    cubes.__f870f87 |= ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
-                    addCubeX_( cubes, iy, iz );
+                    var y0z0r = current___right.units[ ( iy + 0 & 0x1f ) * 32 + iz + 0 ];
+                    var y0z1r = current___right.units[ ( iy + 0 & 0x1f ) * 32 + iz + 1 ];
+                    var y1z0r = under_____right.units[ ( iy + 1 & 0x1f ) * 32 + iz + 0 ];
+                    var y1z1r = under_____right.units[ ( iy + 1 & 0x1f ) * 32 + iz + 1 ];
+
+                    cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
+
+                    addCubeFromLineX_( cubes, iy, iz, outputCubes );
                 }
                 {
-                    //var iz = 31;
-                    //var y0z0 = backUnder.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    //var y0z1 = backUnder.units[ ( iy + 0 ) * 32 + 0 + 1 ];
-                    //var y1z0 = backUnder.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    //var y1z1 = backUnder.units[ ( iy + 1 ) * 32 + 0 + 1 ];
+                    const int iz = 31;
+                    var y0z0 = current___.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y0z1 = back______.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y1z0 = under_____.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y1z1 = backUnder_.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
 
-                    //var y0z0r = backUnder_right.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    //var y0z1r = backUnder_right.units[ ( iy + 0 ) * 32 + 0 + 1 ];
-                    //var y1z0r = backUnder_right.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    //var y1z1r = backUnder_right.units[ ( iy + 1 ) * 32 + 0 + 1 ];
+                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
-                    //var cubes = makeCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-                    //cubes.__f870f87 |= ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
-                    //addCubeX_( cubes, iy, iz );
+                    var y0z0r = current___right.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y0z1r = back______right.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var y1z0r = under_____right.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
+                    var y1z1r = backUnder_right.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+
+                    cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
+
+                    addCubeFromLineX_( cubes, iy, iz, outputCubes );
                 }
             }
 
-            return outputCubes.ToArray();
+            return;
 
 
-            void addCubeX_(
+            void addCubeFromLineX_(
                 (uint _98109810, uint _a921a921, uint _ba32ba32, uint _cb43cb43,
                  uint _dc54dc54, uint _ed65ed65, uint _fe76fe76, uint __f870f87) cubes,
-                int iy, int iz
+                int iy, int iz, List<uint> outputCubes_
             )
             {
                 var i = 0;
                 var ix = 0;
                 for( var ipack = 0; ipack < 32 >> 3; ipack++ )// 8 は 1cube の 8bit
                 {
-                    addCubeIfVisible_( cubes._98109810 >> i, outputCubes, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._a921a921 >> i, outputCubes, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._ba32ba32 >> i, outputCubes, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._cb43cb43 >> i, outputCubes, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._dc54dc54 >> i, outputCubes, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._ed65ed65 >> i, outputCubes, ix++, iy, iz );
-                    addCubeIfVisible_( cubes._fe76fe76 >> i, outputCubes, ix++, iy, iz );
-                    addCubeIfVisible_( cubes.__f870f87 >> i, outputCubes, ix++, iy, iz );
+                    addCubeIfVisible_( cubes._98109810 >> i, outputCubes_, ix++, iy, iz );
+                    addCubeIfVisible_( cubes._a921a921 >> i, outputCubes_, ix++, iy, iz );
+                    addCubeIfVisible_( cubes._ba32ba32 >> i, outputCubes_, ix++, iy, iz );
+                    addCubeIfVisible_( cubes._cb43cb43 >> i, outputCubes_, ix++, iy, iz );
+                    addCubeIfVisible_( cubes._dc54dc54 >> i, outputCubes_, ix++, iy, iz );
+                    addCubeIfVisible_( cubes._ed65ed65 >> i, outputCubes_, ix++, iy, iz );
+                    addCubeIfVisible_( cubes._fe76fe76 >> i, outputCubes_, ix++, iy, iz );
+                    addCubeIfVisible_( cubes.__f870f87 >> i, outputCubes_, ix++, iy, iz );
                     i += 8;
                 }
                 return;
@@ -186,7 +196,7 @@ namespace mc
             // あらかじめ共通段階までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある
             (uint _98109810, uint _a921a921, uint _ba32ba32, uint _cb43cb43,
              uint _dc54dc54, uint _ed65ed65, uint _fe76fe76, uint __f870f87)
-            makeCubesLineX_( uint y0z0, uint y0z1, uint y1z0, uint y1z1 )
+            bitwiseCubesLineX_( uint y0z0, uint y0z1, uint y1z0, uint y1z1 )
             {
                 // fedcba9876543210fedcba9876543210
 
@@ -232,6 +242,12 @@ namespace mc
                 // -f-f-f-f878787870f0f0f0f87878787
 
                 return (_98109810, _a921a921, _ba32ba32, _cb43cb43, _dc54dc54, _ed65ed65, _fe76fe76, __f870f87);
+            }
+
+            //[MethodImpl( MethodImplOptions.AggressiveInlining )]
+            uint bitwiseHalfCubeLineX_( uint y0z0r, uint y0z1r, uint y1z0r, uint y1z1r )
+            {
+                return ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
             }
         }
 
