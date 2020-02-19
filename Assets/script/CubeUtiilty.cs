@@ -295,18 +295,19 @@ namespace mc
             List<uint> outputCubes
         )
         {
+            return false;
             var preCubeCount = outputCubes.Count;
 
             for( var iy = 0; iy < 31; iy++ )
             {
                 for( var iz = 0; iz < 31; iz++ )
                 {
-                    var y0z0 = g.current___.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1 = g.current___.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0 = g.current___.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1 = g.current___.units[ ( iy + 1 ) * 32 + iz + 1 ];
+                    //var y0z0 = g.current___.units[ ( iy + 0 ) * 32 + iz + 0 ];
+                    //var y0z1 = g.current___.units[ ( iy + 0 ) * 32 + iz + 1 ];
+                    //var y1z0 = g.current___.units[ ( iy + 1 ) * 32 + iz + 0 ];
+                    //var y1z1 = g.current___.units[ ( iy + 1 ) * 32 + iz + 1 ];
 
-                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    //var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
 
                     //var y0z0r = g.current___right.units[ ( iy + 0 ) * 32 + iz + 0 ];
                     //var y0z1r = g.current___right.units[ ( iy + 0 ) * 32 + iz + 1 ];
@@ -315,7 +316,7 @@ namespace mc
 
                     //cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
 
-                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
+                    //addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
                 }
                 //{
                 //    const int iz = 31;

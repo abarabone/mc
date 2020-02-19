@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
+using System.Runtime.CompilerServices;
 
 namespace mc
 {
@@ -12,7 +13,7 @@ namespace mc
         public int3 GridLength => this.wholeGridLength - 2;
         public int3 wholeGridLength { get; private set; }
 
-        public CubeGrid32x32x32[] grids { get; private set; }
+        CubeGrid32x32x32[] grids;
 
         static public CubeGrid32x32x32 DefaultBlankCube { get; } = new CubeGrid32x32x32( isFillAll: false );
         static public CubeGrid32x32x32 DefaultFilledCube { get; } = new CubeGrid32x32x32( isFillAll: true );
@@ -91,9 +92,9 @@ namespace mc
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
 
-            for( var iy = 0; iy < this.wholeGridLength.y-1; iy++ )
-                for( var iz = 0; iz < this.wholeGridLength.z-1; iz++ )
-                    for( var ix = 0; ix < this.wholeGridLength.x-1; ix++ )
+            for( var iy = 0; iy < this.wholeGridLength.y - 1; iy++ )
+                for( var iz = 0; iz < this.wholeGridLength.z - 1; iz++ )
+                    for( var ix = 0; ix < this.wholeGridLength.x - 1; ix++ )
                     {
 
                         var gridset = getGridSet_( ix, iy, iz, yspan, zspan );
@@ -102,17 +103,18 @@ namespace mc
 
 
                         var gridId = gridPositions.Count;
-                        var isCubeAdded = gridset.SampleAllCubes( gridId, instanceCubes );
+                        var isCubeAdded = false;//gridset.SampleAllCubes( gridId, instanceCubes );
                         if( isCubeAdded )
                         {
-                            gridPositions.Add(new float4(ix * 32, -iy * 32, -iz * 32, 0));
+                            gridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
                         }
                     }
 
             return;// (gridPositions.ToArray(), instanceCubes.ToArray());
+        }
 
-
-            (
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        (
                 CubeGrid32x32x32 current,
                 CubeGrid32x32x32 current_right,
                 CubeGrid32x32x32 back,
@@ -139,7 +141,8 @@ namespace mc
                 return ( current, current_right, back, back_right, under, under_right, backUnder, backUnder_right );
             }
 
-            bool isNeedDraw_(
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        bool isNeedDraw_(
                 ref (
                     CubeGrid32x32x32 current,
                     CubeGrid32x32x32 current_right,
@@ -190,7 +193,6 @@ namespace mc
 
                 return true;
             }
-        }
 
     }
 }
