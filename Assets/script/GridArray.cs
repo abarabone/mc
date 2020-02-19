@@ -81,11 +81,12 @@ namespace mc
         /// とりあえずは全描画、カリングは後で
         /// フィル／ブランクは描画不要、ただし右下後にフィルのくるブランクは、描画必要
         /// </summary>
-        public (float4[] gridPositions, uint[] cubeIds) BuildCubeInstanceData()
+        //public (float4[] gridPositions, uint[] cubeIds) BuildCubeInstanceData()
+        public void BuildCubeInstanceData( List<float4> gridPositions, List<uint> instanceCubes )
         {
 
-            var gridPositions = new List<float4>();
-            var instanceCubes = new List<uint>();
+            //var gridPositions = new List<float4>();
+            //var instanceCubes = new List<uint>();
 
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
@@ -108,7 +109,7 @@ namespace mc
                         }
                     }
 
-            return (gridPositions.ToArray(), instanceCubes.ToArray());
+            return;// (gridPositions.ToArray(), instanceCubes.ToArray());
 
 
             (
