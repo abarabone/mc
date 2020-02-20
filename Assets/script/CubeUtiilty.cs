@@ -33,6 +33,12 @@ namespace mc
             (new float3( cubeInstance >> 16 & 0x1f, -(cubeInstance >> 21 & 0x1f ), -(cubeInstance >> 26 & 0x1f ) ), cubeInstance >> 8 & 0xff, cubeInstance & 0xff);
 
 
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public uint4 ToCubeInstance( int4 ix, int4 iy, int4 iz, int gridId, uint4 cubeId ) =>
+        (uint4)iz << 26 | (uint4)iy << 21 | (uint4)ix << 16 | (uint)gridId << 8 | cubeId;
+
+
+
         static public (int[] tris, float3[] vtxs) MakeCollisionMeshData
             ( uint[] cubeInstances, int[][] srcIdxLists, float3[] srcVtxList )
         {
