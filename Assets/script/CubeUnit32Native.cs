@@ -6,11 +6,13 @@ using System.IO;
 using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace mc
 {
 
-    public struct CubeGrid32x32x32Native
+    //public struct CubeGrid32x32x32
+    public class CubeGrid32x32x32
     {
         public const int unitLength = 32;
 
@@ -18,19 +20,19 @@ namespace mc
         public int cubeCount;
 
 
-        //public CubeGrid32x32x32Native()
-        //{
-        //    this.units = new NativeArray<uint>( 1 * 32 * 32, Allocator.Persistent );
-        //    this.cubeCount = 0;
-        //}
+        public CubeGrid32x32x32()
+        {
+            this.units = new NativeArray<uint>( 1 * 32 * 32, Allocator.Persistent, NativeArrayOptions.ClearMemory );
+            this.cubeCount = 0;
+        }
 
-        public CubeGrid32x32x32Native( bool isFillAll )
+        public unsafe CubeGrid32x32x32( bool isFillAll )
         {
             if( isFillAll )
             {
                 this.units = new NativeArray<uint>
                     ( 1 * 32 * 32, Allocator.Persistent, NativeArrayOptions.UninitializedMemory );
-                for( var i = 0; i < this.units.Length; i++ ) this.units[ i ] = 0xffffffff;
+                UnsafeUtility.MemSet( this.units.GetUnsafePtr(), 0xff, sizeof(uint) * this.units.Length );
 
                 this.cubeCount = 32 * 32 * 32;
             }
@@ -45,7 +47,7 @@ namespace mc
 
         public void Dispose()
         {
-            this.units.Dispose();
+            if(this.units.IsCreated) this.units.Dispose();
         }
 
 

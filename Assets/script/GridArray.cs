@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace mc
 {
-
+    
     public class GridArray
     {
 
@@ -35,6 +35,12 @@ namespace mc
             }
         }
 
+        public void Dispose()
+        {
+            foreach( var g in this.grids )
+                g.Dispose();
+        }
+
 
         public CubeGrid32x32x32 this[ int x, int y, int z ]
         {
@@ -59,6 +65,7 @@ namespace mc
                 return grid;
             }
         }
+
 
 
         public void FillCubes( CubeGrid32x32x32 gridUnit, int3 topLeft, int3 length3 )
@@ -103,7 +110,7 @@ namespace mc
 
 
                         var gridId = gridPositions.Count;
-                        var isCubeAdded = false;//gridset.SampleAllCubes( gridId, instanceCubes );
+                        var isCubeAdded = gridset.SampleAllCubes( gridId, instanceCubes );
                         if( isCubeAdded )
                         {
                             gridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );

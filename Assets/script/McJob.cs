@@ -12,6 +12,8 @@ using Unity.Jobs;
 
 namespace mc
 { 
+
+    using CubeGrid32x32x32Native = CubeGrid32x32x32;
     
 
     public struct McJob : IJob
@@ -40,13 +42,13 @@ namespace mc
         // xyz各32個目のキューブは1bitのために隣のグリッドを見なくてはならず、効率悪いしコードも汚くなる、なんとかならんか？
         static public bool SampleAllCubes(
             ref this (
-                CubeGrid32x32x32Native current___,
-                CubeGrid32x32x32Native current___right,
-                CubeGrid32x32x32Native back______,
-                CubeGrid32x32x32Native back______right,
-                CubeGrid32x32x32Native under_____,
-                CubeGrid32x32x32Native under_____right,
-                CubeGrid32x32x32Native backUnder_,
+                CubeGrid32x32x32Native current,
+                CubeGrid32x32x32Native current_right,
+                CubeGrid32x32x32Native back,
+                CubeGrid32x32x32Native back_right,
+                CubeGrid32x32x32Native under,
+                CubeGrid32x32x32Native under_right,
+                CubeGrid32x32x32Native backUnder,
                 CubeGrid32x32x32Native backUnder_right
             ) g,
             int gridId,
@@ -57,122 +59,114 @@ namespace mc
 
             for( var iy = 0; iy < 31; iy++ )
             {
-                for( var iz = 0; iz < 31; iz++ )
+                for( var iz = 0; iz < 31; iz+=4 )
                 {
-                    uint4 y0z0, y0z1, y1z0, y1z1;
+                    var (y0z0, y0z1, y1z0, y1z1) =
+                        getXLine_( iy, iz, ref g.current, ref g.current, ref g.current, ref g.current );
+                    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
 
-                    y0z0.x = g.current___.units[ ( iy + 0 + 0 ) * 32 + iz + 0 + 0 ];
-                    y0z1.x = g.current___.units[ ( iy + 0 + 0 ) * 32 + iz + 0 + 1 ];
-                    y1z0.x = g.current___.units[ ( iy + 0 + 1 ) * 32 + iz + 0 + 0 ];
-                    y1z1.x = g.current___.units[ ( iy + 0 + 1 ) * 32 + iz + 0 + 1 ];
+                    var (y0z0r, y0z1r, y1z0r, y1z1r) =
+                        getXLine_( iy, iz, ref g.current_right, ref g.current_right, ref g.current_right, ref g.current_right );
+                    cubes.__f870f87 |= bitwiseHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
 
-                    y0z0.y = g.current___.units[ ( iy + 0 + 0 ) * 32 + iz + 1 + 0 ];
-                    y0z1.y = g.current___.units[ ( iy + 0 + 0 ) * 32 + iz + 1 + 1 ];
-                    y1z0.y = g.current___.units[ ( iy + 0 + 1 ) * 32 + iz + 1 + 0 ];
-                    y1z1.y = g.current___.units[ ( iy + 0 + 1 ) * 32 + iz + 1 + 1 ];
-
-                    y0z0.z = g.current___.units[ ( iy + 0 + 0 ) * 32 + iz + 0 + 0 ];
-                    y0z1.z = g.current___.units[ ( iy + 0 + 0 ) * 32 + iz + 0 + 1 ];
-                    y1z0.z = g.current___.units[ ( iy + 0 + 1 ) * 32 + iz + 0 + 0 ];
-                    y1z1.z = g.current___.units[ ( iy + 0 + 1 ) * 32 + iz + 0 + 1 ];
-
-                    y0z0.w = g.current___.units[ ( iy + 0 + 0 ) * 32 + iz + 1 + 0 ];
-                    y0z1.w = g.current___.units[ ( iy + 0 + 0 ) * 32 + iz + 1 + 1 ];
-                    y1z0.w = g.current___.units[ ( iy + 0 + 1 ) * 32 + iz + 1 + 0 ];
-                    y1z1.w = g.current___.units[ ( iy + 0 + 1 ) * 32 + iz + 1 + 1 ];
-
-                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-
-                    var y0z0r = g.current___right.units[ ( iy + 0 ) * 32 + iz + 0 ];
-                    var y0z1r = g.current___right.units[ ( iy + 0 ) * 32 + iz + 1 ];
-                    var y1z0r = g.current___right.units[ ( iy + 1 ) * 32 + iz + 0 ];
-                    var y1z1r = g.current___right.units[ ( iy + 1 ) * 32 + iz + 1 ];
-
-                    cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
-
-                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
+                    addCubeFromXLine_( cubes, gridId, iy, iz, outputCubes );
                 }
                 {
                     const int iz = 31;
-                    var y0z0 = g.current___.units[ ( iy + 0 ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y0z1 = g.back______.units[ ( iy + 0 ) * 32 + ( iz + 1 & 0x1f ) ];
-                    var y1z0 = g.current___.units[ ( iy + 1 ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y1z1 = g.back______.units[ ( iy + 1 ) * 32 + ( iz + 1 & 0x1f ) ];
 
-                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    var (y0z0, y0z1, y1z0, y1z1) =
+                        getXLine_( iy, iz, ref g.current, ref g.back, ref g.current, ref g.back );
+                    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
+                    
+                    var (y0z0r, y0z1r, y1z0r, y1z1r) =
+                        getXLine_( iy, iz, ref g.current_right, ref g.back_right, ref g.current_right, ref g.back_right );
+                    cubes.__f870f87 |= bitwiseHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
 
-                    var y0z0r = g.current___right.units[ ( iy + 0 ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y0z1r = g.back______right.units[ ( iy + 0 ) * 32 + ( iz + 1 & 0x1f ) ];
-                    var y1z0r = g.current___right.units[ ( iy + 1 ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y1z1r = g.back______right.units[ ( iy + 1 ) * 32 + ( iz + 1 & 0x1f ) ];
-
-                    cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
-
-                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
+                    addCubeFromXLine_( cubes, gridId, iy, iz, outputCubes );
                 }
             }
             {
                 const int iy = 31;
-                for( var iz = 0; iz < 31; iz++ )
+                for( var iz = 0; iz < 31; iz+=4 )
                 {
-                    var y0z0 = g.current___.units[ ( iy + 0 & 0x1f ) * 32 + iz + 0 ];
-                    var y0z1 = g.current___.units[ ( iy + 0 & 0x1f ) * 32 + iz + 1 ];
-                    var y1z0 = g.under_____.units[ ( iy + 1 & 0x1f ) * 32 + iz + 0 ];
-                    var y1z1 = g.under_____.units[ ( iy + 1 & 0x1f ) * 32 + iz + 1 ];
+                    var (y0z0, y0z1, y1z0, y1z1) =
+                        getXLine_( iy, iz, ref g.current, ref g.current, ref g.under, ref g.under );
+                    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
+                    
+                    var (y0z0r, y0z1r, y1z0r, y1z1r) =
+                        getXLine_( iy, iz, ref g.current_right, ref g.current_right, ref g.under_right, ref g.under_right );
+                    cubes.__f870f87 |= bitwiseHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
 
-                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
-
-                    var y0z0r = g.current___right.units[ ( iy + 0 & 0x1f ) * 32 + iz + 0 ];
-                    var y0z1r = g.current___right.units[ ( iy + 0 & 0x1f ) * 32 + iz + 1 ];
-                    var y1z0r = g.under_____right.units[ ( iy + 1 & 0x1f ) * 32 + iz + 0 ];
-                    var y1z1r = g.under_____right.units[ ( iy + 1 & 0x1f ) * 32 + iz + 1 ];
-
-                    cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
-
-                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
+                    addCubeFromXLine_( cubes, gridId, iy, iz, outputCubes );
                 }
                 {
                     const int iz = 31;
-                    var y0z0 = g.current___.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y0z1 = g.back______.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
-                    var y1z0 = g.under_____.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y1z1 = g.backUnder_.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
 
-                    var cubes = bitwiseCubesLineX_( y0z0, y0z1, y1z0, y1z1 );
+                    var (y0z0, y0z1, y1z0, y1z1) =
+                        getXLine_( iy, iz, ref g.current, ref g.back, ref g.under, ref g.backUnder );
+                    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
 
-                    var y0z0r = g.current___right.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y0z1r = g.back______right.units[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
-                    var y1z0r = g.under_____right.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 0 & 0x1f ) ];
-                    var y1z1r = g.backUnder_right.units[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+                    var (y0z0r, y0z1r, y1z0r, y1z1r) =
+                        getXLine_( iy, iz, ref g.current_right, ref g.back_right, ref g.under_right, ref g.backUnder_right );
+                    cubes.__f870f87 |= bitwiseHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
 
-                    cubes.__f870f87 |= bitwiseHalfCubeLineX_( y0z0r, y0z1r, y1z0r, y1z1r );
-
-                    addCubeFromLineX_( cubes, gridId, iy, iz, outputCubes );
+                    addCubeFromXLine_( cubes, gridId, iy, iz, outputCubes );
                 }
             }
 
             return preCubeCount != outputCubes.Length;
         }
 
+
+
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static void addCubeFromLineX_(
+        static (uint4, uint4, uint4, uint4) getXLine_(
+            int iy, int iz,
+            ref CubeGrid32x32x32Native current, ref CubeGrid32x32x32Native back,
+            ref CubeGrid32x32x32Native under, ref CubeGrid32x32x32Native backUnder
+        )
+        {
+            var iy_ = iy;
+            var iz_ = new int4( iz >> 2, iz >> 2, iz, iz );
+            var yofs = new int4( 0, 1, 0, 1 );
+            var zofs = new int4( 0, 0, 1, 1 );
+            var ymask = 0x1f;
+            var zmask = new int4( 0x7, 0x7, 0xff, 0xff );
+
+            var i = (iy_ + yofs & ymask ) * 32 + (iz_ + zofs & zmask);
+            var y0 = current.units.Reinterpret<uint, uint4>()[i.x];//[ ( iy + 0 & 0x1f ) * 32 + ( iz>>2 + 0 & 0x7 ) ];
+            var y1 = under  .units.Reinterpret<uint, uint4>()[i.y];//[ ( iy + 1 & 0x1f ) * 32 + ( iz>>2 + 0 & 0x7 ) ];
+            var y0z0 = y0;
+            var y1z0 = y1;
+
+            y0.x = back     .units[i.z];//[ ( iy + 0 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+            y1.x = backUnder.units[i.w];//[ ( iy + 1 & 0x1f ) * 32 + ( iz + 1 & 0x1f ) ];
+            var y0z1 = y0.yzwx;
+            var y1z1 = y1.yzwx;
+
+            return (y0z0, y0z1, y1z0, y1z1);
+        }
+
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static void addCubeFromXLine_(
             (uint4 _98109810, uint4 _a921a921, uint4 _ba32ba32, uint4 _cb43cb43,
              uint4 _dc54dc54, uint4 _ed65ed65, uint4 _fe76fe76, uint4 __f870f87) cubes,
-            int gridId_, int4 iy, int4 iz, NativeList<uint> outputCubes_
+            int gridId_, int iy, int iz, NativeList<uint> outputCubes_
         )
         {
             var i = 0;
             var ix = 0;
+            var iz_ = new int4( iz + 0, iz + 1, iz + 2, iz + 3 );
             for( var ipack = 0; ipack < 32 >> 3; ipack++ )// 8 は 1cube の 8bit
             {
-                addCubeIfVisible_( cubes._98109810 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
-                addCubeIfVisible_( cubes._a921a921 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
-                addCubeIfVisible_( cubes._ba32ba32 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
-                addCubeIfVisible_( cubes._cb43cb43 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
-                addCubeIfVisible_( cubes._dc54dc54 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
-                addCubeIfVisible_( cubes._ed65ed65 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
-                addCubeIfVisible_( cubes._fe76fe76 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
-                addCubeIfVisible_( cubes.__f870f87 >> i & 0xff, gridId_, ix++, iy, iz, outputCubes_ );
+                addCubeIfVisible_( cubes._98109810 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._a921a921 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._ba32ba32 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._cb43cb43 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._dc54dc54 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._ed65ed65 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._fe76fe76 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes.__f870f87 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
                 i += 8;
             }
             return;
@@ -209,11 +203,12 @@ namespace mc
 
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static
+        
         // あらかじめ共通段階までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある
+        static
         ( uint4 _98109810, uint4 _a921a921, uint4 _ba32ba32, uint4 _cb43cb43,
-         uint4 _dc54dc54, uint4 _ed65ed65, uint4 _fe76fe76, uint4 __f870f87 )
-        bitwiseCubesLineX_( uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1 )
+          uint4 _dc54dc54, uint4 _ed65ed65, uint4 _fe76fe76, uint4 __f870f87 )
+        bitwiseCubesXLine_( uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1 )
         {
             // fedcba9876543210fedcba9876543210
 
@@ -262,7 +257,7 @@ namespace mc
         }
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static uint4 bitwiseHalfCubeLineX_( uint4 y0z0r, uint4 y0z1r, uint4 y1z0r, uint4 y1z1r )
+        static uint4 bitwiseHalfCubeXLine_( uint4 y0z0r, uint4 y0z1r, uint4 y1z0r, uint4 y1z1r )
         {
             return ( y0z0r & 1 ) << 25 | ( y0z1r & 1 ) << 27 | ( y1z0r & 1 ) << 29 | ( y1z1r & 1 ) << 31;
         }

@@ -10,14 +10,14 @@ using Unity.Mathematics;
 namespace mc
 {
 
-    public class CubeGrid32x32x32
+    public class CubeGrid32x32x32_
     {
         public const int unitLength = 32;
 
         public uint[] units { get; private set; }
 
 
-        public CubeGrid32x32x32()
+        public CubeGrid32x32x32_()
         {
             this.units = new uint[1 * 32 * 32];
             //this.units = Enumerable.Empty<uint>()
@@ -27,7 +27,7 @@ namespace mc
             //    .ToArray();
         }
 
-        public CubeGrid32x32x32( bool isFillAll )
+        public CubeGrid32x32x32_( bool isFillAll )
         {
             this.units = new uint[ 1 * 32 * 32 ];
             if( isFillAll )
@@ -36,6 +36,9 @@ namespace mc
             else
                 System.Array.Clear( this.units, 0, this.units.Length );
         }
+
+
+        public void Dispose() { }
 
 
         public uint this[ int ix, int iy, int iz ]

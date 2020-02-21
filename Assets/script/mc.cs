@@ -97,6 +97,8 @@ namespace mc
             if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
             if( this.gridPositionBuffer != null ) this.gridPositionBuffer.Dispose();
             if( this.argsBuffer != null ) this.argsBuffer.Dispose();
+
+            this.cubeGrids.Dispose();
         }
 
 
