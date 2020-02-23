@@ -23,9 +23,9 @@ namespace mc
         
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static public uint ToCubeInstance(  int ix, int iy, int iz, int gridId, uint cubeId ) =>
-        //(uint)iz << 24 | (uint)iy << 16 | (uint)ix << 8 | cubeId;
-        //(uint)iz << 26 & 0x1fu << 26 | (uint)iy << 21 & 0x1fu << 21 | (uint)ix << 16 & 0x1fu << 16 | (uint)gridId << 8 & 0xffu << 8 | cubeId & 0xff;
-        (uint)iz << 26 | (uint)iy << 21 | (uint)ix << 16 | (uint)gridId << 8 | cubeId;
+            //(uint)iz << 24 | (uint)iy << 16 | (uint)ix << 8 | cubeId;
+            //(uint)iz << 26 & 0x1fu << 26 | (uint)iy << 21 & 0x1fu << 21 | (uint)ix << 16 & 0x1fu << 16 | (uint)gridId << 8 & 0xffu << 8 | cubeId & 0xff;
+            (uint)iz << 26 | (uint)iy << 21 | (uint)ix << 16 | (uint)gridId << 8 | cubeId;
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static public (float3 center, uint gridId, uint cubeId) FromCubeInstance( uint cubeInstance ) =>
@@ -35,7 +35,7 @@ namespace mc
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static public uint4 ToCubeInstance( int4 ix, int4 iy, int4 iz, int gridId, uint4 cubeId ) =>
-        (uint4)iz << 26 | (uint4)iy << 21 | (uint4)ix << 16 | (uint)gridId << 8 | cubeId;
+            (uint4)iz << 26 | (uint4)iy << 21 | (uint4)ix << 16 | (uint)gridId << 8 | cubeId;
 
 
 
@@ -98,10 +98,10 @@ namespace mc
                 CubeGrid32x32x32 backUnder_right
             ) g,
             int gridId,
-            List<uint> outputCubes
+            NativeList<uint> outputCubes
         )
         {
-            var preCubeCount = outputCubes.Count;
+            var preCubeCount = outputCubes.Length;
             
             for( var iy = 0; iy < 31; iy++ )
             {
@@ -182,13 +182,13 @@ namespace mc
                 }
             }
 
-            return preCubeCount != outputCubes.Count;
+            return preCubeCount != outputCubes.Length;
 
 
             void addCubeFromLineX_(
                 (uint _98109810, uint _a921a921, uint _ba32ba32, uint _cb43cb43,
                  uint _dc54dc54, uint _ed65ed65, uint _fe76fe76, uint __f870f87) cubes,
-                int gridId_, int iy, int iz, List<uint> outputCubes_
+                int gridId_, int iy, int iz, NativeList<uint> outputCubes_
             )
             {
                 var i = 0;
@@ -208,7 +208,7 @@ namespace mc
                 return;
 
                 void addCubeIfVisible_
-                    ( uint cube, int gridId__, int ix_, int iy_, int iz_, List<uint> cubeInstances )
+                    ( uint cube, int gridId__, int ix_, int iy_, int iz_, NativeList<uint> cubeInstances )
                 {
                     if( cube == 0 || cube == 255 ) return;
 

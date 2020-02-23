@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
 
 namespace mc
 {
@@ -39,6 +40,9 @@ namespace mc
         {
             foreach( var g in this.grids )
                 g.Dispose();
+
+            DefaultBlankCube.Dispose();
+            DefaultFilledCube.Dispose();
         }
 
 
@@ -90,7 +94,7 @@ namespace mc
         /// フィル／ブランクは描画不要、ただし右下後にフィルのくるブランクは、描画必要
         /// </summary>
         //public (float4[] gridPositions, uint[] cubeIds) BuildCubeInstanceData()
-        public void BuildCubeInstanceData( List<float4> gridPositions, List<uint> instanceCubes )
+        public void BuildCubeInstanceData( NativeList<float4> gridPositions, NativeList<uint> instanceCubes )
         {
 
             //var gridPositions = new List<float4>();
@@ -109,7 +113,7 @@ namespace mc
                         if( !isNeedDraw_( ref gridset ) ) continue;
 
 
-                        var gridId = gridPositions.Count;
+                        var gridId = gridPositions.Length;
                         var isCubeAdded = gridset.SampleAllCubes( gridId, instanceCubes );
                         if( isCubeAdded )
                         {

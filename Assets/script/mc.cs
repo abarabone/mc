@@ -28,11 +28,14 @@ namespace mc
         ComputeBuffer gridPositionBuffer;
 
         //uint[] cubeInstances;
-        List<float4> gridPositions = new List<float4>( 3000 );
-        List<uint> cubeInstances = new List<uint>( 80000 );
+        NativeList<float4> gridPositions;// = new NativeList<float4>( 3000, Allocator.Persistent );
+        NativeList<uint> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
 
         void Awake()
         {
+            this.gridPositions = new NativeList<float4>( 3000, Allocator.Persistent );
+            this.cubeInstances = new NativeList<uint>( 80000, Allocator.Persistent );
+
             var res = convertMqoToMarchingCubesData();
 
             this.baseVtxsBuffer = res.basevtxs;
@@ -52,25 +55,23 @@ namespace mc
             this.cubeGrids.FillCubes( GridArray.DefaultBlankCube, new int3( -1, -1, -1 ), new int3( 11, 11, 11 ) );
             this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3( -1, 2, -1 ), new int3( 11, 11, 11 ) );
             this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3( 2, 0, 3 ), new int3( 1, 2, 1 ) );
-
-            var c = this.cubeGrids[0, 0, 0];
+            
+            var c = this.cubeGrids[ 0, 0, 0 ];
             c[ 1, 1, 1 ] = 1;
             c[ 31, 1, 1 ] = 1;
             c[ 31, 31, 31 ] = 1;
             c[ 1, 31, 1 ] = 1;
             for( var iy = 0; iy < 15; iy++ )
-                for( var iz = 0; iz < 13; iz++ )
+                for( var iz = 0; iz < 15; iz++ )
                     for( var ix = 0; ix < 13; ix++ )
                         c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
-            //var (gridPositions, cubeInstances) = this.cubeGrids.BuildCubeInstanceData();
             this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
-            this.instancesBuffer.SetData( this.cubeInstances );
-            this.gridPositionBuffer.SetData( this.gridPositions );
-            //this.cubeInstances = cubeInstances;
-            Debug.Log(cubeInstances.Count);
+            this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
+            this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
+            Debug.Log($"{cubeInstances.Length} / {this.instancesBuffer.count}");
 
             //var idxLists = this.MarchingCubeAsset.CubeIdsAndIndexLists.Select( x => x.vtxIdxs ).ToArray();
-            //var vtxList = this.MarchingCubeAsset.BaseVertexList.Select(x => new float3(x.x,x.y,x.z)).ToArray();
+            //var vtxList = this.MarchingCubeAsset.BaseVertexList.Select( x => new float3( x.x, x.y, x.z ) ).ToArray();
             //var q =
             //    from x in this.cubeInstances
             //    let gridId = CubeUtiilty.FromCubeInstance( x ).gridId
@@ -84,8 +85,8 @@ namespace mc
             //    mesh.vertices = v.Select( x => new Vector3( x.x, x.y, x.z ) ).ToArray();
             //    mesh.triangles = i;
             //    var go = new GameObject( $"new {cubeId.Key}" );
-            //    var vc4 = gridPositions[ cubeId.Key ];
-            //    go.transform.position = new float3(vc4.x, vc4.y, vc4.z);
+            //    var vc4 = gridPositions[ (int)cubeId.Key ];
+            //    go.transform.position = new float3( vc4.x, vc4.y, vc4.z );
             //    go.AddComponent<MeshCollider>().sharedMesh = mesh;
             //}
         }
@@ -99,16 +100,18 @@ namespace mc
             if( this.argsBuffer != null ) this.argsBuffer.Dispose();
 
             this.cubeGrids.Dispose();
+            this.gridPositions.Dispose();
+            this.cubeInstances.Dispose();
         }
 
 
         private void Update()
         {
-            this.gridPositions.Clear();
-            this.cubeInstances.Clear();
-            this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
-            this.instancesBuffer.SetData( this.cubeInstances );
-            this.gridPositionBuffer.SetData( this.gridPositions );
+            //this.gridPositions.Clear();
+            //this.cubeInstances.Clear();
+            //this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+            this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
+            this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
 
 
             var mesh = this.mesh;
@@ -120,7 +123,7 @@ namespace mc
             ////mat.SetInt( "BoneLengthEveryInstance", mesh.bindposes.Length );
             ////mat.SetBuffer( "BoneVectorBuffer", computeBuffer );
 
-            var instanceCount = this.cubeInstances.Count;
+            var instanceCount = this.cubeInstances.Length;
             var argparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             args.SetData( ref argparams );
 

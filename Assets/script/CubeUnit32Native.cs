@@ -40,7 +40,7 @@ namespace mc
             {
                 this.units = new NativeArray<uint>
                     ( 1 * 32 * 32, Allocator.Persistent, NativeArrayOptions.ClearMemory );
-                
+
                 this.cubeCount = 0;
             }
         }
