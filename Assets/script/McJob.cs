@@ -49,15 +49,16 @@ namespace mc
         /// </summary>
         // xyz各32個目のキューブは1bitのために隣のグリッドを見なくてはならず、効率悪いしコードも汚くなる、なんとかならんか？
         static public bool SampleAllCubes(
-            ref this (
-                CubeGrid32x32x32Native current,
-                CubeGrid32x32x32Native current_right,
-                CubeGrid32x32x32Native back,
-                CubeGrid32x32x32Native back_right,
-                CubeGrid32x32x32Native under,
-                CubeGrid32x32x32Native under_right,
-                CubeGrid32x32x32Native backUnder,
-                CubeGrid32x32x32Native backUnder_right
+            ref this
+            (
+                NativeArray<uint> current,
+                NativeArray<uint> current_right,
+                NativeArray<uint> back,
+                NativeArray<uint> back_right,
+                NativeArray<uint> under,
+                NativeArray<uint> under_right,
+                NativeArray<uint> backUnder,
+                NativeArray<uint> backUnder_right
             ) g,
             int gridId,
             NativeList<uint> outputCubes
@@ -131,8 +132,8 @@ namespace mc
         static (uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1)
         getXLine_(
             int iy, int iz,
-            ref CubeGrid32x32x32Native current, ref CubeGrid32x32x32Native back,
-            ref CubeGrid32x32x32Native under, ref CubeGrid32x32x32Native backUnder
+            ref NativeArray<uint> current, ref NativeArray<uint> back,
+            ref NativeArray<uint> under, ref NativeArray<uint> backUnder
         )
         {
             //y0  -> ( iy + 0 & 31 ) * 32/4 + ( iz>>2 + 0 & 31>>2 );
@@ -148,13 +149,13 @@ namespace mc
             var yspan = new int4( 32/4, 32/4, 32, 32 );
 
             var i = (iy_ + yofs & ymask ) * yspan + (iz_ + zofs & zmask);
-            var y0 = current.units.Reinterpret<uint, uint4>()[ i.x ];
-            var y1 = under.units.Reinterpret<uint, uint4>()[ i.y ];
+            var y0 = current.Reinterpret<uint, uint4>()[ i.x ];
+            var y1 = under.Reinterpret<uint, uint4>()[ i.y ];
             var y0z0 = y0;
             var y1z0 = y1;
 
-            y0.x = back.units[ i.z ];
-            y1.x = backUnder.units[ i.w ];
+            y0.x = back[ i.z ];
+            y1.x = backUnder[ i.w ];
             var y0z1 = y0.yzwx;
             var y1z1 = y1.yzwx;
 
@@ -265,3 +266,24 @@ namespace mc
     }
 
 }
+
+
+namespace Unity.Collections.LowLevel.Unsafe
+{
+    public static unsafe class NativeUtility
+    {
+        public static NativeArray<T> PtrToNativeArray<T>( T* ptr, int length )
+            where T : unmanaged
+        {
+            var arr = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>( ptr, length, Allocator.Invalid );
+
+            // これをやらないとNativeArrayのインデクサアクセス時に死ぬ
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            NativeArrayUnsafeUtility.SetAtomicSafetyHandle( ref arr, AtomicSafetyHandle.Create() );
+#endif
+
+            return arr;
+        }
+    }
+}
+
