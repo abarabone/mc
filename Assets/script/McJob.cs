@@ -16,9 +16,17 @@ namespace mc
     using CubeGrid32x32x32Native = CubeGrid32x32x32;
     
 
-    public struct McJob : IJob
+    public struct McJob : IJobParallelFor
     {
-        public void Execute()
+        [ReadOnly]
+        public NativeArray<IntPtr> srcCubeGrids;
+
+        [WriteOnly]
+        public NativeArray<float4> dstGridPositions;
+        [WriteOnly]
+        public NativeArray<uint> dstCubes;
+        
+        public void Execute( int index )
         {
 
         }
@@ -71,47 +79,47 @@ namespace mc
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
                 }
-                //{
-                //    const int iz = ( 31 & ~( 0x3 ));
+                {
+                    const int iz = ( 31 & ~( 0x3 ) );
 
-                //    var (y0z0, y0z1, y1z0, y1z1) =
-                //        getXLine_( iy, iz, ref g.current, ref g.back, ref g.current, ref g.back );
-                //    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
-                    
-                //    var (y0z0r, y0z1r, y1z0r, y1z1r) =
-                //        getXLine_( iy, iz, ref g.current_right, ref g.back_right, ref g.current_right, ref g.back_right );
-                //    cubes.__f870f87 |= bitwiseLastHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
+                    var (y0z0, y0z1, y1z0, y1z1) =
+                        getXLine_( iy, iz, ref g.current, ref g.back, ref g.current, ref g.back );
+                    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
 
-                //    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                //}
+                    var (y0z0r, y0z1r, y1z0r, y1z1r) =
+                        getXLine_( iy, iz, ref g.current_right, ref g.back_right, ref g.current_right, ref g.back_right );
+                    cubes.__f870f87 |= bitwiseLastHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
+
+                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
+                }
             }
             {
-                //const int iy = 31;
-                //for( var iz = 0; iz < ( 31 & ~( 0x3 )); iz+=4 )
-                //{
-                //    var (y0z0, y0z1, y1z0, y1z1) =
-                //        getXLine_( iy, iz, ref g.current, ref g.current, ref g.under, ref g.under );
-                //    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
-                    
-                //    var (y0z0r, y0z1r, y1z0r, y1z1r) =
-                //        getXLine_( iy, iz, ref g.current_right, ref g.current_right, ref g.under_right, ref g.under_right );
-                //    cubes.__f870f87 |= bitwiseLastHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
+                const int iy = 31;
+                for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
+                {
+                    var (y0z0, y0z1, y1z0, y1z1) =
+                        getXLine_( iy, iz, ref g.current, ref g.current, ref g.under, ref g.under );
+                    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
 
-                //    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                //}
-                //{
-                //    const int iz = ( 31 & ~( 0x3 ));
+                    var (y0z0r, y0z1r, y1z0r, y1z1r) =
+                        getXLine_( iy, iz, ref g.current_right, ref g.current_right, ref g.under_right, ref g.under_right );
+                    cubes.__f870f87 |= bitwiseLastHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
 
-                //    var (y0z0, y0z1, y1z0, y1z1) =
-                //        getXLine_( iy, iz, ref g.current, ref g.back, ref g.under, ref g.backUnder );
-                //    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
+                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
+                }
+                {
+                    const int iz = ( 31 & ~( 0x3 ) );
 
-                //    var (y0z0r, y0z1r, y1z0r, y1z1r) =
-                //        getXLine_( iy, iz, ref g.current_right, ref g.back_right, ref g.under_right, ref g.backUnder_right );
-                //    cubes.__f870f87 |= bitwiseLastHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
+                    var (y0z0, y0z1, y1z0, y1z1) =
+                        getXLine_( iy, iz, ref g.current, ref g.back, ref g.under, ref g.backUnder );
+                    var cubes = bitwiseCubesXLine_( y0z0, y0z1, y1z0, y1z1 );
 
-                //    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                //}
+                    var (y0z0r, y0z1r, y1z0r, y1z1r) =
+                        getXLine_( iy, iz, ref g.current_right, ref g.back_right, ref g.under_right, ref g.backUnder_right );
+                    cubes.__f870f87 |= bitwiseLastHalfCubeXLine_( y0z0r, y0z1r, y1z0r, y1z1r );
+
+                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
+                }
             }
 
             return preCubeCount != outputCubes.Length;

@@ -57,13 +57,9 @@ namespace mc
 
                 var grid = this.grids[ i ];
 
-                if( grid == GridArray.DefaultBlankCube )
+                if( grid.IsFullOrEmpty )
                 {
-                    return this.grids[ i ] = new CubeGrid32x32x32( isFillAll: false );
-                }
-                if( grid == GridArray.DefaultFilledCube )
-                {
-                    return this.grids[ i ] = new CubeGrid32x32x32( isFillAll: true );
+                    return this.grids[ i ] = new CubeGrid32x32x32( isFillAll: grid.IsFull );
                 }
 
                 return grid;
@@ -126,6 +122,35 @@ namespace mc
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         (
+            CubeGrid32x32x32 current,
+            CubeGrid32x32x32 current_right,
+            CubeGrid32x32x32 back,
+            CubeGrid32x32x32 back_right,
+            CubeGrid32x32x32 under,
+            CubeGrid32x32x32 under_right,
+            CubeGrid32x32x32 backUnder,
+            CubeGrid32x32x32 backUnder_right
+        )
+        getGridSet_( int ix, int iy, int iz, int yspan_, int zspan_ )
+        {
+                
+            var i = iy * yspan_ + iz * zspan_ + ix;
+                
+            var current         = this.grids[ i + 0 ];
+            var current_right   = this.grids[ i + 1 ];
+            var back            = this.grids[ i + zspan_ + 0 ];
+            var back_right      = this.grids[ i + zspan_ + 1 ];
+            var under           = this.grids[ i + yspan_ + 0 ];
+            var under_right     = this.grids[ i + yspan_ + 1 ];
+            var backUnder       = this.grids[ i + yspan_ + zspan_ + 0 ];
+            var backUnder_right = this.grids[ i + yspan_ + zspan_ + 1 ];
+                
+            return ( current, current_right, back, back_right, under, under_right, backUnder, backUnder_right );
+        }
+
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        bool isNeedDraw_(
+            ref (
                 CubeGrid32x32x32 current,
                 CubeGrid32x32x32 current_right,
                 CubeGrid32x32x32 back,
@@ -134,76 +159,47 @@ namespace mc
                 CubeGrid32x32x32 under_right,
                 CubeGrid32x32x32 backUnder,
                 CubeGrid32x32x32 backUnder_right
-            )
-                getGridSet_( int ix, int iy, int iz, int yspan_, int zspan_ )
+            ) g
+        )
+        {
+            if( g.current.IsEmpty )
             {
+                var isNoDraw =
+                    g.current_right.IsEmpty &&
+                    g.back.IsEmpty &&
+                    g.back_right.IsEmpty &&
+                    g.under.IsEmpty &&
+                    g.under_right.IsEmpty &&
+                    g.backUnder.IsEmpty &&
+                    g.backUnder_right.IsEmpty
+                    ;
+                if( isNoDraw ) return false;
 
-                var i = iy * yspan_ + iz * zspan_ + ix;
-
-                var current         = this.grids[ i + 0 ];
-                var current_right   = this.grids[ i + 1 ];
-                var back            = this.grids[ i + zspan_ + 0 ];
-                var back_right      = this.grids[ i + zspan_ + 1 ];
-                var under           = this.grids[ i + yspan_ + 0 ];
-                var under_right     = this.grids[ i + yspan_ + 1 ];
-                var backUnder       = this.grids[ i + yspan_ + zspan_ + 0 ];
-                var backUnder_right = this.grids[ i + yspan_ + zspan_ + 1 ];
-
-                return ( current, current_right, back, back_right, under, under_right, backUnder, backUnder_right );
-            }
-
-        [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        bool isNeedDraw_(
-                ref (
-                    CubeGrid32x32x32 current,
-                    CubeGrid32x32x32 current_right,
-                    CubeGrid32x32x32 back,
-                    CubeGrid32x32x32 back_right,
-                    CubeGrid32x32x32 under,
-                    CubeGrid32x32x32 under_right,
-                    CubeGrid32x32x32 backUnder,
-                    CubeGrid32x32x32 backUnder_right
-                ) g
-            )
-            {
-                if( g.current == GridArray.DefaultBlankCube )
-                {
-                    var isNoDraw =
-                        g.current_right == GridArray.DefaultBlankCube &&
-                        g.back == GridArray.DefaultBlankCube &&
-                        g.back_right == GridArray.DefaultBlankCube &&
-                        g.under == GridArray.DefaultBlankCube &&
-                        g.under_right == GridArray.DefaultBlankCube &&
-                        g.backUnder == GridArray.DefaultBlankCube &&
-                        g.backUnder_right == GridArray.DefaultBlankCube
-                        ;
-                    if( isNoDraw ) return false;
-
-                    // ブランク・フィル用のビルド関数も作るべき
-
-                    return true;
-                }
-
-                if( g.current == GridArray.DefaultFilledCube )
-                {
-                    var isNoDraw =
-                        g.current_right == GridArray.DefaultFilledCube &&
-                        g.back == GridArray.DefaultFilledCube &&
-                        g.back_right == GridArray.DefaultFilledCube &&
-                        g.under == GridArray.DefaultFilledCube &&
-                        g.under_right == GridArray.DefaultFilledCube &&
-                        g.backUnder == GridArray.DefaultFilledCube &&
-                        g.backUnder_right == GridArray.DefaultFilledCube
-                        ;
-                    if( isNoDraw ) return false;
-
-                    // ブランク・フィル用のビルド関数も作るべき
-
-                    return true;
-                }
+                // ブランク・フィル用のビルド関数も作るべき
 
                 return true;
             }
+
+            if( g.current.IsFull )
+            {
+                var isNoDraw =
+                    g.current_right.IsFull &&
+                    g.back.IsFull &&
+                    g.back_right.IsFull &&
+                    g.under.IsFull &&
+                    g.under_right.IsFull &&
+                    g.backUnder.IsFull &&
+                    g.backUnder_right.IsFull
+                    ;
+                if( isNoDraw ) return false;
+
+                // ブランク・フィル用のビルド関数も作るべき
+
+                return true;
+            }
+
+            return true;
+        }
 
     }
 }

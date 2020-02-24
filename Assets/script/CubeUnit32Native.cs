@@ -19,6 +19,10 @@ namespace mc
         public NativeArray<uint> units;
         public int cubeCount;
 
+        public bool IsFullOrEmpty => ( this.cubeCount & 0x7fff ) == 0;
+        public bool IsFull => this.cubeCount == 0x8000;
+        public bool IsEmpty => this.cubeCount == 0;
+
 
         public CubeGrid32x32x32()
         {
