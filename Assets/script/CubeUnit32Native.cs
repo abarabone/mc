@@ -24,11 +24,11 @@ namespace mc
         public bool IsEmpty => this.cubeCount == 0;
 
 
-        public CubeGrid32x32x32()
-        {
-            this.units = new NativeArray<uint>( 1 * 32 * 32, Allocator.Persistent, NativeArrayOptions.ClearMemory );
-            this.cubeCount = 0;
-        }
+        //public CubeGrid32x32x32()
+        //{
+        //    this.units = new NativeArray<uint>( 1 * 32 * 32, Allocator.Persistent, NativeArrayOptions.ClearMemory );
+        //    this.cubeCount = 0;
+        //}
 
         public unsafe CubeGrid32x32x32( bool isFillAll )
         {

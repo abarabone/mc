@@ -107,9 +107,9 @@ namespace mc
 
         private void Update()
         {
-            //this.gridPositions.Clear();
-            //this.cubeInstances.Clear();
-            //this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+            this.gridPositions.Clear();
+            this.cubeInstances.Clear();
+            this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
             this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
 

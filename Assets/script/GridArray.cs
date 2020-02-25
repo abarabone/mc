@@ -1,9 +1,14 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Burst;
+using Unity.Mathematics;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace mc
 {
@@ -90,7 +95,7 @@ namespace mc
         /// フィル／ブランクは描画不要、ただし右下後にフィルのくるブランクは、描画必要
         /// </summary>
         //public (float4[] gridPositions, uint[] cubeIds) BuildCubeInstanceData()
-        public void BuildCubeInstanceData( NativeList<float4> gridPositions, NativeList<uint> instanceCubes )
+        public unsafe void BuildCubeInstanceData( NativeList<float4> gridPositions, NativeList<uint> instanceCubes )
         {
 
             //var gridPositions = new List<float4>();
@@ -99,9 +104,11 @@ namespace mc
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
 
-            for( var iy = 0; iy < this.wholeGridLength.y - 1; iy++ )
-                for( var iz = 0; iz < this.wholeGridLength.z - 1; iz++ )
-                    for( var ix = 0; ix < this.wholeGridLength.x - 1; ix++ )
+            var gs = new NativeList<CubeNearGrids>( Allocator.TempJob );
+
+            for( var iy = 1; iy < this.wholeGridLength.y - 1; iy++ )
+                for( var iz = 1; iz < this.wholeGridLength.z - 1; iz++ )
+                    for( var ix = 1; ix < this.wholeGridLength.x - 1; ix++ )
                     {
 
                         var gridset = getGridSet_( ix, iy, iz, yspan, zspan );
@@ -109,16 +116,41 @@ namespace mc
                         if( !isNeedDraw_( ref gridset ) ) continue;
 
 
-                        var gridId = gridPositions.Length;
-                        var isCubeAdded = gridset.SampleAllCubes( gridId, instanceCubes );
-                        if( isCubeAdded )
-                        {
-                            gridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
-                        }
+                        var ggg = new CubeNearGrids
+                        { 
+                            current = (uint*)gridset.current.units.GetUnsafeReadOnlyPtr(),
+                            current_right = (uint*)gridset.current_right.units.GetUnsafeReadOnlyPtr(),
+                            back = (uint*)gridset.back.units.GetUnsafeReadOnlyPtr(),
+                            back_right = (uint*)gridset.back_right.units.GetUnsafeReadOnlyPtr(),
+                            under = (uint*)gridset.under.units.GetUnsafeReadOnlyPtr(),
+                            under_right = (uint*)gridset.under_right.units.GetUnsafeReadOnlyPtr(),
+                            backUnder = (uint*)gridset.backUnder.units.GetUnsafeReadOnlyPtr(),
+                            backUnder_right = (uint*)gridset.backUnder_right.units.GetUnsafeReadOnlyPtr(),
+                        };
+                        gs.Add( ggg );
+                        //var gridId = gridPositions.Length;
+                        //var isCubeAdded = gridset.SampleAllCubes( gridId, instanceCubes );
+                        //if( isCubeAdded )
+                        //{
+                        //    gridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
+                        //}
                     }
-
+            
+            var job = new McJob
+            {
+                srcCubeGrids = gs,
+                dstCubes = instanceCubes,
+                dstGridPositions = gridPositions,
+            };
+            var j = job.Schedule();
+            j.Complete();
+            gs.Dispose();
+            
             return;// (gridPositions.ToArray(), instanceCubes.ToArray());
         }
+        
+
+
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         (
@@ -133,9 +165,9 @@ namespace mc
         )
         getGridSet_( int ix, int iy, int iz, int yspan_, int zspan_ )
         {
-                
+            
             var i = iy * yspan_ + iz * zspan_ + ix;
-                
+            
             var current         = this.grids[ i + 0 ];
             var current_right   = this.grids[ i + 1 ];
             var back            = this.grids[ i + zspan_ + 0 ];
@@ -144,7 +176,7 @@ namespace mc
             var under_right     = this.grids[ i + yspan_ + 1 ];
             var backUnder       = this.grids[ i + yspan_ + zspan_ + 0 ];
             var backUnder_right = this.grids[ i + yspan_ + zspan_ + 1 ];
-                
+            
             return ( current, current_right, back, back_right, under, under_right, backUnder, backUnder_right );
         }
 

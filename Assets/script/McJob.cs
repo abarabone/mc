@@ -9,6 +9,8 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Jobs;
+using Unity.Burst;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace mc
 { 
@@ -16,19 +18,40 @@ namespace mc
     using CubeGrid32x32x32Native = CubeGrid32x32x32;
     
 
-    public struct McJob : IJobParallelFor
+    [BurstCompile]
+    public unsafe struct McJob : IJob
     {
-        [ReadOnly]
-        public NativeArray<IntPtr> srcCubeGrids;
+        [ReadOnly]//[DeallocateOnJobCompletion]
+        public NativeList<CubeNearGrids> srcCubeGrids;
 
-        [WriteOnly]
-        public NativeArray<float4> dstGridPositions;
-        [WriteOnly]
-        public NativeArray<uint> dstCubes;
+        //[WriteOnly]
+        public NativeList<float4> dstGridPositions;
+        //[WriteOnly]
+        public NativeList<uint> dstCubes;
         
-        public void Execute( int index )
+        public void Execute()
         {
-
+            var id = 0;
+            for(var i=0; i<this.srcCubeGrids.Length; i++)
+            {
+                var g = this.srcCubeGrids[ i ];
+                var ggg = (
+                       NativeUtility.PtrToNativeArray( g.current, 32 * 32 ),
+                       NativeUtility.PtrToNativeArray( g.current_right, 32 * 32 ),
+                       NativeUtility.PtrToNativeArray( g.back, 32 * 32 ),
+                       NativeUtility.PtrToNativeArray( g.back_right, 32 * 32 ),
+                       NativeUtility.PtrToNativeArray( g.under, 32 * 32 ),
+                       NativeUtility.PtrToNativeArray( g.under_right, 32 * 32 ),
+                       NativeUtility.PtrToNativeArray( g.backUnder, 32 * 32 ),
+                       NativeUtility.PtrToNativeArray( g.backUnder_right, 32 * 32 )
+                    );
+                var isCubeAdded = ggg.SampleAllCubes( id, this.dstCubes );
+                if( isCubeAdded )
+                {
+                    this.dstGridPositions.Add( new float4( id * 32, -0 * 32, -0 * 32, 0 ) );
+                    id++;
+                }
+            }
         }
     }
 
@@ -38,7 +61,17 @@ namespace mc
         public uint4 cube;
     }
 
-
+    public unsafe struct CubeNearGrids
+    {
+        public uint* current;
+        public uint* current_right;
+        public uint* back;
+        public uint* back_right;
+        public uint* under;
+        public uint* under_right;
+        public uint* backUnder;
+        public uint* backUnder_right;
+    }
 
     static public class Mc
     {
@@ -60,6 +93,7 @@ namespace mc
                 NativeArray<uint> backUnder,
                 NativeArray<uint> backUnder_right
             ) g,
+            //CubeNearGrids g,
             int gridId,
             NativeList<uint> outputCubes
         )
