@@ -51,7 +51,7 @@ namespace mc
             this.Material.SetBuffer( "GridPositions", this.gridPositionBuffer );
             //this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
-            this.cubeGrids = new GridArray( 1, 1, 1 );
+            this.cubeGrids = new GridArray( 3, 3, 3 );
             this.cubeGrids.FillCubes( GridArray.DefaultBlankCube, new int3( -1, -1, -1 ), new int3( 11, 11, 11 ) );
             this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3( -1, 2, -1 ), new int3( 11, 11, 11 ) );
             this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3( 2, 0, 3 ), new int3( 1, 2, 1 ) );

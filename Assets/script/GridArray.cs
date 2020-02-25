@@ -104,6 +104,7 @@ namespace mc
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
 
+            //var gs = new NativeQueue<CubeNearGrids>( Allocator.TempJob );
             var gs = new NativeList<CubeNearGrids>( Allocator.TempJob );
 
             for( var iy = 1; iy < this.wholeGridLength.y - 1; iy++ )
@@ -145,8 +146,8 @@ namespace mc
             var j = job.Schedule();
             j.Complete();
             gs.Dispose();
-            
-            return;// (gridPositions.ToArray(), instanceCubes.ToArray());
+
+            return;
         }
         
 
