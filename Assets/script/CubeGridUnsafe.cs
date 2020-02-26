@@ -13,15 +13,15 @@ namespace mc
 
     public unsafe struct CubeGrid32x32x32Unsafe
     {
-        public uint* pUnits;
+        uint* pUnits;
 
-        public int cubeCount;
-        public bool IsFullOrEmpty => ( this.cubeCount & 0x7fff ) == 0;
-        public bool IsFull => this.cubeCount == 0x8000;
-        public bool IsEmpty => this.cubeCount == 0;
+        public int CubeCount { get; private set; }
+        public bool IsFullOrEmpty => ( this.CubeCount & 0x7fff ) == 0;
+        public bool IsFull => this.CubeCount == 0x8000;
+        public bool IsEmpty => this.CubeCount == 0;
 
         
-        public unsafe CubeGrid32x32x32Unsafe( bool isFillAll )
+        public CubeGrid32x32x32Unsafe( bool isFillAll )
         {
             //var align = UnsafeUtility.AlignOf<uint4>();
             const int align = 16;
@@ -32,12 +32,12 @@ namespace mc
             if( isFillAll )
             {
                 UnsafeUtility.MemSet( this.pUnits, 0xff, size );
-                this.cubeCount = 32 * 32 * 32;
+                this.CubeCount = 32 * 32 * 32;
             }
             else
             {
                 UnsafeUtility.MemClear( this.pUnits, size );
-                this.cubeCount = 0;
+                this.CubeCount = 0;
             }
         }
 
@@ -65,7 +65,7 @@ namespace mc
                 var b = this.pUnits[ i ];
                 this.pUnits[ i ] |= b ^ b ^ maskedValue << ix;
 
-                this.cubeCount += (int)( maskedValue << 1 - 1 );
+                this.CubeCount += (int)( maskedValue << 1 - 1 );
             }
         }
     }

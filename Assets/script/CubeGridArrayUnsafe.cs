@@ -13,29 +13,32 @@ using Unity.Collections.LowLevel.Unsafe;
 namespace mc
 {
 
-    public struct GridArrayNative
+    public struct CubeGridArrayUnsafe
     {
 
         public int3 GridLength { get; private set; }
-        public int3 wholeGridLength { get; private set; }
+        readonly int3 wholeGridLength;
 
         public NativeArray<CubeGrid32x32x32Unsafe> grids;
 
 
 
-        public GridArray( int x, int y, int z )
+        public CubeGridArrayUnsafe( int x, int y, int z )
         {
+            this.GridLength = new int3( x, y, z );
             this.wholeGridLength = new int3( x, y, z ) + 2;
 
-            allocGrids_();
+            this.grids = allocGrids_(ref this.wholeGridLength);
 
             return;
 
 
-            void allocGrids_()
+            NativeArray<CubeGrid32x32x32Unsafe> allocGrids_( ref int3 wholeGridLength )
             {
-                var totalLength = this.wholeGridLength.x * this.wholeGridLength.y * this.wholeGridLength.z;
-                this.grids = new CubeGrid32x32x32[ totalLength ];
+                var totalLength = wholeGridLength.x * wholeGridLength.y * wholeGridLength.z;
+
+                return new NativeArray<CubeGrid32x32x32Unsafe>
+                    ( totalLength, Allocator.Persistent, NativeArrayOptions.ClearMemory );
             }
         }
 
