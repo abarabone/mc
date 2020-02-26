@@ -12,6 +12,9 @@ namespace mc
     static public class CubeUtiilty
     {
 
+        static public CubeGrid32x32x32Native DefaultBlankCube { get; } = new CubeGrid32x32x32Native( isFillAll: false );
+        static public CubeGrid32x32x32Native DefaultFilledCube { get; } = new CubeGrid32x32x32Native( isFillAll: true );
+
 
         //static public uint GetCube(  )
         //{
@@ -20,7 +23,7 @@ namespace mc
         //    var ii = ( i.x & 0b_100 ) << 2 | ( i.x & 0b_10) << 1;
         //}
 
-        
+
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static public uint ToCubeInstance(  int ix, int iy, int iz, int gridId, uint cubeId ) =>
             //(uint)iz << 24 | (uint)iy << 16 | (uint)ix << 8 | cubeId;

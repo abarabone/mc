@@ -11,10 +11,10 @@ using Unity.Collections.LowLevel.Unsafe;
 namespace mc
 {
 
-    //public struct CubeGrid32x32x32
+    //public struct CubeGrid32x32x32Native
     public class CubeGrid32x32x32
     {
-        public const int unitLength = 32;
+        //public const int unitLength = 32;
 
         public NativeArray<uint> units;
         public int cubeCount;
