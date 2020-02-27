@@ -13,7 +13,7 @@ namespace mc
 
     public unsafe struct CubeGrid32x32x32Unsafe
     {
-        uint* pUnits;
+        public uint* pUnits { get; private set; }
 
         public int CubeCount { get; private set; }
         public bool IsFullOrEmpty => ( this.CubeCount & 0x7fff ) == 0;

@@ -18,7 +18,7 @@ namespace mc
         public MarchingCubeAsset MarchingCubeAsset;
         public Material Material;
 
-        GridArray cubeGrids;
+        CubeGridArrayUnsafe cubeGrids;
         
         Mesh mesh;
         ComputeBuffer baseVtxsBuffer;
@@ -51,10 +51,10 @@ namespace mc
             this.Material.SetBuffer( "GridPositions", this.gridPositionBuffer );
             //this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
-            this.cubeGrids = new GridArray( 3, 3, 3 );
-            this.cubeGrids.FillCubes( GridArray.DefaultBlankCube, new int3( -1, -1, -1 ), new int3( 11, 11, 11 ) );
-            this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3( -1, 2, -1 ), new int3( 11, 11, 11 ) );
-            this.cubeGrids.FillCubes( GridArray.DefaultFilledCube, new int3( 2, 0, 3 ), new int3( 1, 2, 1 ) );
+            this.cubeGrids = new CubeGridArrayUnsafe( 3, 3, 3 );
+            this.cubeGrids.FillCubes( CubeUtiilty.DefaultBlankCube, new int3( -1, -1, -1 ), new int3( 11, 11, 11 ) );
+            this.cubeGrids.FillCubes( CubeUtiilty.DefaultFilledCube, new int3( -1, 2, -1 ), new int3( 11, 11, 11 ) );
+            this.cubeGrids.FillCubes( CubeUtiilty.DefaultFilledCube, new int3( 2, 0, 3 ), new int3( 1, 2, 1 ) );
             
             var c = this.cubeGrids[ 0, 0, 0 ];
             c[ 1, 1, 1 ] = 1;

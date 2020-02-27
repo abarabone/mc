@@ -12,8 +12,14 @@ namespace mc
     static public class CubeUtiilty
     {
 
-        static public CubeGrid32x32x32Native DefaultBlankCube { get; } = new CubeGrid32x32x32Native( isFillAll: false );
-        static public CubeGrid32x32x32Native DefaultFilledCube { get; } = new CubeGrid32x32x32Native( isFillAll: true );
+        static public CubeGrid32x32x32Unsafe DefaultBlankCube { get; } = new CubeGrid32x32x32Unsafe( isFillAll: false );
+        static public CubeGrid32x32x32Unsafe DefaultFilledCube { get; } = new CubeGrid32x32x32Unsafe( isFillAll: true );
+
+        static public void DisposeDefaultCube()
+        {
+            DefaultBlankCube.Dispose();
+            DefaultFilledCube.Dispose();
+        }
 
 
         //static public uint GetCube(  )

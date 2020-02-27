@@ -19,21 +19,21 @@ namespace mc
 
 
     [BurstCompile]
-    public unsafe struct McJob : IJobParallelFor
+    public unsafe struct McJob : IJob
     {
         [ReadOnly]//[DeallocateOnJobCompletion]
         public NativeList<CubeNearGrids> srcCubeGrids;
 
-        ////[WriteOnly]
-        //public NativeList<float4> dstGridPositions;
-        ////[WriteOnly]
-        //public NativeList<uint> dstCubes;
-        [WriteOnly]
-        public NativeQueue<float4>.ParallelWriter dstGridPositions;
-        [WriteOnly]
+        //[WriteOnly]
+        public NativeList<float4> dstGridPositions;
+        //[WriteOnly]
         public NativeList<uint> dstCubes;
+        //[WriteOnly]
+        //public NativeQueue<float4>.ParallelWriter dstGridPositions;
+        //[WriteOnly]
+        //public NativeList<uint> dstCubes;
 
-        public void Execute( int index )
+        public void Execute()
         {
             var id = 0;
             for(var i=0; i<this.srcCubeGrids.Length; i++)
