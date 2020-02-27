@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
@@ -6,7 +7,7 @@ using System.IO;
 using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
-using System;
+using Unity.Jobs;
 
 namespace mc
 {
@@ -29,12 +30,12 @@ namespace mc
 
         //uint[] cubeInstances;
         NativeList<float4> gridPositions;// = new NativeList<float4>( 3000, Allocator.Persistent );
-        NativeList<uint> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
+        NativeList<CubeInstance> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
 
         void Awake()
         {
             this.gridPositions = new NativeList<float4>( 3000, Allocator.Persistent );
-            this.cubeInstances = new NativeList<uint>( 80000, Allocator.Persistent );
+            this.cubeInstances = new NativeList<CubeInstance>( 1000000, Allocator.Persistent );
 
             var res = convertMqoToMarchingCubesData();
 
@@ -51,7 +52,7 @@ namespace mc
             this.Material.SetBuffer( "GridPositions", this.gridPositionBuffer );
             //this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
-            this.cubeGrids = new CubeGridArrayUnsafe( 3, 3, 3 );
+            this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
             this.cubeGrids.FillCubes( CubeUtiilty.DefaultBlankCube, new int3( -1, -1, -1 ), new int3( 11, 11, 11 ) );
             this.cubeGrids.FillCubes( CubeUtiilty.DefaultFilledCube, new int3( -1, 2, -1 ), new int3( 11, 11, 11 ) );
             this.cubeGrids.FillCubes( CubeUtiilty.DefaultFilledCube, new int3( 2, 0, 3 ), new int3( 1, 2, 1 ) );
@@ -65,7 +66,8 @@ namespace mc
                 for( var iz = 0; iz < 15; iz++ )
                     for( var ix = 0; ix < 13; ix++ )
                         c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
-            this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+            this.job.Complete();
             this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             Debug.Log($"{cubeInstances.Length} / {this.instancesBuffer.count}");
@@ -93,6 +95,8 @@ namespace mc
 
         private void OnDestroy()
         {
+            this.job.Complete();
+
             if( this.baseVtxsBuffer != null ) this.baseVtxsBuffer.Dispose();
             if( this.idxListsBuffer != null ) this.idxListsBuffer.Dispose();
             if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
@@ -105,11 +109,11 @@ namespace mc
         }
 
 
+        JobHandle job;
+
         private void Update()
         {
-            this.gridPositions.Clear();
-            this.cubeInstances.Clear();
-            this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+            this.job.Complete();
             this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
 
@@ -129,6 +133,11 @@ namespace mc
 
             var bounds = new Bounds() { center = Vector3.zero, size = Vector3.one * 1000.0f };
             Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, args );
+
+
+            this.gridPositions.Clear();
+            this.cubeInstances.Clear();
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
         }
 
 

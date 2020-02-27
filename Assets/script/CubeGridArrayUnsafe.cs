@@ -9,9 +9,17 @@ using Unity.Jobs;
 using Unity.Burst;
 using Unity.Mathematics;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Collections.Experimental;
 
 namespace mc
 {
+
+    public struct CubeInstance
+    {
+        public uint instance;
+        static public implicit operator CubeInstance( uint cubeInstance ) => new CubeInstance { instance = cubeInstance };
+    }
+
 
     public struct CubeGridArrayUnsafe
     {
@@ -97,14 +105,53 @@ namespace mc
 
 
 
-        public struct CubeInstance
+        public JobHandle BuildCubeInstanceData
+            ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )
         {
-            public uint instance;
-            static public implicit operator CubeInstance ( uint cubeInstance ) => new CubeInstance {instance = cubeInstance};
+
+            var job = new GridJob
+            {
+                gridArray = this,
+                dstCubeInstances = cubeInstances.AsParallelWriter(),
+                dstGridPositions = gridPositions,
+            }
+            .Schedule();
+
+            return job;
         }
+        public JobHandle BuildCubeInstanceData_
+            ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )
+        {
+
+            var gridsets = new NativeList<CubeNearGrids>( 100, Allocator.TempJob );
+
+
+            var dispJob = new GridDispatchJob
+            {
+                gridArray = this,
+                dstGridPositions = gridPositions,
+                dstNearGrids = gridsets,
+            }
+            .Schedule();
+
+            var instJob = new CubeInstanceJob
+            {
+                nearGrids = gridsets.AsDeferredJobArray(),
+                dstCubeInstances = cubeInstances.AsParallelWriter(),
+            }
+            .Schedule( gridsets, -1, dispJob );
+
+            gridsets.Dispose( instJob );
+
+            return instJob;
+        }
+
+
+
 
         public struct CubeNearGrids
         {
+            public int gridId;
             public CubeGrid32x32x32Unsafe current;
             public CubeGrid32x32x32Unsafe current_right;
             public CubeGrid32x32x32Unsafe back;
@@ -115,6 +162,7 @@ namespace mc
             public CubeGrid32x32x32Unsafe backUnder_right;
         }
 
+        [BurstCompile]
         struct GridJob : IJob
         {
 
@@ -122,9 +170,9 @@ namespace mc
             public CubeGridArrayUnsafe gridArray;
 
             [WriteOnly]
-            public NativeList<CubeInstance> dstCubeInstances;
+            public NativeList<CubeInstance>.ParallelWriter dstCubeInstances;
             [WriteOnly]
-            NativeList<float4> dstGridPositions;
+            public NativeList<float4> dstGridPositions;
 
 
             public void Execute()
@@ -134,9 +182,9 @@ namespace mc
 
                 var gridId = 0;
 
-                for( var iy = 1; iy < this.gridArray.wholeGridLength.y - 1; iy++ )
-                    for( var iz = 1; iz < this.gridArray.wholeGridLength.z - 1; iz++ )
-                        for( var ix = 1; ix < this.gridArray.wholeGridLength.x - 1; ix++ )
+                for( var iy = 0; iy < this.gridArray.wholeGridLength.y - 1; iy++ )
+                    for( var iz = 0; iz < this.gridArray.wholeGridLength.z - 1; iz++ )
+                        for( var ix = 0; ix < this.gridArray.wholeGridLength.x - 1; ix++ )
                         {
 
                             var gridset = getGridSet_( this.gridArray, ix, iy, iz, yspan, zspan );
@@ -144,16 +192,16 @@ namespace mc
                             if( !isNeedDraw_( ref gridset ) ) continue;
 
 
-                            var isCubeAdded = SampleAllCubes( ref gridset, gridId, this.dstCubeInstances );
-                            if( isCubeAdded )
-                            {
-                                gridId++;
-                                this.dstGridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
-                            }
+                            SampleAllCubes( ref gridset, gridId, this.dstCubeInstances );
+                            
+                            this.dstGridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
+
+                            gridId++;
+
                         }
 
 
-                
+
                 CubeNearGrids getGridSet_( CubeGridArrayUnsafe gridArray, int ix, int iy, int iz, int yspan_, int zspan_ )
                 {
                     var i = iy * yspan_ + iz * zspan_ + ix;
@@ -216,14 +264,140 @@ namespace mc
 
 
 
+        [BurstCompile]
+        struct GridDispatchJob : IJob
+        {
+
+            [ReadOnly]
+            public CubeGridArrayUnsafe gridArray;
+
+            [WriteOnly]
+            public NativeList<CubeNearGrids> dstNearGrids;
+            [WriteOnly]
+            public NativeList<float4> dstGridPositions;
+
+
+            public void Execute()
+            {
+                var yspan = this.gridArray.wholeGridLength.x * this.gridArray.wholeGridLength.z;
+                var zspan = this.gridArray.wholeGridLength.x;
+
+                var gridId = 0;
+
+                for( var iy = 0; iy < this.gridArray.wholeGridLength.y - 1; iy++ )
+                    for( var iz = 0; iz < this.gridArray.wholeGridLength.z - 1; iz++ )
+                        for( var ix = 0; ix < this.gridArray.wholeGridLength.x - 1; ix++ )
+                        {
+
+                            var gridset = getGridSet_( this.gridArray, ix, iy, iz, yspan, zspan );
+
+                            if( !isNeedDraw_( ref gridset ) ) continue;
+
+
+                            gridset.gridId = gridId++;
+
+                            this.dstNearGrids.Add( gridset );
+                            this.dstGridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
+                            
+                        }
+
+
+
+                CubeNearGrids getGridSet_( CubeGridArrayUnsafe gridArray, int ix, int iy, int iz, int yspan_, int zspan_ )
+                {
+                    var i = iy * yspan_ + iz * zspan_ + ix;
+
+                    return new CubeNearGrids
+                    {
+                        current = gridArray.grids[ i + 0 ],
+                        current_right = gridArray.grids[ i + 1 ],
+                        back = gridArray.grids[ i + zspan_ + 0 ],
+                        back_right = gridArray.grids[ i + zspan_ + 1 ],
+                        under = gridArray.grids[ i + yspan_ + 0 ],
+                        under_right = gridArray.grids[ i + yspan_ + 1 ],
+                        backUnder_right = gridArray.grids[ i + yspan_ + zspan_ + 1 ],
+                        backUnder = gridArray.grids[ i + yspan_ + zspan_ + 0 ],
+                    };
+                }
+
+                bool isNeedDraw_( ref CubeNearGrids g )
+                {
+                    if( g.current.IsEmpty )
+                    {
+                        var isNoDraw =
+                            g.current_right.IsEmpty &
+                            g.back.IsEmpty &
+                            g.back_right.IsEmpty &
+                            g.under.IsEmpty &
+                            g.under_right.IsEmpty &
+                            g.backUnder.IsEmpty &
+                            g.backUnder_right.IsEmpty
+                            ;
+                        if( isNoDraw ) return false;
+
+                        // ブランク・フィル用のビルド関数も作るべき
+
+                        return true;
+                    }
+
+                    if( g.current.IsFull )
+                    {
+                        var isNoDraw =
+                            g.current_right.IsFull &
+                            g.back.IsFull &
+                            g.back_right.IsFull &
+                            g.under.IsFull &
+                            g.under_right.IsFull &
+                            g.backUnder.IsFull &
+                            g.backUnder_right.IsFull
+                            ;
+                        if( isNoDraw ) return false;
+
+                        // ブランク・フィル用のビルド関数も作るべき
+
+                        return true;
+                    }
+
+                    return true;
+                }
+            }
+        }
+
+        [BurstCompile]
+        struct CubeInstanceJob : IJobParallelForDefer
+        {
+
+            [ReadOnly]
+            public NativeArray<CubeNearGrids> nearGrids;
+
+            [WriteOnly]
+            //public NativeList<CubeInstance>.ParallelWriter dstCubeInstances;
+            public NativeQueue<CubeInstance>.ParallelWriter dstCubeInstances;
+
+
+            public void Execute( int index )
+            {
+
+                var gridset = this.nearGrids[ index ];
+
+
+                SampleAllCubes( ref gridset, gridset.gridId, this.dstCubeInstances );
+                
+            }
+        }
+
+
+
+
+
         /// <summary>
         /// native contener 化必要、とりあえずは配列で動作チェック
         /// あとでＹＺカリングもしたい
         /// </summary>
         // xyz各32個目のキューブは1bitのために隣のグリッドを見なくてはならず、効率悪いしコードも汚くなる、なんとかならんか？
-        static public bool SampleAllCubes( ref CubeNearGrids g, int gridId, NativeList<CubeInstance> outputCubes )
+        static public void SampleAllCubes
+            ( ref CubeNearGrids g, int gridId, NativeList<CubeInstance>.ParallelWriter outputCubes )
         {
-            var preCubeCount = outputCubes.Length;
 
             for( var iy = 0; iy < 31; iy++ )
             {
@@ -274,7 +448,6 @@ namespace mc
                 }
             }
 
-            return preCubeCount != outputCubes.Length;
         }
 
 
@@ -347,42 +520,47 @@ namespace mc
         }
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static void addCubeFromXLine_(
+        static bool addCubeFromXLine_(
             ref CubeXLineBitwise cubes,
-            int gridId_, int iy, int iz, NativeList<CubeInstance> outputCubes_
+            int gridId_, int iy, int iz, NativeList<CubeInstance>.ParallelWriter outputCubes_
         )
         {
+            var isInstanceAppended = false;
+
             var i = 0;
             var ix = 0;
             var iz_ = new int4( iz + 0, iz + 1, iz + 2, iz + 3 );
             for( var ipack = 0; ipack < 32 / 8; ipack++ )// 8 は 1cube の 8bit
             {
-                addCubeIfVisible_( cubes._98109810 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                addCubeIfVisible_( cubes._a921a921 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                addCubeIfVisible_( cubes._ba32ba32 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                addCubeIfVisible_( cubes._cb43cb43 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                addCubeIfVisible_( cubes._dc54dc54 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                addCubeIfVisible_( cubes._ed65ed65 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                addCubeIfVisible_( cubes._fe76fe76 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                addCubeIfVisible_( cubes._0f870f87 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                isInstanceAppended |= addCubeIfVisible_( cubes._98109810 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                isInstanceAppended |= addCubeIfVisible_( cubes._a921a921 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                isInstanceAppended |= addCubeIfVisible_( cubes._ba32ba32 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                isInstanceAppended |= addCubeIfVisible_( cubes._cb43cb43 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                isInstanceAppended |= addCubeIfVisible_( cubes._dc54dc54 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                isInstanceAppended |= addCubeIfVisible_( cubes._ed65ed65 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                isInstanceAppended |= addCubeIfVisible_( cubes._fe76fe76 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                isInstanceAppended |= addCubeIfVisible_( cubes._0f870f87 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
                 i += 8;
             }
-            return;
+
+            return isInstanceAppended;
         }
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static void addCubeIfVisible_
-            ( uint4 cubeId, int gridId__, int4 ix_, int4 iy_, int4 iz_, NativeList<CubeInstance> cubeInstances )
+        static bool addCubeIfVisible_
+            ( uint4 cubeId, int gridId__, int4 ix_, int4 iy_, int4 iz_, NativeList<CubeInstance>.ParallelWriter cubeInstances )
         {
             var _0or255to0 = cubeId + 1 & 0xfe;
-            if( !math.any( _0or255to0 ) ) return;// すべての cubeId が 0 か 255 なら何もしない
+            if( !math.any( _0or255to0 ) ) return false;// すべての cubeId が 0 か 255 なら何もしない
 
             var cubeInstance = CubeUtiilty.ToCubeInstance( ix_, iy_, iz_, gridId__, cubeId );
 
-            if( _0or255to0.x != 0 ) cubeInstances.Add( cubeInstance.x );
-            if( _0or255to0.y != 0 ) cubeInstances.Add( cubeInstance.y );
-            if( _0or255to0.z != 0 ) cubeInstances.Add( cubeInstance.z );
-            if( _0or255to0.w != 0 ) cubeInstances.Add( cubeInstance.w );
+            if( _0or255to0.x != 0 ) cubeInstances.AddNoResize( cubeInstance.x );
+            if( _0or255to0.y != 0 ) cubeInstances.AddNoResize( cubeInstance.y );
+            if( _0or255to0.z != 0 ) cubeInstances.AddNoResize( cubeInstance.z );
+            if( _0or255to0.w != 0 ) cubeInstances.AddNoResize( cubeInstance.w );
+
+            return true;
         }
 
 
