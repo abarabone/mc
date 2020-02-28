@@ -8,6 +8,7 @@ using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Jobs;
+using Unity.Burst;
 
 namespace mc
 {
@@ -31,11 +32,13 @@ namespace mc
         //uint[] cubeInstances;
         NativeList<float4> gridPositions;// = new NativeList<float4>( 3000, Allocator.Persistent );
         NativeList<CubeInstance> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
+        //NativeQueue<CubeInstance> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
 
         void Awake()
         {
             this.gridPositions = new NativeList<float4>( 3000, Allocator.Persistent );
             this.cubeInstances = new NativeList<CubeInstance>( 1000000, Allocator.Persistent );
+            //this.cubeInstances = new NativeQueue<CubeInstance>( Allocator.Persistent );
 
             var res = convertMqoToMarchingCubesData();
 
@@ -68,6 +71,7 @@ namespace mc
                         c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
             this.job.Complete();
+
             this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             Debug.Log($"{cubeInstances.Length} / {this.instancesBuffer.count}");

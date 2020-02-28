@@ -14,87 +14,58 @@ using Unity.Collections.Experimental;
 namespace mc
 {
 
-    public struct CubeInstance
-    {
-        public uint instance;
-        static public implicit operator CubeInstance( uint cubeInstance ) => new CubeInstance { instance = cubeInstance };
-    }
-    public unsafe struct CubeGrid32x32x32UnsafePtr
-    {
-        public CubeGrid32x32x32Unsafe* p;
-    }
+    //public struct CubeInstance
+    //{
+    //    public uint instance;
+    //    static public implicit operator CubeInstance( uint cubeInstance ) => new CubeInstance { instance = cubeInstance };
+    //}
 
-    public unsafe struct CubeGridArrayUnsafe
+
+    public struct CubeGridArrayUnsafeQ
     {
 
         public int3 GridLength { get; private set; }
         readonly int3 wholeGridLength;
 
-        NativeList<CubeGrid32x32x32Unsafe> gridStock;
-        public NativeArray<CubeGrid32x32x32UnsafePtr> grids;
-        
-        CubeGrid32x32x32UnsafePtr pDefaultBlankCube;
-        CubeGrid32x32x32UnsafePtr pDefaultFilledCube;
-        
+        public NativeArray<CubeGrid32x32x32Unsafe> grids;
 
-        public CubeGridArrayUnsafe( int x, int y, int z ) : this()
+
+
+        public CubeGridArrayUnsafeQ( int x, int y, int z )
         {
             this.GridLength = new int3( x, y, z );
             this.wholeGridLength = new int3( x, y, z ) + 2;
 
-            this.gridStock = allocGridStock_( this.GridLength );
-            this.grids = allocGrids_( this.wholeGridLength );
-
-            makeDefaultGrids_( ref this );
-
-            this.FillCubes( new int3( -1, -1, -1 ), wholeGridLength, isFillAll: false );
+            this.grids = allocGrids_(ref this.wholeGridLength);
 
             return;
 
-            
-            NativeArray<CubeGrid32x32x32UnsafePtr> allocGrids_( int3 wholeGridLength )
+
+            NativeArray<CubeGrid32x32x32Unsafe> allocGrids_( ref int3 wholeGridLength )
             {
                 var totalLength = wholeGridLength.x * wholeGridLength.y * wholeGridLength.z;
 
-                return new NativeArray<CubeGrid32x32x32UnsafePtr>( totalLength, Allocator.Persistent );
-            }
-
-            NativeList<CubeGrid32x32x32Unsafe> allocGridStock_( int3 gridLength )
-            {
-                var capacity = gridLength.x * gridLength.y * gridLength.z;
-
-                return new NativeList<CubeGrid32x32x32Unsafe>( capacity, Allocator.Persistent );
-            }
-
-            void makeDefaultGrids_( ref CubeGridArrayUnsafe ga )
-            {
-                ga.gridStock.AddNoResize( new CubeGrid32x32x32Unsafe( isFillAll: false ) );
-                ga.pDefaultBlankCube = new CubeGrid32x32x32UnsafePtr
-                {
-                    p = (CubeGrid32x32x32Unsafe*)ga.gridStock.GetUnsafePtr() + 0
-                };
-
-                ga.gridStock.AddNoResize( new CubeGrid32x32x32Unsafe( isFillAll: true ) );
-                ga.pDefaultFilledCube = new CubeGrid32x32x32UnsafePtr
-                {
-                    p = (CubeGrid32x32x32Unsafe*)ga.gridStock.GetUnsafePtr() + 1
-                };
+                return new NativeArray<CubeGrid32x32x32Unsafe>
+                    ( totalLength, Allocator.Persistent, NativeArrayOptions.ClearMemory );
             }
         }
 
         public unsafe void Dispose()
         {
-            foreach( var g in this.gridStock )
+            foreach( var g in this.grids )
             {
+                if( g.pUnits == CubeUtiilty.DefaultBlankCube.pUnits ) continue;
+                if( g.pUnits == CubeUtiilty.DefaultFilledCube.pUnits ) continue;
+
                 g.Dispose();
             }
+            CubeUtiilty.DisposeDefaultCube();
 
-            this.gridStock.Dispose();
             this.grids.Dispose();
         }
 
 
-        public unsafe CubeGrid32x32x32UnsafePtr this[ int x, int y, int z ]
+        public unsafe CubeGrid32x32x32Unsafe this[ int x, int y, int z ]
         {
             get
             {
@@ -105,27 +76,23 @@ namespace mc
 
                 var grid = this.grids[ i ];
 
-                if( !grid.p->IsFullOrEmpty ) return grid;
-
-
-                var newGrid = new CubeGrid32x32x32Unsafe( isFillAll: grid.p->IsFull );
-                this.gridStock.AddNoResize( newGrid );// アドレスを変化させてはいけないので、拡張してはいけない。
+                if( !grid.IsFullOrEmpty ) return grid;
                 
-                return this.grids[ i ] = new CubeGrid32x32x32UnsafePtr
-                {
-                    p = (CubeGrid32x32x32Unsafe*)this.gridStock.GetUnsafePtr() + ( this.gridStock.Length - 1 )
-                };
+                if( grid.pUnits == CubeUtiilty.DefaultBlankCube.pUnits )
+                    return this.grids[ i ] = new CubeGrid32x32x32Unsafe( isFillAll: false );
+                if( grid.pUnits == CubeUtiilty.DefaultFilledCube.pUnits )
+                    return this.grids[ i ] = new CubeGrid32x32x32Unsafe( isFillAll: true );
+
+                return grid;
             }
         }
 
 
 
-        public void FillCubes( int3 topLeft, int3 length3, bool isFillAll = false )
+        public void FillCubes( CubeGrid32x32x32Unsafe gridUnit, int3 topLeft, int3 length3 )
         {
             var st = math.max( topLeft + 1, int3.zero );
             var ed = math.min( st + length3 - 1, this.wholeGridLength - 1 );
-
-            var pGridTemplate = isFillAll ? this.pDefaultFilledCube : this.pDefaultBlankCube;
 
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
@@ -134,7 +101,7 @@ namespace mc
                 for( var iz = st.z; iz <= ed.z; iz++ )
                     for( var ix = st.x; ix <= ed.x; ix++ )
                     {
-                        this.grids[ iy * yspan + iz * zspan + ix ] = pGridTemplate;
+                        this.grids[ iy * yspan + iz * zspan + ix ] = gridUnit;
                     }
         }
 
@@ -146,7 +113,7 @@ namespace mc
 
 
 
-        static CubeNearGrids getGridSet_( CubeGridArrayUnsafe gridArray, int ix, int iy, int iz, int yspan_, int zspan_ )
+        static CubeNearGrids getGridSet_( CubeGridArrayUnsafeQ gridArray, int ix, int iy, int iz, int yspan_, int zspan_ )
         {
             var i = iy * yspan_ + iz * zspan_ + ix;
 
@@ -209,7 +176,7 @@ namespace mc
 
 
         public JobHandle BuildCubeInstanceData_
-            ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )
+            ( NativeList<float4> gridPositions, NativeQueue<CubeInstance> cubeInstances )
         {
 
             var job = new GridJob
@@ -223,7 +190,7 @@ namespace mc
             return job;
         }
         public JobHandle BuildCubeInstanceData
-            ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )
+            ( NativeList<float4> gridPositions, NativeQueue<CubeInstance> cubeInstances )
         {
 
             var gridsets = new NativeList<CubeNearGrids>( 100, Allocator.TempJob );
@@ -255,14 +222,14 @@ namespace mc
         public struct CubeNearGrids
         {
             public int gridId;
-            public CubeGrid32x32x32UnsafePtr current;
-            public CubeGrid32x32x32UnsafePtr current_right;
-            public CubeGrid32x32x32UnsafePtr back;
-            public CubeGrid32x32x32UnsafePtr back_right;
-            public CubeGrid32x32x32UnsafePtr under;
-            public CubeGrid32x32x32UnsafePtr under_right;
-            public CubeGrid32x32x32UnsafePtr backUnder;
-            public CubeGrid32x32x32UnsafePtr backUnder_right;
+            public CubeGrid32x32x32Unsafe current;
+            public CubeGrid32x32x32Unsafe current_right;
+            public CubeGrid32x32x32Unsafe back;
+            public CubeGrid32x32x32Unsafe back_right;
+            public CubeGrid32x32x32Unsafe under;
+            public CubeGrid32x32x32Unsafe under_right;
+            public CubeGrid32x32x32Unsafe backUnder;
+            public CubeGrid32x32x32Unsafe backUnder_right;
         }
 
         [BurstCompile]
@@ -270,10 +237,10 @@ namespace mc
         {
 
             [ReadOnly]
-            public CubeGridArrayUnsafe gridArray;
+            public CubeGridArrayUnsafeQ gridArray;
 
             [WriteOnly]
-            public NativeList<CubeInstance>.ParallelWriter dstCubeInstances;
+            public NativeQueue<CubeInstance>.ParallelWriter dstCubeInstances;
             [WriteOnly]
             public NativeList<float4> dstGridPositions;
 
@@ -292,7 +259,7 @@ namespace mc
 
                             var gridset = getGridSet_( this.gridArray, ix, iy, iz, yspan, zspan );
 
-                            //if( !isNeedDraw_( ref gridset ) ) continue;
+                            if( !isNeedDraw_( ref gridset ) ) continue;
 
 
                             SampleAllCubes( ref gridset, gridId, this.dstCubeInstances );
@@ -312,7 +279,7 @@ namespace mc
         {
 
             [ReadOnly]
-            public CubeGridArrayUnsafe gridArray;
+            public CubeGridArrayUnsafeQ gridArray;
 
             [WriteOnly]
             public NativeList<CubeNearGrids> dstNearGrids;
@@ -334,7 +301,7 @@ namespace mc
 
                             var gridset = getGridSet_( this.gridArray, ix, iy, iz, yspan, zspan );
 
-                            //if( !isNeedDraw_( ref gridset ) ) continue;
+                            if( !isNeedDraw_( ref gridset ) ) continue;
 
 
                             gridset.gridId = gridId++;
@@ -354,7 +321,8 @@ namespace mc
             public NativeArray<CubeNearGrids> nearGrids;
 
             [WriteOnly]
-            public NativeList<CubeInstance>.ParallelWriter dstCubeInstances;
+            //public NativeList<CubeInstance>.ParallelWriter dstCubeInstances;
+            public NativeQueue<CubeInstance>.ParallelWriter dstCubeInstances;
 
 
             public void Execute( int index )
@@ -378,7 +346,8 @@ namespace mc
         /// </summary>
         // xyz各32個目のキューブは1bitのために隣のグリッドを見なくてはならず、効率悪いしコードも汚くなる、なんとかならんか？
         static public void SampleAllCubes
-            ( ref CubeNearGrids g, int gridId, NativeList<CubeInstance>.ParallelWriter outputCubes )
+            //( ref CubeNearGrids g, int gridId, NativeList<CubeInstance>.ParallelWriter outputCubes )
+            ( ref CubeNearGrids g, int gridId, NativeQueue<CubeInstance>.ParallelWriter outputCubes )
         {
 
             for( var iy = 0; iy < 31; iy++ )
@@ -500,11 +469,12 @@ namespace mc
 
             return new CubeNearXLines( y0z0, y0z1, y1z0, y1z1 );
         }
+        
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static bool addCubeFromXLine_(
             ref CubeXLineBitwise cubes,
-            int gridId_, int iy, int iz, NativeList<CubeInstance>.ParallelWriter outputCubes_
+            int gridId_, int iy, int iz, NativeQueue<CubeInstance>.ParallelWriter outputCubes_
         )
         {
             var isInstanceAppended = false;
@@ -529,21 +499,20 @@ namespace mc
         }
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static bool addCubeIfVisible_
-            ( uint4 cubeId, int gridId__, int4 ix_, int4 iy_, int4 iz_, NativeList<CubeInstance>.ParallelWriter cubeInstances )
+            ( uint4 cubeId, int gridId__, int4 ix_, int4 iy_, int4 iz_, NativeQueue<CubeInstance>.ParallelWriter cubeInstances )
         {
             var _0or255to0 = cubeId + 1 & 0xfe;
             if( !math.any( _0or255to0 ) ) return false;// すべての cubeId が 0 か 255 なら何もしない
 
             var cubeInstance = CubeUtiilty.ToCubeInstance( ix_, iy_, iz_, gridId__, cubeId );
 
-            if( _0or255to0.x != 0 ) cubeInstances.AddNoResize( cubeInstance.x );
-            if( _0or255to0.y != 0 ) cubeInstances.AddNoResize( cubeInstance.y );
-            if( _0or255to0.z != 0 ) cubeInstances.AddNoResize( cubeInstance.z );
-            if( _0or255to0.w != 0 ) cubeInstances.AddNoResize( cubeInstance.w );
+            if( _0or255to0.x != 0 ) cubeInstances.Enqueue( cubeInstance.x );
+            if( _0or255to0.y != 0 ) cubeInstances.Enqueue( cubeInstance.y );
+            if( _0or255to0.z != 0 ) cubeInstances.Enqueue( cubeInstance.z );
+            if( _0or255to0.w != 0 ) cubeInstances.Enqueue( cubeInstance.w );
 
             return true;
         }
-        
 
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
