@@ -34,7 +34,7 @@ namespace mc
         NativeList<CubeInstance> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
         //NativeQueue<CubeInstance> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
 
-        void Awake()
+        unsafe void Awake()
         {
             this.gridPositions = new NativeList<float4>( 3000, Allocator.Persistent );
             this.cubeInstances = new NativeList<CubeInstance>( 1000000, Allocator.Persistent );
@@ -56,19 +56,18 @@ namespace mc
             //this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
             this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
-            this.cubeGrids.FillCubes( CubeUtiilty.DefaultBlankCube, new int3( -1, -1, -1 ), new int3( 11, 11, 11 ) );
-            this.cubeGrids.FillCubes( CubeUtiilty.DefaultFilledCube, new int3( -1, 2, -1 ), new int3( 11, 11, 11 ) );
-            this.cubeGrids.FillCubes( CubeUtiilty.DefaultFilledCube, new int3( 2, 0, 3 ), new int3( 1, 2, 1 ) );
+            this.cubeGrids.FillCubes( new int3( -1, 2, -1 ), new int3( 11, 11, 11 ), isFillAll: true );
+            this.cubeGrids.FillCubes( new int3( 2, 0, 3 ), new int3( 1, 2, 1 ), isFillAll: true );
             
             var c = this.cubeGrids[ 0, 0, 0 ];
-            c[ 1, 1, 1 ] = 1;
-            c[ 31, 1, 1 ] = 1;
-            c[ 31, 31, 31 ] = 1;
-            c[ 1, 31, 1 ] = 1;
+            (*c.p)[ 1, 1, 1 ] = 1;
+            //c[ 31, 1, 1 ] = 1;
+            //c[ 31, 31, 31 ] = 1;
+            //c[ 1, 31, 1 ] = 1;
             for( var iy = 0; iy < 15; iy++ )
                 for( var iz = 0; iz < 15; iz++ )
                     for( var ix = 0; ix < 13; ix++ )
-                        c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
+                        ( *c.p )[ 5 + ix, 5 + iy, 5 + iz ] = 1;
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
             this.job.Complete();
 

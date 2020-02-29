@@ -21,6 +21,7 @@ namespace mc
     }
     public unsafe struct CubeGrid32x32x32UnsafePtr
     {
+        [NativeDisableUnsafePtrRestriction]
         public CubeGrid32x32x32Unsafe* p;
     }
 
@@ -32,7 +33,7 @@ namespace mc
 
         NativeList<CubeGrid32x32x32Unsafe> gridStock;
         public NativeArray<CubeGrid32x32x32UnsafePtr> grids;
-        
+
         CubeGrid32x32x32UnsafePtr pDefaultBlankCube;
         CubeGrid32x32x32UnsafePtr pDefaultFilledCube;
         
@@ -146,7 +147,8 @@ namespace mc
 
 
 
-        static CubeNearGrids getGridSet_( CubeGridArrayUnsafe gridArray, int ix, int iy, int iz, int yspan_, int zspan_ )
+        static CubeNearGrids getGridSet_
+            ( ref CubeGridArrayUnsafe gridArray, int ix, int iy, int iz, int yspan_, int zspan_ )
         {
             var i = iy * yspan_ + iz * zspan_ + ix;
 
@@ -165,16 +167,16 @@ namespace mc
 
         static bool isNeedDraw_( ref CubeNearGrids g )
         {
-            if( g.current.IsEmpty )
+            if( g.current.p->IsEmpty )
             {
                 var isNoDraw =
-                    g.current_right.IsEmpty &
-                    g.back.IsEmpty &
-                    g.back_right.IsEmpty &
-                    g.under.IsEmpty &
-                    g.under_right.IsEmpty &
-                    g.backUnder.IsEmpty &
-                    g.backUnder_right.IsEmpty
+                    g.current_right.p->IsEmpty &
+                    g.back.p->IsEmpty &
+                    g.back_right.p->IsEmpty &
+                    g.under.p->IsEmpty &
+                    g.under_right.p->IsEmpty &
+                    g.backUnder.p->IsEmpty &
+                    g.backUnder_right.p->IsEmpty
                     ;
                 if( isNoDraw ) return false;
 
@@ -183,16 +185,16 @@ namespace mc
                 return true;
             }
 
-            if( g.current.IsFull )
+            if( g.current.p->IsFull )
             {
                 var isNoDraw =
-                    g.current_right.IsFull &
-                    g.back.IsFull &
-                    g.back_right.IsFull &
-                    g.under.IsFull &
-                    g.under_right.IsFull &
-                    g.backUnder.IsFull &
-                    g.backUnder_right.IsFull
+                    g.current_right.p->IsFull &
+                    g.back.p->IsFull &
+                    g.back_right.p->IsFull &
+                    g.under.p->IsFull &
+                    g.under_right.p->IsFull &
+                    g.backUnder.p->IsFull &
+                    g.backUnder_right.p->IsFull
                     ;
                 if( isNoDraw ) return false;
 
@@ -290,9 +292,9 @@ namespace mc
                         for( var ix = 0; ix < this.gridArray.wholeGridLength.x - 1; ix++ )
                         {
 
-                            var gridset = getGridSet_( this.gridArray, ix, iy, iz, yspan, zspan );
+                            var gridset = getGridSet_( ref this.gridArray, ix, iy, iz, yspan, zspan );
 
-                            //if( !isNeedDraw_( ref gridset ) ) continue;
+                            if( !isNeedDraw_( ref gridset ) ) continue;
 
 
                             SampleAllCubes( ref gridset, gridId, this.dstCubeInstances );
@@ -332,9 +334,9 @@ namespace mc
                         for( var ix = 0; ix < this.gridArray.wholeGridLength.x - 1; ix++ )
                         {
 
-                            var gridset = getGridSet_( this.gridArray, ix, iy, iz, yspan, zspan );
+                            var gridset = getGridSet_( ref this.gridArray, ix, iy, iz, yspan, zspan );
 
-                            //if( !isNeedDraw_( ref gridset ) ) continue;
+                            if( !isNeedDraw_( ref gridset ) ) continue;
 
 
                             gridset.gridId = gridId++;
@@ -385,10 +387,10 @@ namespace mc
             {
                 for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
                 {
-                    var c = getXLine_( iy, iz, ref g.current, ref g.current, ref g.current, ref g.current );
+                    var c = getXLine_( iy, iz, g.current, g.current, g.current, g.current );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, ref g.current_right, ref g.current_right, ref g.current_right, ref g.current_right );
+                    var cr = getXLine_( iy, iz, g.current_right, g.current_right, g.current_right, g.current_right );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
@@ -396,10 +398,10 @@ namespace mc
                 {
                     const int iz = ( 31 & ~( 0x3 ) );
 
-                    var c = getXLine_( iy, iz, ref g.current, ref g.back, ref g.current, ref g.back );
+                    var c = getXLine_( iy, iz, g.current, g.back, g.current, g.back );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, ref g.current_right, ref g.back_right, ref g.current_right, ref g.back_right );
+                    var cr = getXLine_( iy, iz, g.current_right, g.back_right, g.current_right, g.back_right );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
@@ -409,10 +411,10 @@ namespace mc
                 const int iy = 31;
                 for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
                 {
-                    var c = getXLine_( iy, iz, ref g.current, ref g.current, ref g.under, ref g.under );
+                    var c = getXLine_( iy, iz, g.current, g.current, g.under, g.under );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, ref g.current_right, ref g.current_right, ref g.under_right, ref g.under_right );
+                    var cr = getXLine_( iy, iz, g.current_right, g.current_right, g.under_right, g.under_right );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
@@ -420,10 +422,10 @@ namespace mc
                 {
                     const int iz = ( 31 & ~( 0x3 ) );
 
-                    var c = getXLine_( iy, iz, ref g.current, ref g.back, ref g.under, ref g.backUnder );
+                    var c = getXLine_( iy, iz, g.current, g.back, g.under, g.backUnder );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, ref g.current_right, ref g.back_right, ref g.under_right, ref g.backUnder_right );
+                    var cr = getXLine_( iy, iz, g.current_right, g.back_right, g.under_right, g.backUnder_right );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
@@ -471,8 +473,8 @@ namespace mc
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static unsafe CubeNearXLines getXLine_(
             int iy, int iz,
-            ref CubeGrid32x32x32Unsafe current, ref CubeGrid32x32x32Unsafe back,
-            ref CubeGrid32x32x32Unsafe under, ref CubeGrid32x32x32Unsafe backUnder
+            CubeGrid32x32x32UnsafePtr current, CubeGrid32x32x32UnsafePtr back,
+            CubeGrid32x32x32UnsafePtr under, CubeGrid32x32x32UnsafePtr backUnder
         )
         {
             //y0  -> ( iy + 0 & 31 ) * 32/4 + ( iz>>2 + 0 & 31>>2 );
@@ -488,13 +490,13 @@ namespace mc
             var yspan = new int4( 32 / 4, 32 / 4, 32, 32 );
             
             var i = ( iy_ + yofs & ymask ) * yspan + ( iz_ + zofs & zmask );
-            var y0 = ((uint4*)current.pUnits)[ i.x ];
-            var y1 = ( (uint4*)under.pUnits )[ i.y ];
+            var y0 = ((uint4*)current.p->pUnits)[ i.x ];
+            var y1 = ( (uint4*)under.p->pUnits )[ i.y ];
             var y0z0 = y0;
             var y1z0 = y1;
 
-            y0.x = back.pUnits[ i.z ];
-            y1.x = backUnder.pUnits[ i.w ];
+            y0.x = back.p->pUnits[ i.z ];
+            y1.x = backUnder.p->pUnits[ i.w ];
             var y0z1 = y0.yzwx;
             var y1z1 = y1.yzwx;
 
