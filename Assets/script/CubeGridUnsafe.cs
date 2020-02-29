@@ -8,8 +8,17 @@ using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Collections.LowLevel.Unsafe;
 
-namespace mc
+namespace MarchingCubes
 {
+
+
+    public struct CubeInstance
+    {
+        public uint instance;
+        static public implicit operator CubeInstance( uint cubeInstance ) => new CubeInstance { instance = cubeInstance };
+    }
+
+
 
     public unsafe struct CubeGrid32x32x32Unsafe
     {
@@ -55,7 +64,7 @@ namespace mc
         {
             get
             {
-                return (uint)( this.pUnits[ ( iy << 5 ) + iz ] & 1 << ix );
+                return (uint)( this.pUnits[ ( iy << 5 ) + iz ] >> ix & 1 );
             }
             set
             {
@@ -63,9 +72,9 @@ namespace mc
 
                 var i = ( iy << 5 ) + iz;
                 var b = this.pUnits[ i ];
-                this.pUnits[ i ] |= b ^ b ^ maskedValue << ix;
+                this.pUnits[ i ] ^= (uint)( (b & 1 << ix) ^ (maskedValue << ix) );
 
-                this.CubeCount += (int)( maskedValue << 1 - 1 );
+                this.CubeCount += (int)( (maskedValue << 1) - 1 );
             }
         }
     }

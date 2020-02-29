@@ -10,7 +10,7 @@ using Unity.Mathematics;
 using Unity.Jobs;
 using Unity.Burst;
 
-namespace mc
+namespace MarchingCubes
 {
 
     using vc = Vector3;
@@ -61,13 +61,13 @@ namespace mc
             
             var c = this.cubeGrids[ 0, 0, 0 ];
             (*c.p)[ 1, 1, 1 ] = 1;
-            //c[ 31, 1, 1 ] = 1;
-            //c[ 31, 31, 31 ] = 1;
-            //c[ 1, 31, 1 ] = 1;
+            c[ 31, 1, 1 ] = 1;
+            c[ 31, 31, 31 ] = 1;
+            c[ 1, 31, 1 ] = 1;
             for( var iy = 0; iy < 15; iy++ )
                 for( var iz = 0; iz < 15; iz++ )
                     for( var ix = 0; ix < 13; ix++ )
-                        ( *c.p )[ 5 + ix, 5 + iy, 5 + iz ] = 1;
+                        c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
             this.job.Complete();
 
@@ -114,7 +114,7 @@ namespace mc
 
         JobHandle job;
 
-        private void Update()
+        private unsafe void Update()
         {
             this.job.Complete();
             this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
@@ -137,11 +137,14 @@ namespace mc
             var bounds = new Bounds() { center = Vector3.zero, size = Vector3.one * 1000.0f };
             Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, args );
 
-
+            var c = this.cubeGrids[ 5, 1, 3 ];
+            c[ i, 0, 0 ] ^= 1;
+            i = i + 1 & 31;
             this.gridPositions.Clear();
             this.cubeInstances.Clear();
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
         }
+        int i;
 
 
         (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, ComputeBuffer gridposition, Mesh mesh)

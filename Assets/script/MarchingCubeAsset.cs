@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace mc
+namespace MarchingCubes
 {
 
     public class MarchingCubeAsset : ScriptableObject
@@ -17,6 +17,7 @@ namespace mc
             public byte cubeId;
             public int[] indices;
         }
+
         public (byte cubeId, int[] vtxIdxs)[] CubeIdsAndIndexLists =>
             this.CubeIndexLists.Select( x => (x.cubeId, x.indices) ).ToArray();
     }

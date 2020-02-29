@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Sprache;
 
-namespace mc
+namespace MqoUtility
 {
     static public class MqoParser
     {
