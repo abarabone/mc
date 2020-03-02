@@ -7,7 +7,6 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
-using Unity.Mathematics;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections.Experimental;
 
@@ -15,6 +14,15 @@ namespace MarchingCubes
 {
     public unsafe partial struct CubeGridArrayUnsafe
     {
+
+
+        static public void SampleAllCubes<TCubeInstanceWriter>
+            ( ref NearCubeGrids g, int gridId, TCubeInstanceWriter outputCubes )
+            where TCubeInstanceWriter : ICubeInstanceWriter
+        {
+            SampleAllCubes( ref g, new uint4(1,1,1,1), new uint4( 1, 1, 1, 1 ), gridId, outputCubes );
+        }
+
 
 
         // 標準 -------------------------------------------------------------
@@ -25,13 +33,15 @@ namespace MarchingCubes
         /// </summary>
         // xyz各32個目のキューブは1bitのために隣のグリッドを見なくてはならず、効率悪いしコードも汚くなる、なんとかならんか？
         static public void SampleAllCubes<TCubeInstanceWriter>
-            ( ref NearCubeGrids g, int gridId, TCubeInstanceWriter outputCubes )
+            ( ref NearCubeGrids g, uint4 grid0or1, uint4 grid0or1_right, int gridId, TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
+            var grid0ro1xz = math.any( new uint4(grid0or1.xz, grid0or1_right.xz) ).AsByte();
+            var grid0or1z = math.any( new uint2( grid0or1.z, grid0or1_right.z ) ).AsByte();
 
-            for( var iy = 0; iy < 31; iy++ )
+            for( var iy = 0; iy < 31 * grid0ro1xz; iy++ )
             {
-                for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
+                for( var iz = 0; iz < ( 31 * grid0or1z & ~( 0x3 ) ); iz += 4 )
                 {
                     var c = getXLine_( iy, iz, g.current, g.current, g.current, g.current );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -55,7 +65,7 @@ namespace MarchingCubes
             }
             {
                 const int iy = 31;
-                for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
+                for( var iz = 0; iz < ( 31 * grid0or1z & ~( 0x3 ) ); iz += 4 )
                 {
                     var c = getXLine_( iy, iz, g.current, g.current, g.under, g.under );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -263,249 +273,7 @@ namespace MarchingCubes
         // ------------------------------------------------------------------
 
 
-
-
-        // 特殊化 ------------------------------------------------------------
-
-        
-        static public void SampleAllCubes_NextYMonolithic<TCubeInstanceWriter>
-            ( ref NearCubeGrids g, int gridId, TCubeInstanceWriter outputCubes, uint nexty )
-            where TCubeInstanceWriter : ICubeInstanceWriter
-        {
-            {
-                const int iy = 31;
-                for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
-                {
-                    var c = getXLine_( iy, iz, g.current, g.current, g.under, g.under );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    var cr = getXLine_( iy, iz, g.current_right, g.current_right, g.under_right, g.under_right );
-                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-                {
-                    const int iz = ( 31 & ~( 0x3 ) );
-
-                    var c = getXLine_( iy, iz, g.current, g.back, g.under, g.backUnder );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    var cr = getXLine_( iy, iz, g.current_right, g.back_right, g.under_right, g.backUnder_right );
-                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-            }
-
-        }
-
-
-        const uint bits_for_nextx = 0x_aa00_0000;// 0-0-0-0-------------------------（-f-f-f-f878787870f0f0f0f87878787 と | する）
-
-        static public void SampleAllCubes_NextXMonolithic<TCubeInstanceWriter>
-            ( ref NearCubeGrids g, int gridId, TCubeInstanceWriter outputCubes, uint nextx )
-            where TCubeInstanceWriter : ICubeInstanceWriter
-        {
-
-            for( var iy = 0; iy < 31; iy++ )
-            {
-                for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
-                {
-                    var c = getXLine_( iy, iz, g.current, g.current, g.current, g.current );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    cubes._0f870f87 |= nextx;
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-                {
-                    const int iz = ( 31 & ~( 0x3 ) );
-
-                    var c = getXLine_( iy, iz, g.current, g.back, g.current, g.back );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    cubes._0f870f87 |= nextx;
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-            }
-            {
-                const int iy = 31;
-                for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
-                {
-                    var c = getXLine_( iy, iz, g.current, g.current, g.under, g.under );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    cubes._0f870f87 |= nextx;
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-                {
-                    const int iz = ( 31 & ~( 0x3 ) );
-
-                    var c = getXLine_( iy, iz, g.current, g.back, g.under, g.backUnder );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    cubes._0f870f87 |= nextx;
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-            }
-
-        }
-
-        static public void SampleAllCubes_NextYMonolithic<TCubeInstanceWriter>
-            ( ref NearCubeGrids g, int gridId, TCubeInstanceWriter outputCubes )
-            where TCubeInstanceWriter : ICubeInstanceWriter
-        {
-
-            for( var iy = 0; iy < 31; iy++ )
-            {
-                for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
-                {
-                    var c = getXLine_( iy, iz, g.current, g.current, g.current, g.current );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    var cr = getXLine_( iy, iz, g.current_right, g.current_right, g.current_right, g.current_right );
-                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-                {
-                    const int iz = ( 31 & ~( 0x3 ) );
-
-                    var c = getXLine_( iy, iz, g.current, g.back, g.current, g.back );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    var cr = getXLine_( iy, iz, g.current_right, g.back_right, g.current_right, g.back_right );
-                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-            }
-            {
-                const int iy = 31;
-                for( var iz = 0; iz < ( 31 & ~( 0x3 ) ); iz += 4 )
-                {
-                    var c = getXLine_( iy, iz, g.current, g.current, g.under, g.under );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    var cr = getXLine_( iy, iz, g.current_right, g.current_right, g.under_right, g.under_right );
-                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-                {
-                    const int iz = ( 31 & ~( 0x3 ) );
-
-                    var c = getXLine_( iy, iz, g.current, g.back, g.under, g.backUnder );
-                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
-
-                    var cr = getXLine_( iy, iz, g.current_right, g.back_right, g.under_right, g.backUnder_right );
-                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
-
-                    addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
-                }
-            }
-
-        }
-
-
-
-
-
-        [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static unsafe CubeNearXLines getXLine_NextZMonolithic_(
-            int iy, int iz, uint nextz,
-            CubeGrid32x32x32UnsafePtr current, CubeGrid32x32x32UnsafePtr back,
-            CubeGrid32x32x32UnsafePtr under, CubeGrid32x32x32UnsafePtr backUnder
-        )
-        {
-            //y0  -> ( iy + 0 & 31 ) * 32/4 + ( iz>>2 + 0 & 31>>2 );
-            //y1  -> ( iy + 1 & 31 ) * 32/4 + ( iz>>2 + 0 & 31>>2 );
-            var iy_ = iy;
-            var iz_ = new int2( iz, iz ) >> 2;
-            var yofs = new int2( 0, 1 );
-            var zofs = new int2( 0, 0 );
-            var ymask = 31;
-            var zmask = new int2( 31 >> 2, 31 >> 2 );
-            var yspan = new int2( 32 / 4, 32 / 4 );
-
-            var i = ( iy_ + yofs & ymask ) * yspan + ( iz_ + zofs & zmask );
-            var y0 = ( (uint4*)current.p->pUnits )[ i.x ];
-            var y1 = ( (uint4*)under.p->pUnits )[ i.y ];
-            var y0z0 = y0;
-            var y1z0 = y1;
-
-            y0.x = nextz;
-            y1.x = nextz;
-            var y0z1 = y0.yzwx;
-            var y1z1 = y1.yzwx;
-
-            return new CubeNearXLines( y0z0, y0z1, y1z0, y1z1 );
-        }
-
-        
-        [ MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static unsafe CubeNearXLines getXLine_NextYMonolithic_(
-            int iy, int iz, uint4 nexty,
-            CubeGrid32x32x32UnsafePtr current, CubeGrid32x32x32UnsafePtr back,
-            CubeGrid32x32x32UnsafePtr under, CubeGrid32x32x32UnsafePtr backUnder
-        )
-        {
-            //y0  -> ( iy + 0 & 31 ) * 32/4 + ( iz>>2 + 0 & 31>>2 );
-            //y0r -> ( iy + 0 & 31 ) * 32 + ( iz + 1<<2 & 31 );
-            var iy_ = iy;
-            var iz_ = new int2( iz >> 2, iz );
-            var yofs = new int2( 0, 0 );
-            var zofs = new int2( 0, 1 << 2 );
-            var ymask = 31;
-            var zmask = new int2( 31 >> 2, 31 );
-            var yspan = new int2( 32 / 4, 32 );
-
-            var i = ( iy_ + yofs & ymask ) * yspan + ( iz_ + zofs & zmask );
-            var y0 = ( (uint4*)current.p->pUnits )[ i.x ];
-            var y0z0 = y0;
-            var y1z0 = nexty;
-
-            y0.x = back.p->pUnits[ i.y ];
-            var y0z1 = y0.yzwx;
-            var y1z1 = nexty;
-
-            return new CubeNearXLines( y0z0, y0z1, y1z0, y1z1 );
-        }
-
-        [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static unsafe CubeNearXLines getXLine_NextYMonolithic_(
-            int iy, int iz, uint4 nextyz,
-            CubeGrid32x32x32UnsafePtr current, CubeGrid32x32x32UnsafePtr back,
-            CubeGrid32x32x32UnsafePtr under, CubeGrid32x32x32UnsafePtr backUnder
-        )
-        {
-            //y0  -> ( iy + 0 & 31 ) * 32/4 + ( iz>>2 + 0 & 31>>2 );
-            //y0r -> ( iy + 0 & 31 ) * 32 + ( iz + 1<<2 & 31 );
-            var iy_ = iy;
-            var iz_ = new int2( iz >> 2, iz );
-            var yofs = new int2( 0, 0 );
-            var zofs = new int2( 0, 1 << 2 );
-            var ymask = 31;
-            var zmask = new int2( 31 >> 2, 31 );
-            var yspan = new int2( 32 / 4, 32 );
-
-            var i = ( iy_ + yofs & ymask ) * yspan + ( iz_ + zofs & zmask );
-            var y0 = ( (uint4*)current.p->pUnits )[ i.x ];
-            var y1 = nexty;
-            var y0z0 = y0;
-            var y1z0 = y1;
-
-            y0.x = back.p->pUnits[ i.y ];
-            y1.x = nexty.x;
-            var y0z1 = y0.yzwx;
-            var y1z1 = y1.yzwx;
-
-            return new CubeNearXLines( y0z0, y0z1, y1z0, y1z1 );
-        }
-
+            
 
     }
 }

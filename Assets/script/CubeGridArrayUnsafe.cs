@@ -165,6 +165,29 @@ namespace MarchingCubes
             };
         }
 
+        static (int4 gridCount, int4 gridCount_right) countEach( ref NearCubeGrids g )
+        {
+            var gridCount = new int4(
+                g.current   .p->CubeCount,
+                g.back      .p->CubeCount,
+                g.under     .p->CubeCount,
+                g.backUnder .p->CubeCount
+            );
+            var gridCount_right = new int4(
+                g.current_right     .p->CubeCount,
+                g.back_right        .p->CubeCount,
+                g.under_right       .p->CubeCount,
+                g.backUnder_right   .p->CubeCount
+            );
+            return (gridCount, gridCount_right);
+        }
+
+        static bool isNeedDraw_( int4 gridCount, int4 gridCount_right )
+        {
+            
+        }
+
+
         static bool isNeedDraw_( ref NearCubeGrids g )
         {
             if( g.current.p->IsEmpty )
@@ -224,6 +247,7 @@ namespace MarchingCubes
 
             return job;
         }
+        
 
         public JobHandle BuildCubeInstanceDataParaQ
             ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )

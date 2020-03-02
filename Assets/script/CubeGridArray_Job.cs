@@ -91,8 +91,9 @@ namespace MarchingCubes
                     for( var iz = 0; iz < this.gridArray.wholeGridLength.z - 1; iz++ )
                         for( var ix = 0; ix < this.gridArray.wholeGridLength.x - 1; ix++ )
                         {
-
+                            
                             var gridset = getGridSet_( ref this.gridArray, ix, iy, iz, yspan, zspan );
+                            var gridcount = countEach( ref gridset );
 
                             if( !isNeedDraw_( ref gridset ) ) continue;
 

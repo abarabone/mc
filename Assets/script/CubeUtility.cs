@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
@@ -13,6 +14,24 @@ namespace MarchingCubes
 {
     static public class CubeUtiilty
     {
+
+
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public bool4 IsEmptyOrFull( this uint4 ui4 ) => math.any( ui4 + 1 & 0xfe );
+
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public uint4 _0or255to0( this uint4 ui4 ) => ui4 + 1 & 0xfe;
+
+
+
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public int AsByte( this bool b ) => new BoolAsByte() { bl = b }.by;
+        [StructLayout(LayoutKind.Explicit)]
+        public struct BoolAsByte
+        {
+            [FieldOffset( 0 )] public bool bl;
+            [FieldOffset( 0 )] public byte by;
+        }
 
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
