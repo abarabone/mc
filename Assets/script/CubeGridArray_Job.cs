@@ -33,10 +33,10 @@ namespace MarchingCubes
             public int gridId;
             public CubeGrid32x32x32UnsafePtr current;
             public CubeGrid32x32x32UnsafePtr current_right;
-            public CubeGrid32x32x32UnsafePtr back;
-            public CubeGrid32x32x32UnsafePtr back_right;
             public CubeGrid32x32x32UnsafePtr under;
             public CubeGrid32x32x32UnsafePtr under_right;
+            public CubeGrid32x32x32UnsafePtr back;
+            public CubeGrid32x32x32UnsafePtr back_right;
             public CubeGrid32x32x32UnsafePtr backUnder;
             public CubeGrid32x32x32UnsafePtr backUnder_right;
         }
@@ -95,11 +95,15 @@ namespace MarchingCubes
                             var gridset = getGridSet_( ref this.gridArray, ix, iy, iz, yspan, zspan );
                             var gridcount = countEach( ref gridset );
 
-                            if( !isNeedDraw_( ref gridset ) ) continue;
+                            if( !isNeedDraw_( gridcount.left, gridcount.right ) ) continue;
+                            //if( !isNeedDraw_( ref gridset ) ) continue;
 
+                            var grid0or1 = math.min( gridcount.left & 0x7fff, new int4(1,1,1,1) );
+                            var grid0or1_right = math.min( gridcount.right & 0x7fff, new int4(1,1,1,1) );
 
                             var dstCubeInstances = new InstanceCubeByList { list = this.dstCubeInstances };
-                            SampleAllCubes( ref gridset, gridId, dstCubeInstances );
+                            SampleAllCubes( ref gridset, grid0or1, grid0or1_right, gridId, dstCubeInstances );
+                            //SampleAllCubes( ref gridset, gridId, dstCubeInstances );
 
                             this.dstGridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
 

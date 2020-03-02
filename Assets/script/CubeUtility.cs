@@ -16,11 +16,11 @@ namespace MarchingCubes
     {
 
 
-        [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static public bool4 IsEmptyOrFull( this uint4 ui4 ) => math.any( ui4 + 1 & 0xfe );
+        //[MethodImpl( MethodImplOptions.AggressiveInlining )]
+        //static public bool4 IsEmptyOrFull( this uint4 ui4 ) => math.any( ui4 + 1 & 0xfe );
 
-        [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static public uint4 _0or255to0( this uint4 ui4 ) => ui4 + 1 & 0xfe;
+        //[MethodImpl( MethodImplOptions.AggressiveInlining )]
+        //static public uint4 _0or255to0( this uint4 ui4 ) => ui4 + 1 & 0xfe;
 
 
 

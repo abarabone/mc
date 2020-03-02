@@ -20,7 +20,7 @@ namespace MarchingCubes
             ( ref NearCubeGrids g, int gridId, TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
-            SampleAllCubes( ref g, new uint4(1,1,1,1), new uint4( 1, 1, 1, 1 ), gridId, outputCubes );
+            SampleAllCubes( ref g, new int4( 1, 1, 1, 1 ), new int4( 1, 1, 1, 1 ), gridId, outputCubes );
         }
 
 
@@ -33,20 +33,29 @@ namespace MarchingCubes
         /// </summary>
         // xyz各32個目のキューブは1bitのために隣のグリッドを見なくてはならず、効率悪いしコードも汚くなる、なんとかならんか？
         static public void SampleAllCubes<TCubeInstanceWriter>
-            ( ref NearCubeGrids g, uint4 grid0or1, uint4 grid0or1_right, int gridId, TCubeInstanceWriter outputCubes )
+            ( ref NearCubeGrids g, int4 grid0or1, int4 grid0or1_right, int gridId, TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
-            var grid0ro1xz = math.any( new uint4(grid0or1.xz, grid0or1_right.xz) ).AsByte();
-            var grid0or1z = math.any( new uint2( grid0or1.z, grid0or1_right.z ) ).AsByte();
+            var grid0ro1xz = math.any( new int4(grid0or1.xz, grid0or1_right.xz) ).AsByte();
+            var grid0or1z = math.any( new int2( grid0or1.z, grid0or1_right.z ) ).AsByte();
+
+            var g0or1x      = grid0or1.xxxx;
+            var g0or1x_r    = grid0or1_right.xxxx;
+            var g0or1xz     = grid0or1.xxzz;
+            var g0or1xz_r   = grid0or1_right.xxzz;
+            var g0or1xy     = grid0or1.xyxy;
+            var g0or1xy_r   = grid0or1_right.xyxy;
+            var g0or1       = grid0or1;
+            var g0or1_r     = grid0or1_right;
 
             for( var iy = 0; iy < 31 * grid0ro1xz; iy++ )
             {
                 for( var iz = 0; iz < ( 31 * grid0or1z & ~( 0x3 ) ); iz += 4 )
                 {
-                    var c = getXLine_( iy, iz, g.current, g.current, g.current, g.current );
+                    var c = getXLine_( iy, iz, g0or1x, g.current, g.current, g.current, g.current );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, g.current_right, g.current_right, g.current_right, g.current_right );
+                    var cr = getXLine_( iy, iz, g0or1x_r, g.current_right, g.current_right, g.current_right, g.current_right );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
@@ -54,10 +63,10 @@ namespace MarchingCubes
                 {
                     const int iz = ( 31 & ~( 0x3 ) );
 
-                    var c = getXLine_( iy, iz, g.current, g.back, g.current, g.back );
+                    var c = getXLine_( iy, iz, g0or1xz, g.current, g.current, g.back, g.back );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, g.current_right, g.back_right, g.current_right, g.back_right );
+                    var cr = getXLine_( iy, iz, g0or1xz_r, g.current_right, g.current_right, g.back_right, g.back_right );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
@@ -67,10 +76,10 @@ namespace MarchingCubes
                 const int iy = 31;
                 for( var iz = 0; iz < ( 31 * grid0or1z & ~( 0x3 ) ); iz += 4 )
                 {
-                    var c = getXLine_( iy, iz, g.current, g.current, g.under, g.under );
+                    var c = getXLine_( iy, iz, g0or1xy, g.current, g.under, g.current, g.under );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, g.current_right, g.current_right, g.under_right, g.under_right );
+                    var cr = getXLine_( iy, iz, g0or1xy_r, g.current_right, g.under_right, g.current_right, g.under_right );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
@@ -78,10 +87,10 @@ namespace MarchingCubes
                 {
                     const int iz = ( 31 & ~( 0x3 ) );
 
-                    var c = getXLine_( iy, iz, g.current, g.back, g.under, g.backUnder );
+                    var c = getXLine_( iy, iz, g0or1, g.current, g.under, g.back, g.backUnder );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, g.current_right, g.back_right, g.under_right, g.backUnder_right );
+                    var cr = getXLine_( iy, iz, g0or1_r, g.current_right, g.under_right, g.back_right, g.backUnder_right );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
@@ -132,9 +141,9 @@ namespace MarchingCubes
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static unsafe CubeNearXLines getXLine_(
-            int iy, int iz,
-            CubeGrid32x32x32UnsafePtr current, CubeGrid32x32x32UnsafePtr back,
-            CubeGrid32x32x32UnsafePtr under, CubeGrid32x32x32UnsafePtr backUnder
+            int iy, int iz, int4 index0or1,
+            CubeGrid32x32x32UnsafePtr current, CubeGrid32x32x32UnsafePtr under,
+            CubeGrid32x32x32UnsafePtr back, CubeGrid32x32x32UnsafePtr backUnder
         )
         {
             //y0  -> ( iy + 0 & 31 ) * 32/4 + ( iz>>2 + 0 & 31>>2 );
@@ -149,7 +158,8 @@ namespace MarchingCubes
             var zmask = new int4( 31 >> 2, 31 >> 2, 31, 31 );
             var yspan = new int4( 32 / 4, 32 / 4, 32, 32 );
 
-            var i = ( iy_ + yofs & ymask ) * yspan + ( iz_ + zofs & zmask );
+            var _i = ( iy_ + yofs & ymask ) * yspan + ( iz_ + zofs & zmask );
+            var i = _i * index0or1;
             var y0 = ( (uint4*)current.p->pUnits )[ i.x ];
             var y1 = ( (uint4*)under.p->pUnits )[ i.y ];
             var y0z0 = y0;

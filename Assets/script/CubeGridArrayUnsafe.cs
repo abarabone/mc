@@ -61,13 +61,13 @@ namespace MarchingCubes
 
             void makeDefaultGrids_( ref CubeGridArrayUnsafe ga )
             {
-                ga.gridStock.AddNoResize( new CubeGrid32x32x32Unsafe( isFillAll: false ) );
+                ga.gridStock.AddNoResize( new CubeGrid32x32x32Unsafe().ForDefault( isFillAll: false ) );
                 ga.defaultBlankCubePtr = new CubeGrid32x32x32UnsafePtr
                 {
                     p = (CubeGrid32x32x32Unsafe*)ga.gridStock.GetUnsafePtr() + 0
                 };
 
-                ga.gridStock.AddNoResize( new CubeGrid32x32x32Unsafe( isFillAll: true ) );
+                ga.gridStock.AddNoResize( new CubeGrid32x32x32Unsafe().ForDefault( isFillAll: true ) );
                 ga.defaultFilledCubePtr = new CubeGrid32x32x32UnsafePtr
                 {
                     p = (CubeGrid32x32x32Unsafe*)ga.gridStock.GetUnsafePtr() + 1
@@ -156,35 +156,42 @@ namespace MarchingCubes
             {
                 current         = gridArray.grids[ i + 0 ],
                 current_right   = gridArray.grids[ i + 1 ],
-                back            = gridArray.grids[ i + zspan_ + 0 ],
-                back_right      = gridArray.grids[ i + zspan_ + 1 ],
                 under           = gridArray.grids[ i + yspan_ + 0 ],
                 under_right     = gridArray.grids[ i + yspan_ + 1 ],
+                back            = gridArray.grids[ i + zspan_ + 0 ],
+                back_right      = gridArray.grids[ i + zspan_ + 1 ],
                 backUnder_right = gridArray.grids[ i + yspan_ + zspan_ + 1 ],
                 backUnder       = gridArray.grids[ i + yspan_ + zspan_ + 0 ],
             };
         }
 
-        static (int4 gridCount, int4 gridCount_right) countEach( ref NearCubeGrids g )
+        struct GridCounts
+        {
+            public int4 left, right;
+        }
+        static GridCounts countEach( ref NearCubeGrids g )
         {
             var gridCount = new int4(
                 g.current   .p->CubeCount,
-                g.back      .p->CubeCount,
                 g.under     .p->CubeCount,
+                g.back      .p->CubeCount,
                 g.backUnder .p->CubeCount
             );
             var gridCount_right = new int4(
                 g.current_right     .p->CubeCount,
-                g.back_right        .p->CubeCount,
                 g.under_right       .p->CubeCount,
+                g.back_right        .p->CubeCount,
                 g.backUnder_right   .p->CubeCount
             );
-            return (gridCount, gridCount_right);
+            return new GridCounts { left = gridCount, right = gridCount_right };
         }
 
         static bool isNeedDraw_( int4 gridCount, int4 gridCount_right )
         {
-            
+            var addvalue = gridCount + gridCount_right;
+            var isZero = !math.any( addvalue );
+            var isFull = math.all( addvalue == 0x8000 << 1);
+            return !(isZero | isFull);
         }
 
 
@@ -194,10 +201,10 @@ namespace MarchingCubes
             {
                 var isNoDraw =
                     g.current_right.p->IsEmpty &
-                    g.back.p->IsEmpty &
-                    g.back_right.p->IsEmpty &
                     g.under.p->IsEmpty &
                     g.under_right.p->IsEmpty &
+                    g.back.p->IsEmpty &
+                    g.back_right.p->IsEmpty &
                     g.backUnder.p->IsEmpty &
                     g.backUnder_right.p->IsEmpty
                     ;
@@ -212,10 +219,10 @@ namespace MarchingCubes
             {
                 var isNoDraw =
                     g.current_right.p->IsFull &
-                    g.back.p->IsFull &
-                    g.back_right.p->IsFull &
                     g.under.p->IsFull &
                     g.under_right.p->IsFull &
+                    g.back.p->IsFull &
+                    g.back_right.p->IsFull &
                     g.backUnder.p->IsFull &
                     g.backUnder_right.p->IsFull
                     ;

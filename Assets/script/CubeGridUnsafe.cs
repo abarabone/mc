@@ -30,12 +30,30 @@ namespace MarchingCubes
         public bool IsEmpty => this.CubeCount == 0;
 
         
-        public CubeGrid32x32x32Unsafe( bool isFillAll )
+        public CubeGrid32x32x32Unsafe( bool isFillAll ) : this()
         {
             //var align = UnsafeUtility.AlignOf<uint4>();
             const int align = 16;
             const int size = sizeof( uint ) * 1 * 32 * 32;
-            
+
+            this.alloc_( size, align, isFillAll );
+        }
+
+        public CubeGrid32x32x32Unsafe ForDefault( bool isFillAll )
+        {
+            //var align = UnsafeUtility.AlignOf<uint4>();
+            const int align = 16;
+            //const int size = sizeof( uint ) * 4;
+            const int size = sizeof( uint ) * 1 * 32 * 32;
+
+            this.alloc_( size, align, isFillAll );
+
+            return this;
+        }
+
+        void alloc_( int size, int align, bool isFillAll )
+        {
+            this.Dispose();
             this.pUnits = (uint*)UnsafeUtility.Malloc( size, align, Allocator.Persistent );
 
             if( isFillAll )
@@ -52,11 +70,10 @@ namespace MarchingCubes
 
         public void Dispose()
         {
-            if( this.pUnits != null )// struct なので、複製された場合意味がない
-            {
-                UnsafeUtility.Free( this.pUnits, Allocator.Persistent );
-                this.pUnits = null;
-            }
+            if( this.pUnits == null ) return;// struct なので、複製された場合はこのチェックも意味がない
+            
+            UnsafeUtility.Free( this.pUnits, Allocator.Persistent );
+            this.pUnits = null;
         }
 
 
