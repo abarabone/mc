@@ -36,8 +36,9 @@ namespace MarchingCubes
             ( ref NearCubeGrids g, int4 grid0or1, int4 grid0or1_right, int gridId, TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
-            var grid0ro1xz = math.any( new int4(grid0or1.xz, grid0or1_right.xz) ).AsByte();
-            var grid0or1z = math.any( new int2( grid0or1.z, grid0or1_right.z ) ).AsByte();
+            var grid0ro1xz = 1;// math.any( new int4( grid0or1.xz, grid0or1_right.xz ) ).AsByte();
+            var grid0or1x = grid0or1.x + grid0or1_right.x > 0 ? 1 : 0;//math.any( new int2( grid0or1.x, grid0or1_right.x ) ).AsByte();
+            var a = 1;// math.any( new int2( grid0or1.z, grid0or1_right.z ) ).AsByte();
 
             var g0or1x      = grid0or1.xxxx;
             var g0or1x_r    = grid0or1_right.xxxx;
@@ -50,7 +51,7 @@ namespace MarchingCubes
 
             for( var iy = 0; iy < 31 * grid0ro1xz; iy++ )
             {
-                for( var iz = 0; iz < ( 31 * grid0or1z & ~( 0x3 ) ); iz += 4 )
+                for( var iz = 0; iz < ( 31 * grid0or1x & ~0x3 ); iz += 4 )
                 {
                     var c = getXLine_( iy, iz, g0or1x, g.current, g.current, g.current, g.current );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -61,7 +62,7 @@ namespace MarchingCubes
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
                 }
                 {
-                    const int iz = ( 31 & ~( 0x3 ) );
+                    const int iz = 31 & ~0x3;
 
                     var c = getXLine_( iy, iz, g0or1xz, g.current, g.current, g.back, g.back );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -74,7 +75,7 @@ namespace MarchingCubes
             }
             {
                 const int iy = 31;
-                for( var iz = 0; iz < ( 31 * grid0or1z & ~( 0x3 ) ); iz += 4 )
+                for( var iz = 0; iz < ( 31 * a & ~0x3 ); iz += 4 )
                 {
                     var c = getXLine_( iy, iz, g0or1xy, g.current, g.under, g.current, g.under );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -85,7 +86,7 @@ namespace MarchingCubes
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, outputCubes );
                 }
                 {
-                    const int iz = ( 31 & ~( 0x3 ) );
+                    const int iz = 31 & ~0x3;
 
                     var c = getXLine_( iy, iz, g0or1, g.current, g.under, g.back, g.backUnder );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -159,7 +160,7 @@ namespace MarchingCubes
             var yspan = new int4( 32 / 4, 32 / 4, 32, 32 );
 
             var _i = ( iy_ + yofs & ymask ) * yspan + ( iz_ + zofs & zmask );
-            var i = _i * index0or1;
+            var i = _i;// * index0or1;
             var y0 = ( (uint4*)current.p->pUnits )[ i.x ];
             var y1 = ( (uint4*)under.p->pUnits )[ i.y ];
             var y0z0 = y0;
@@ -226,6 +227,9 @@ namespace MarchingCubes
         // あらかじめ共通段階までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある
         static CubeXLineBitwise bitwiseCubesXLine_( uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1 )
         {
+            //if(!math.any(y0z0) && !math.any(y0z1) && !math.any(y1z0) && !math.any(y1z1))
+            //    return new CubeXLineBitwise( uint4.zero, uint4.zero, uint4.zero, uint4.zero, uint4.zero, uint4.zero, uint4.zero, uint4.zero);
+
             // fedcba9876543210fedcba9876543210
 
             var m1100 = 0b_11001100_11001100_11001100_11001100u;
