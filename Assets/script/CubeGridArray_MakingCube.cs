@@ -36,9 +36,9 @@ namespace MarchingCubes
             ( ref NearCubeGrids g, int4 grid0or1, int4 grid0or1_right, int gridId, TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
-            var grid0ro1xz = 1;// math.any( new int4( grid0or1.xz, grid0or1_right.xz ) ).AsByte();
-            var grid0or1x = grid0or1.x + grid0or1_right.x > 0 ? 1 : 0;//math.any( new int2( grid0or1.x, grid0or1_right.x ) ).AsByte();
-            var a = 1;// math.any( new int2( grid0or1.z, grid0or1_right.z ) ).AsByte();
+            var grid0or1xz = math.any( grid0or1.xz | grid0or1_right.xz ).AsByte() | (grid0or1.x ^ grid0or1.z) | ( grid0or1_right.x ^ grid0or1_right.z );
+            var grid0or1x = grid0or1.x | grid0or1_right.x | ( grid0or1.x ^ grid0or1_right.x );
+            var a = grid0or1.z | grid0or1_right.z;
 
             var g0or1x      = grid0or1.xxxx;
             var g0or1x_r    = grid0or1_right.xxxx;
@@ -49,7 +49,8 @@ namespace MarchingCubes
             var g0or1       = grid0or1;
             var g0or1_r     = grid0or1_right;
 
-            for( var iy = 0; iy < 31 * grid0ro1xz; iy++ )
+
+            for( var iy = 0; iy < 31 * grid0or1xz; iy++ )
             {
                 for( var iz = 0; iz < ( 31 * grid0or1x & ~0x3 ); iz += 4 )
                 {
@@ -177,39 +178,35 @@ namespace MarchingCubes
 
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static bool addCubeFromXLine_<TCubeInstanceWriter>(
+        static void addCubeFromXLine_<TCubeInstanceWriter>(
             ref CubeXLineBitwise cubes,
             int gridId_, int iy, int iz, TCubeInstanceWriter outputCubes_
         )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
-            var isInstanceAppended = false;
-
             var i = 0;
             var ix = 0;
             var iz_ = new int4( iz + 0, iz + 1, iz + 2, iz + 3 );
             for( var ipack = 0; ipack < 32 / 8; ipack++ )// 8 は 1cube の 8bit
             {
-                isInstanceAppended |= addCubeIfVisible_( cubes._98109810 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                isInstanceAppended |= addCubeIfVisible_( cubes._a921a921 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                isInstanceAppended |= addCubeIfVisible_( cubes._ba32ba32 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                isInstanceAppended |= addCubeIfVisible_( cubes._cb43cb43 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                isInstanceAppended |= addCubeIfVisible_( cubes._dc54dc54 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                isInstanceAppended |= addCubeIfVisible_( cubes._ed65ed65 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                isInstanceAppended |= addCubeIfVisible_( cubes._fe76fe76 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
-                isInstanceAppended |= addCubeIfVisible_( cubes._0f870f87 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._98109810 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._a921a921 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._ba32ba32 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._cb43cb43 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._dc54dc54 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._ed65ed65 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._fe76fe76 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
+                addCubeIfVisible_( cubes._0f870f87 >> i & 0xff, gridId_, ix++, iy, iz_, outputCubes_ );
                 i += 8;
             }
-
-            return isInstanceAppended;
         }
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static bool addCubeIfVisible_<TCubeInstanceWriter>
+        static void addCubeIfVisible_<TCubeInstanceWriter>
             ( uint4 cubeId, int gridId__, int4 ix_, int4 iy_, int4 iz_, TCubeInstanceWriter cubeInstances )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
             var _0or255to0 = cubeId + 1 & 0xfe;
-            if( !math.any( _0or255to0 ) ) return false;// すべての cubeId が 0 か 255 なら何もしない
+            if( !math.any( _0or255to0 ) ) return;// すべての cubeId が 0 か 255 なら何もしない
 
             var cubeInstance = CubeUtiilty.ToCubeInstance( ix_, iy_, iz_, gridId__, cubeId );
 
@@ -217,8 +214,6 @@ namespace MarchingCubes
             if( _0or255to0.y != 0 ) cubeInstances.Add( cubeInstance.y );
             if( _0or255to0.z != 0 ) cubeInstances.Add( cubeInstance.z );
             if( _0or255to0.w != 0 ) cubeInstances.Add( cubeInstance.w );
-
-            return true;
         }
 
 
@@ -227,8 +222,7 @@ namespace MarchingCubes
         // あらかじめ共通段階までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある
         static CubeXLineBitwise bitwiseCubesXLine_( uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1 )
         {
-            //if(!math.any(y0z0) && !math.any(y0z1) && !math.any(y1z0) && !math.any(y1z1))
-            //    return new CubeXLineBitwise( uint4.zero, uint4.zero, uint4.zero, uint4.zero, uint4.zero, uint4.zero, uint4.zero, uint4.zero);
+            if( !math.any(y0z0 | y0z1 | y1z0 | y1z1) ) return new CubeXLineBitwise();
 
             // fedcba9876543210fedcba9876543210
 
