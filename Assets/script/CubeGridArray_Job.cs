@@ -42,28 +42,42 @@ namespace MarchingCubes
         }
 
 
-        public interface ICubeInstanceWriter
+        public unsafe interface ICubeInstanceWriter
         {
             void Add( CubeInstance ci );
+            void AddRange( CubeInstance* pCi, int length );
         }
-        public struct InstanceCubeByList : ICubeInstanceWriter
+        public unsafe struct InstanceCubeByList : ICubeInstanceWriter
         {
             [WriteOnly]
             public NativeList<CubeInstance> list;
             public void Add( CubeInstance ci ) => list.AddNoResize( ci );
+            public void AddRange( CubeInstance* pCi, int length ) => list.AddRangeNoResize( pCi, length );
         }
-        public struct InstanceCubeByParaList : ICubeInstanceWriter
+        public unsafe struct InstanceCubeByParaList : ICubeInstanceWriter
         {
             [WriteOnly]
             public NativeList<CubeInstance>.ParallelWriter list;
             public void Add( CubeInstance ci ) => list.AddNoResize( ci );
+            public void AddRange( CubeInstance* pCi, int length ) => list.AddRangeNoResize( pCi, length );
         }
-        public struct InstanceCubeByParaQueue : ICubeInstanceWriter
+        public unsafe struct InstanceCubeByParaQueue : ICubeInstanceWriter
         {
             [WriteOnly]
             public NativeQueue<CubeInstance>.ParallelWriter queue;
             public void Add( CubeInstance ci ) => queue.Enqueue( ci );
+            public void AddRange( CubeInstance* pCi, int length ) => queue.Enqueue( *pCi );
         }
+        public unsafe struct InstanceCubeByTempMem : ICubeInstanceWriter
+        {
+            [WriteOnly]
+            [NativeDisableUnsafePtrRestriction][NativeDisableParallelForRestriction]
+            public CubeInstance* p;
+            public int length;
+            public void Add( CubeInstance ci ) => p[length++] = ci;
+            public void AddRange( CubeInstance* pCi, int length ) => UnsafeUtility.MemCpy( p, pCi, length * 4 );
+        }
+
 
 
 
@@ -98,11 +112,8 @@ namespace MarchingCubes
                             if( !isNeedDraw_( gridcount.left, gridcount.right ) ) continue;
                             //if( !isNeedDraw_( ref gridset ) ) continue;
 
-                            var grid0or1 = math.min( gridcount.left & 0x7fff, new int4(1,1,1,1) );
-                            var grid0or1_right = math.min( gridcount.right & 0x7fff, new int4(1,1,1,1) );
-
                             var dstCubeInstances = new InstanceCubeByList { list = this.dstCubeInstances };
-                            SampleAllCubes( ref gridset, grid0or1, grid0or1_right, gridId, dstCubeInstances );
+                            SampleAllCubes( ref gridset, ref gridcount, gridId, ref dstCubeInstances );
                             //SampleAllCubes( ref gridset, gridId, dstCubeInstances );
 
                             this.dstGridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
@@ -166,14 +177,25 @@ namespace MarchingCubes
             public TCubeInstanceWriter dstCubeInstances;
 
 
-            public void Execute( int index )
+            public unsafe void Execute( int index )
             {
 
                 var gridset = this.nearGrids[ index ];
 
+                SampleAllCubes( ref gridset, gridset.gridId, ref dstCubeInstances );
 
-                SampleAllCubes( ref gridset, gridset.gridId, dstCubeInstances );
+            }
+            public unsafe void Execute_( int index )
+            {
+                var p = (CubeInstance*)UnsafeUtility.Malloc( 32*32*32 * 4, 16, Allocator.Temp );
+                var instances = new InstanceCubeByTempMem { p = p };
+                
+                var gridset = this.nearGrids[ index ];
 
+                SampleAllCubes( ref gridset, gridset.gridId, ref instances );
+
+                dstCubeInstances.AddRange( instances.p, instances.length );
+                UnsafeUtility.Free( p, Allocator.Temp );
             }
         }
 

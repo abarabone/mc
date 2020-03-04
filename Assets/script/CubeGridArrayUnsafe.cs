@@ -319,7 +319,7 @@ namespace MarchingCubes
                 dstCubeInstances = dstCubeInstances,
             }
             .Schedule( gridsets, -1, dispJob );
-            
+
             gridsets.Dispose( instJob );
 
             return instJob;

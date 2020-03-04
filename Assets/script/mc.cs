@@ -68,7 +68,7 @@ namespace MarchingCubes
                 for( var iz = 0; iz < 15; iz++ )
                     for( var ix = 0; ix < 13; ix++ )
                         c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
-            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+            this.job = this.cubeGrids.BuildCubeInstanceDataPara( this.gridPositions, this.cubeInstances );
             this.job.Complete();
 
             this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
