@@ -15,16 +15,38 @@ namespace MarchingCubes
     public unsafe partial struct CubeGridArrayUnsafe
     {
 
+        public unsafe struct CubeGrid32x32x32UnsafePtr
+        {
+            [NativeDisableUnsafePtrRestriction]
+            public CubeGrid32x32x32Unsafe* p;
+
+            public uint this[ int ix, int iy, int iz ]
+            {
+                get => ( *this.p )[ ix, iy, iz ];
+                set => ( *this.p )[ ix, iy, iz ] = value;
+            }
+        }
+
+        public struct NearCubeGrids
+        {
+            public int gridId;
+            public HalfGridUnit L;
+            public HalfGridUnit R;
+            public struct HalfGridUnit
+            {
+                public CubeGrid32x32x32UnsafePtr x;
+                public CubeGrid32x32x32UnsafePtr y;
+                public CubeGrid32x32x32UnsafePtr z;
+                public CubeGrid32x32x32UnsafePtr w;
+            }
+        }
+
 
         static void SampleAllCubes<TCubeInstanceWriter>
             ( ref NearCubeGrids g, int gridId, ref TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
-            var gcount = new GridCounts
-            {
-                left = new int4( 1, 1, 1, 1 ),
-                right = new int4( 1, 1, 1, 1 ),
-            };
+            var gcount = countEach( ref g );
             SampleAllCubes( ref g, ref gcount, gridId, ref outputCubes );
         }
 
@@ -41,30 +63,40 @@ namespace MarchingCubes
             ( ref NearCubeGrids g, ref GridCounts gcount, int gridId, ref TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
-            var grid0or1 = math.min( gcount.left & 0x7fff, new int4( 1, 1, 1, 1 ) );
-            var grid0or1_right = math.min( gcount.right & 0x7fff, new int4( 1, 1, 1, 1 ) );
+            var g0or1L = math.min( gcount.L & 0x7fff, new int4( 1, 1, 1, 1 ) );
+            var g0or1R = math.min( gcount.R & 0x7fff, new int4( 1, 1, 1, 1 ) );
 
             var grid0or1xz = 1;// math.any( grid0or1.xz | grid0or1_right.xz ).AsByte() | (grid0or1.x ^ grid0or1.z) | ( grid0or1_right.x ^ grid0or1_right.z );
-            var grid0or1x = 1;// grid0or1.x | grid0or1_right.x | ( grid0or1.x ^ grid0or1_right.x );
+            var grid0or1x = g0or1L.x | g0or1R.x | ( g.L.x.p->IsFull ^ g.R.x.p->IsFull ).AsByte();
             var a = 1;// grid0or1.z | grid0or1_right.z;
 
-            var g0or1x      = grid0or1.xxxx;
-            var g0or1x_r    = grid0or1_right.xxxx;
-            var g0or1xz     = grid0or1.xxzz;
-            var g0or1xz_r   = grid0or1_right.xxzz;
-            var g0or1xy     = grid0or1.xyxy;
-            var g0or1xy_r   = grid0or1_right.xyxy;
-            var g0or1       = grid0or1;
-            var g0or1_r     = grid0or1_right;
-            
+            //var isFullL = new bool4( g.L.x.p->IsFull, g.L.y.p->IsFull, g.L.z.p->IsFull, g.L.w.p->IsFull );
+            //var isFullR = new bool4( g.R.x.p->IsFull, g.R.y.p->IsFull, g.R.z.p->IsFull, g.R.w.p->IsFull );
+            ////var boundary = (isFullL ^ isFullR) * g
+
+            //var isFullB = new bool4( g.L.x.p->IsFull, g.R.x.p->IsFull, g.L.y.p->IsFull, g.R.y.p->IsFull );
+            //var isFullF = new bool4( g.L.z.p->IsFull, g.L.y.p->IsFull, g.R.z.p->IsFull, g.R.w.p->IsFull );
+
+            //var isFullD = new bool4( g.L.x.p->IsFull, g.L.y.p->IsFull, g.L.z.p->IsFull, g.L.w.p->IsFull );
+            //var isFullU = new bool4( g.R.x.p->IsFull, g.R.y.p->IsFull, g.R.z.p->IsFull, g.R.w.p->IsFull );
+
+            var g0or1Lxxxx = g0or1L.xxxx;
+            var g0or1Rxxxx = g0or1R.xxxx;
+            var g0or1Lxxzz = g0or1L.xxzz;
+            var g0or1Rxxzz = g0or1R.xxzz;
+            var g0or1Lxyxy = g0or1L.xyxy;
+            var g0or1Rxyxy = g0or1R.xyxy;
+            var g0or1Lxyzw = g0or1L;
+            var g0or1Rxyzw = g0or1R;
+
             for( var iy = 0; iy < 31 * grid0or1xz; iy++ )
             {
                 for( var iz = 0; iz < ( 31 * grid0or1x & ~0x3 ); iz += 4 )
                 {
-                    var c = getXLine_( iy, iz, g0or1x, g.current, g.current, g.current, g.current );
+                    var c = getXLine_( iy, iz, g0or1Lxxxx, g.L.x, g.L.x, g.L.x, g.L.x );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, g0or1x_r, g.current_right, g.current_right, g.current_right, g.current_right );
+                    var cr = getXLine_( iy, iz, g0or1Rxxxx, g.R.x, g.R.x, g.R.x, g.R.x );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, ref outputCubes );
@@ -72,10 +104,10 @@ namespace MarchingCubes
                 {
                     const int iz = 31 & ~0x3;
 
-                    var c = getXLine_( iy, iz, g0or1xz, g.current, g.current, g.back, g.back );
+                    var c = getXLine_( iy, iz, g0or1Lxxzz, g.L.x, g.L.x, g.L.z, g.L.z );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, g0or1xz_r, g.current_right, g.current_right, g.back_right, g.back_right );
+                    var cr = getXLine_( iy, iz, g0or1Rxxzz, g.R.x, g.R.x, g.R.z, g.R.z );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, ref outputCubes );
@@ -85,10 +117,10 @@ namespace MarchingCubes
                 const int iy = 31;
                 for( var iz = 0; iz < ( 31 * a & ~0x3 ); iz += 4 )
                 {
-                    var c = getXLine_( iy, iz, g0or1xy, g.current, g.under, g.current, g.under );
+                    var c = getXLine_( iy, iz, g0or1Lxyxy, g.L.x, g.L.y, g.L.x, g.L.y );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, g0or1xy_r, g.current_right, g.under_right, g.current_right, g.under_right );
+                    var cr = getXLine_( iy, iz, g0or1Rxyxy, g.R.x, g.R.y, g.R.x, g.R.y );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, ref outputCubes );
@@ -96,10 +128,10 @@ namespace MarchingCubes
                 {
                     const int iz = 31 & ~0x3;
 
-                    var c = getXLine_( iy, iz, g0or1, g.current, g.under, g.back, g.backUnder );
+                    var c = getXLine_( iy, iz, g0or1Lxyzw, g.L.x, g.L.y, g.L.z, g.L.w );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
 
-                    var cr = getXLine_( iy, iz, g0or1_r, g.current_right, g.under_right, g.back_right, g.backUnder_right );
+                    var cr = getXLine_( iy, iz, g0or1Rxyzw, g.R.x, g.R.y, g.R.z, g.R.w );
                     cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
 
                     addCubeFromXLine_( ref cubes, gridId, iy, iz, ref outputCubes );
@@ -151,8 +183,8 @@ namespace MarchingCubes
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
         static unsafe CubeNearXLines getXLine_(
             int iy, int iz, int4 index0or1,
-            CubeGrid32x32x32UnsafePtr current, CubeGrid32x32x32UnsafePtr under,
-            CubeGrid32x32x32UnsafePtr back, CubeGrid32x32x32UnsafePtr backUnder
+            CubeGrid32x32x32UnsafePtr gx, CubeGrid32x32x32UnsafePtr gy,
+            CubeGrid32x32x32UnsafePtr gz, CubeGrid32x32x32UnsafePtr gw
         )
         {
             //y0  -> ( iy + 0 & 31 ) * 32/4 + ( iz>>2 + 0 & 31>>2 );
@@ -169,13 +201,17 @@ namespace MarchingCubes
 
             var _i = ( iy_ + yofs & ymask ) * yspan + ( iz_ + zofs & zmask );
             var i = _i;// * index0or1;
-            var y0 = ( (uint4*)current.p->pUnits )[ i.x ];
-            var y1 = ( (uint4*)under.p->pUnits )[ i.y ];
+            var y0 = ( (uint4*)gx.p->pUnits )[ i.x ];
+            var y1 = ( (uint4*)gy.p->pUnits )[ i.y ];
+            //var y0 = index0or1.x > 0 ? ( (uint4*)gx.p->pUnits )[ i.x ] : (uint)(gx.p->IsEmpty.AsByte() - 1);
+            //var y1 = index0or1.y > 0 ? ( (uint4*)gy.p->pUnits )[ i.y ] : (uint)(gy.p->IsEmpty.AsByte() - 1);
             var y0z0 = y0;
             var y1z0 = y1;
 
-            y0.x = back.p->pUnits[ i.z ];
-            y1.x = backUnder.p->pUnits[ i.w ];
+            y0.x = gz.p->pUnits[ i.z ];
+            y1.x = gw.p->pUnits[ i.w ];
+            //y0.x = index0or1.z > 0 ? gz.p->pUnits[ i.z ] : (uint)( gz.p->IsEmpty.AsByte() - 1 );
+            //y1.x = index0or1.w > 0 ? gw.p->pUnits[ i.w ] : (uint)( gw.p->IsEmpty.AsByte() - 1 );
             var y0z1 = y0.yzwx;
             var y1z1 = y1.yzwx;
 
@@ -229,7 +265,7 @@ namespace MarchingCubes
         // あらかじめ共通段階までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある
         static CubeXLineBitwise bitwiseCubesXLine_( uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1 )
         {
-            if( !math.any(y0z0 | y0z1 | y1z0 | y1z1) ) return new CubeXLineBitwise();
+            if( !math.any( y0z0 | y0z1 | y1z0 | y1z1 ) ) return new CubeXLineBitwise();
 
             // fedcba9876543210fedcba9876543210
 

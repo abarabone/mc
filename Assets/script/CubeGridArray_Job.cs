@@ -16,31 +16,6 @@ namespace MarchingCubes
     public partial struct CubeGridArrayUnsafe
     {
 
-        public unsafe struct CubeGrid32x32x32UnsafePtr
-        {
-            [NativeDisableUnsafePtrRestriction]
-            public CubeGrid32x32x32Unsafe* p;
-
-            public uint this[ int ix, int iy, int iz ]
-            {
-                get => ( *this.p )[ ix, iy, iz ];
-                set => ( *this.p )[ ix, iy, iz ] = value;
-            }
-        }
-
-        public struct NearCubeGrids
-        {
-            public int gridId;
-            public CubeGrid32x32x32UnsafePtr current;
-            public CubeGrid32x32x32UnsafePtr current_right;
-            public CubeGrid32x32x32UnsafePtr under;
-            public CubeGrid32x32x32UnsafePtr under_right;
-            public CubeGrid32x32x32UnsafePtr back;
-            public CubeGrid32x32x32UnsafePtr back_right;
-            public CubeGrid32x32x32UnsafePtr backUnder;
-            public CubeGrid32x32x32UnsafePtr backUnder_right;
-        }
-
 
         public unsafe interface ICubeInstanceWriter
         {
@@ -66,7 +41,7 @@ namespace MarchingCubes
             [WriteOnly]
             public NativeQueue<CubeInstance>.ParallelWriter queue;
             public void Add( CubeInstance ci ) => queue.Enqueue( ci );
-            public void AddRange( CubeInstance* pCi, int length ) => queue.Enqueue( *pCi );
+            public void AddRange( CubeInstance* pCi, int length ) => queue.Enqueue( *pCi );// だめ
         }
         public unsafe struct InstanceCubeByTempMem : ICubeInstanceWriter
         {
@@ -75,7 +50,8 @@ namespace MarchingCubes
             public CubeInstance* p;
             public int length;
             public void Add( CubeInstance ci ) => p[length++] = ci;
-            public void AddRange( CubeInstance* pCi, int length ) => UnsafeUtility.MemCpy( p, pCi, length * 4 );
+            public void AddRange( CubeInstance* pCi, int length ) =>
+                UnsafeUtility.MemCpy( p, pCi, length * sizeof(CubeInstance) );
         }
 
 
@@ -109,7 +85,7 @@ namespace MarchingCubes
                             var gridset = getGridSet_( ref this.gridArray, ix, iy, iz, yspan, zspan );
                             var gridcount = countEach( ref gridset );
 
-                            if( !isNeedDraw_( gridcount.left, gridcount.right ) ) continue;
+                            if( !isNeedDraw_( gridcount.L, gridcount.R ) ) continue;
                             //if( !isNeedDraw_( ref gridset ) ) continue;
 
                             var dstCubeInstances = new InstanceCubeByList { list = this.dstCubeInstances };
@@ -166,7 +142,8 @@ namespace MarchingCubes
         }
 
         [BurstCompile]
-        struct CubeInstanceJob<TCubeInstanceWriter> : IJobParallelForDefer where TCubeInstanceWriter : ICubeInstanceWriter
+        struct CubeInstanceJob<TCubeInstanceWriter> : IJobParallelForDefer
+            where TCubeInstanceWriter : ICubeInstanceWriter
         {
 
             [ReadOnly]
@@ -177,7 +154,7 @@ namespace MarchingCubes
             public TCubeInstanceWriter dstCubeInstances;
 
 
-            public unsafe void Execute( int index )
+            public unsafe void Execute_( int index )// 激しく遅い、リストに細かく並列書き込みするとだめっぽい
             {
 
                 var gridset = this.nearGrids[ index ];
@@ -185,9 +162,10 @@ namespace MarchingCubes
                 SampleAllCubes( ref gridset, gridset.gridId, ref dstCubeInstances );
 
             }
-            public unsafe void Execute_( int index )
+            public unsafe void Execute( int index )// 結構速い、IJob より全体は 1.6 倍くらいかかるが完了はだいぶ速い
             {
-                var p = (CubeInstance*)UnsafeUtility.Malloc( 32*32*32 * 4, 16, Allocator.Temp );
+                // 素の確保のほうがコンテナ類（初期化なし）よりだいぶ速い、また unsafe list より幾分か速い
+                var p = (CubeInstance*)UnsafeUtility.Malloc( 32*32*32 * sizeof(CubeInstance), 16, Allocator.Temp );
                 var instances = new InstanceCubeByTempMem { p = p };
                 
                 var gridset = this.nearGrids[ index ];

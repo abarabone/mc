@@ -154,36 +154,44 @@ namespace MarchingCubes
 
             return new NearCubeGrids
             {
-                current         = gridArray.grids[ i + 0 ],
-                current_right   = gridArray.grids[ i + 1 ],
-                under           = gridArray.grids[ i + yspan_ + 0 ],
-                under_right     = gridArray.grids[ i + yspan_ + 1 ],
-                back            = gridArray.grids[ i + zspan_ + 0 ],
-                back_right      = gridArray.grids[ i + zspan_ + 1 ],
-                backUnder_right = gridArray.grids[ i + yspan_ + zspan_ + 1 ],
-                backUnder       = gridArray.grids[ i + yspan_ + zspan_ + 0 ],
+                L =
+                {
+                    x = gridArray.grids[ i + 0 ],
+                    y = gridArray.grids[ i + yspan_ + 0 ],
+                    z = gridArray.grids[ i + zspan_ + 0 ],
+                    w = gridArray.grids[ i + yspan_ + zspan_ + 0 ],
+                },
+                R =
+                {
+                    x = gridArray.grids[ i + 1 ],
+                    y = gridArray.grids[ i + yspan_ + 1 ],
+                    z = gridArray.grids[ i + zspan_ + 1 ],
+                    w = gridArray.grids[ i + yspan_ + zspan_ + 1 ],
+                },
             };
         }
 
         struct GridCounts
         {
-            public int4 left, right;
+            public int4 L, R;
         }
         static GridCounts countEach( ref NearCubeGrids g )
         {
-            var gridCount = new int4(
-                g.current   .p->CubeCount,
-                g.under     .p->CubeCount,
-                g.back      .p->CubeCount,
-                g.backUnder .p->CubeCount
+            var gridCount = new int4
+            (
+                g.L.x.p->CubeCount,
+                g.L.y.p->CubeCount,
+                g.L.z.p->CubeCount,
+                g.L.w.p->CubeCount
             );
-            var gridCount_right = new int4(
-                g.current_right     .p->CubeCount,
-                g.under_right       .p->CubeCount,
-                g.back_right        .p->CubeCount,
-                g.backUnder_right   .p->CubeCount
+            var gridCount_right = new int4
+            (
+                g.R.x.p->CubeCount,
+                g.R.y.p->CubeCount,
+                g.R.z.p->CubeCount,
+                g.R.w.p->CubeCount
             );
-            return new GridCounts { left = gridCount, right = gridCount_right };
+            return new GridCounts { L = gridCount, R = gridCount_right };
         }
 
         static bool isNeedDraw_( int4 gridCount, int4 gridCount_right )
@@ -197,16 +205,16 @@ namespace MarchingCubes
 
         static bool isNeedDraw_( ref NearCubeGrids g )
         {
-            if( g.current.p->IsEmpty )
+            if( g.L.x.p->IsEmpty )
             {
                 var isNoDraw =
-                    g.current_right.p->IsEmpty &
-                    g.under.p->IsEmpty &
-                    g.under_right.p->IsEmpty &
-                    g.back.p->IsEmpty &
-                    g.back_right.p->IsEmpty &
-                    g.backUnder.p->IsEmpty &
-                    g.backUnder_right.p->IsEmpty
+                    g.R.x.p->IsEmpty &
+                    g.L.y.p->IsEmpty &
+                    g.R.y.p->IsEmpty &
+                    g.L.z.p->IsEmpty &
+                    g.R.z.p->IsEmpty &
+                    g.L.w.p->IsEmpty &
+                    g.R.w.p->IsEmpty
                     ;
                 if( isNoDraw ) return false;
 
@@ -215,16 +223,16 @@ namespace MarchingCubes
                 return true;
             }
 
-            if( g.current.p->IsFull )
+            if( g.L.x.p->IsFull )
             {
                 var isNoDraw =
-                    g.current_right.p->IsFull &
-                    g.under.p->IsFull &
-                    g.under_right.p->IsFull &
-                    g.back.p->IsFull &
-                    g.back_right.p->IsFull &
-                    g.backUnder.p->IsFull &
-                    g.backUnder_right.p->IsFull
+                    g.R.x.p->IsFull &
+                    g.L.y.p->IsFull &
+                    g.R.y.p->IsFull &
+                    g.L.z.p->IsFull &
+                    g.R.z.p->IsFull &
+                    g.L.w.p->IsFull &
+                    g.R.w.p->IsFull
                     ;
                 if( isNoDraw ) return false;
 
@@ -239,7 +247,9 @@ namespace MarchingCubes
 
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public JobHandle BuildCubeInstanceData
             ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )
         {
@@ -256,6 +266,9 @@ namespace MarchingCubes
         }
         
 
+        /// <summary>
+        /// 
+        /// </summary>
         public JobHandle BuildCubeInstanceDataParaQ
             ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )
         {
@@ -296,6 +309,10 @@ namespace MarchingCubes
             return copyJob;
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
         public JobHandle BuildCubeInstanceDataPara
             ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )
         {
@@ -319,6 +336,7 @@ namespace MarchingCubes
                 dstCubeInstances = dstCubeInstances,
             }
             .Schedule( gridsets, -1, dispJob );
+
 
             gridsets.Dispose( instJob );
 
