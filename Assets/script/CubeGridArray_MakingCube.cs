@@ -66,19 +66,9 @@ namespace MarchingCubes
             var g0or1L = math.min( gcount.L & 0x7fff, new int4( 1, 1, 1, 1 ) );
             var g0or1R = math.min( gcount.R & 0x7fff, new int4( 1, 1, 1, 1 ) );
 
-            var grid0or1xz = 1;// math.any( grid0or1.xz | grid0or1_right.xz ).AsByte() | (grid0or1.x ^ grid0or1.z) | ( grid0or1_right.x ^ grid0or1_right.z );
-            var grid0or1x = g0or1L.x | g0or1R.x | ( g.L.x.p->IsFull ^ g.R.x.p->IsFull ).AsByte();
-            var a = 1;// grid0or1.z | grid0or1_right.z;
-
-            //var isFullL = new bool4( g.L.x.p->IsFull, g.L.y.p->IsFull, g.L.z.p->IsFull, g.L.w.p->IsFull );
-            //var isFullR = new bool4( g.R.x.p->IsFull, g.R.y.p->IsFull, g.R.z.p->IsFull, g.R.w.p->IsFull );
-            ////var boundary = (isFullL ^ isFullR) * g
-
-            //var isFullB = new bool4( g.L.x.p->IsFull, g.R.x.p->IsFull, g.L.y.p->IsFull, g.R.y.p->IsFull );
-            //var isFullF = new bool4( g.L.z.p->IsFull, g.L.y.p->IsFull, g.R.z.p->IsFull, g.R.w.p->IsFull );
-
-            //var isFullD = new bool4( g.L.x.p->IsFull, g.L.y.p->IsFull, g.L.z.p->IsFull, g.L.w.p->IsFull );
-            //var isFullU = new bool4( g.R.x.p->IsFull, g.R.y.p->IsFull, g.R.z.p->IsFull, g.R.w.p->IsFull );
+            //var g0or1x = g0or1L.x | g0or1R.x | ( g.L.x.p->IsFull ^ g.R.x.p->IsFull ).AsByte();
+            //var g0or1y = g0or1L.y | g0or1R.y | ( g.L.y.p->IsFull ^ g.R.y.p->IsFull ).AsByte();
+            //var g0or1z = g0or1L.z | g0or1R.z | ( g.L.z.p->IsFull ^ g.R.z.p->IsFull ).AsByte();
 
             var g0or1Lxxxx = g0or1L.xxxx;
             var g0or1Rxxxx = g0or1R.xxxx;
@@ -89,9 +79,9 @@ namespace MarchingCubes
             var g0or1Lxyzw = g0or1L;
             var g0or1Rxyzw = g0or1R;
 
-            for( var iy = 0; iy < 31 * grid0or1xz; iy++ )
+            for( var iy = 0; iy < 31; iy++ )
             {
-                for( var iz = 0; iz < ( 31 * grid0or1x & ~0x3 ); iz += 4 )
+                for( var iz = 0; iz < ( 31 & ~0x3 ); iz += 4 )
                 {
                     var c = getXLine_( iy, iz, g0or1Lxxxx, g.L.x, g.L.x, g.L.x, g.L.x );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -115,7 +105,7 @@ namespace MarchingCubes
             }
             {
                 const int iy = 31;
-                for( var iz = 0; iz < ( 31 * a & ~0x3 ); iz += 4 )
+                for( var iz = 0; iz < ( 31 & ~0x3 ); iz += 4 )
                 {
                     var c = getXLine_( iy, iz, g0or1Lxyxy, g.L.x, g.L.y, g.L.x, g.L.y );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -139,7 +129,80 @@ namespace MarchingCubes
             }
 
         }
+        
+        static void SampleAllCubes_<TCubeInstanceWriter>
+            ( ref NearCubeGrids g, ref GridCounts gcount, int gridId, ref TCubeInstanceWriter outputCubes )
+            where TCubeInstanceWriter : ICubeInstanceWriter
+        {
+            var g0or1L = math.min( gcount.L & 0x7fff, new int4( 1, 1, 1, 1 ) );
+            var g0or1R = math.min( gcount.R & 0x7fff, new int4( 1, 1, 1, 1 ) );
 
+            var g0or1x = g0or1L.x | g0or1R.x | ( g.L.x.p->IsFull ^ g.R.x.p->IsFull ).AsByte();
+            var g0or1y = g0or1L.y | g0or1R.y | ( g.L.y.p->IsFull ^ g.R.y.p->IsFull ).AsByte();
+            var g0or1z = g0or1L.z | g0or1R.z | ( g.L.z.p->IsFull ^ g.R.z.p->IsFull ).AsByte();
+            
+            var g0or1Lxxxx = g0or1L.xxxx;
+            var g0or1Rxxxx = g0or1R.xxxx;
+            var g0or1Lxxzz = g0or1L.xxzz;
+            var g0or1Rxxzz = g0or1R.xxzz;
+            var g0or1Lxyxy = g0or1L.xyxy;
+            var g0or1Rxyxy = g0or1R.xyxy;
+            var g0or1Lxyzw = g0or1L;
+            var g0or1Rxyzw = g0or1R;
+
+            for( var iy = 0; iy < 31 * g0or1x; iy++ )
+            {
+                for( var iz = 0; iz < ( 31 & ~0x3 ); iz += 4 )
+                {
+                    var c = getXLine_( iy, iz, g0or1Lxxxx, g.L.x, g.L.x, g.L.x, g.L.x );
+                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
+
+                    var cr = getXLine_( iy, iz, g0or1Rxxxx, g.R.x, g.R.x, g.R.x, g.R.x );
+                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
+
+                    addCubeFromXLine_( ref cubes, gridId, iy, iz, ref outputCubes );
+                }
+            }
+            for( var iy = 0; iy < 31; iy++ )
+            {
+                {
+                    const int iz = 31 & ~0x3;
+
+                    var c = getXLine_( iy, iz, g0or1Lxxzz, g.L.x, g.L.x, g.L.z, g.L.z );
+                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
+
+                    var cr = getXLine_( iy, iz, g0or1Rxxzz, g.R.x, g.R.x, g.R.z, g.R.z );
+                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
+
+                    addCubeFromXLine_( ref cubes, gridId, iy, iz, ref outputCubes );
+                }
+            }
+            {
+                const int iy = 31;
+                for( var iz = 0; iz < ( 31 & ~0x3 ); iz += 4 )
+                {
+                    var c = getXLine_( iy, iz, g0or1Lxyxy, g.L.x, g.L.y, g.L.x, g.L.y );
+                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
+
+                    var cr = getXLine_( iy, iz, g0or1Rxyxy, g.R.x, g.R.y, g.R.x, g.R.y );
+                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
+
+                    addCubeFromXLine_( ref cubes, gridId, iy, iz, ref outputCubes );
+                }
+                {
+                    const int iz = 31 & ~0x3;
+
+                    var c = getXLine_( iy, iz, g0or1Lxyzw, g.L.x, g.L.y, g.L.z, g.L.w );
+                    var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
+
+                    var cr = getXLine_( iy, iz, g0or1Rxyzw, g.R.x, g.R.y, g.R.z, g.R.w );
+                    cubes._0f870f87 |= bitwiseLastHalfCubeXLine_( cr.y0z0, cr.y0z1, cr.y1z0, cr.y1z1 );
+
+                    addCubeFromXLine_( ref cubes, gridId, iy, iz, ref outputCubes );
+                }
+            }
+
+        }
 
 
         public struct CubeXLineBitwise// タプルだと burst 利かないので

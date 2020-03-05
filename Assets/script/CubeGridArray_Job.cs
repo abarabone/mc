@@ -89,7 +89,7 @@ namespace MarchingCubes
                             //if( !isNeedDraw_( ref gridset ) ) continue;
 
                             var dstCubeInstances = new InstanceCubeByList { list = this.dstCubeInstances };
-                            SampleAllCubes( ref gridset, ref gridcount, gridId, ref dstCubeInstances );
+                            SampleAllCubes_( ref gridset, ref gridcount, gridId, ref dstCubeInstances );
                             //SampleAllCubes( ref gridset, gridId, dstCubeInstances );
 
                             this.dstGridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
