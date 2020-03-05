@@ -66,7 +66,7 @@ namespace MarchingCubes
             var g0or1L = math.min( gcount.L & 0x7fff, new int4( 1, 1, 1, 1 ) );
             var g0or1R = math.min( gcount.R & 0x7fff, new int4( 1, 1, 1, 1 ) );
 
-            //var g0or1x = g0or1L.x | g0or1R.x | ( g.L.x.p->IsFull ^ g.R.x.p->IsFull ).AsByte();
+            var g0or1x = g0or1L.x | g0or1R.x | ( g.L.x.p->IsFull ^ g.R.x.p->IsFull ).AsByte();
             //var g0or1y = g0or1L.y | g0or1R.y | ( g.L.y.p->IsFull ^ g.R.y.p->IsFull ).AsByte();
             //var g0or1z = g0or1L.z | g0or1R.z | ( g.L.z.p->IsFull ^ g.R.z.p->IsFull ).AsByte();
 
@@ -81,7 +81,7 @@ namespace MarchingCubes
 
             for( var iy = 0; iy < 31; iy++ )
             {
-                for( var iz = 0; iz < ( 31 & ~0x3 ); iz += 4 )
+                for( var iz = 0; iz < ( 31 * g0or1x & ~0x3 ); iz += 4 )
                 {
                     var c = getXLine_( iy, iz, g0or1Lxxxx, g.L.x, g.L.x, g.L.x, g.L.x );
                     var cubes = bitwiseCubesXLine_( c.y0z0, c.y0z1, c.y1z0, c.y1z1 );
@@ -325,7 +325,7 @@ namespace MarchingCubes
 
 
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        // あらかじめ共通段階までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある
+        // あらかじめ共通段階（キューブ手前）までビット操作しておいたほうが速くなるかも、でも余計なエリアにストアするから、逆効果の可能性もある
         static CubeXLineBitwise bitwiseCubesXLine_( uint4 y0z0, uint4 y0z1, uint4 y1z0, uint4 y1z1 )
         {
             if( !math.any( y0z0 | y0z1 | y1z0 | y1z1 ) ) return new CubeXLineBitwise();
