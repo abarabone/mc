@@ -9,17 +9,18 @@ namespace MarchingCubes
     public class MarchingCubeAsset : ScriptableObject
     {
         public Vector3[] BaseVertexList;
-        public CubeWrapper[] CubeIndexLists;
+        public CubeWrapper[] CubeIdAndVertexIndicesList;
+        public Vector3[] Normals;
 
         [System.Serializable]
         public struct CubeWrapper// タプルがシリアライズできないので
         {
             public byte cubeId;
-            public int[] indices;
+            public int[] vertexIndices;
         }
 
-        public (byte cubeId, int[] vtxIdxs)[] CubeIdsAndIndexLists =>
-            this.CubeIndexLists.Select( x => (x.cubeId, x.indices) ).ToArray();
+        //public (byte cubeId, int[] vtxIdxs)[] CubeIdsAndIndexLists =>
+        //    this.CubeIndexLists.Select( x => (x.cubeId, x.indices) ).ToArray();
     }
 
 }

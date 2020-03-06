@@ -20,20 +20,20 @@ namespace MarchingCubes
     }
 
 
-    public struct CubeInstancesToMeshJob : IJob
-    {
+    //public struct CubeInstancesToMeshJob : IJob
+    //{
 
-        public NativeArray<uint> srcCubeInstances;
-        public NativeArray<int> srcIndices;
-        public NativeArray<float3> srcVertices;
+    //    public NativeArray<uint> srcCubeInstances;
+    //    public NativeArray<int> srcIndices;
+    //    public NativeArray<float3> srcVertices;
 
-        public NativeArray<float3, > dstVertices;
+    //    public NativeArray<float3, > dstVertices;
 
 
-        public void Execute()
-        {
+    //    public void Execute()
+    //    {
 
-        }
-    }
+    //    }
+    //}
 
 }

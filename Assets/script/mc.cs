@@ -154,7 +154,7 @@ namespace MarchingCubes
 
             var instance = createCubeIdInstancingShaderBuffer_( 32*32*32*3000 );
             var basevtxs = createBaseVtxShaderBuffer_( asset.BaseVertexList );
-            var cubeid = createIdxListsShaderBuffer_( asset.CubeIdsAndIndexLists );
+            var cubeid = createIdxListsShaderBuffer_( asset.CubeIdAndVertexIndicesList );
             var gridposition = createGridPositionShaderBuffer_( 3000 );
             var mesh = createMesh_();
 
@@ -175,7 +175,8 @@ namespace MarchingCubes
                 return buffer;
             }
 
-            ComputeBuffer createIdxListsShaderBuffer_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_ )
+            ComputeBuffer createIdxListsShaderBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
+            //ComputeBuffer createIdxListsShaderBuffer_( (byte cubeId, int[] vtxIdxs)[] cubeIdsAndVtxIndexLists_ )
             {
                 var buffer = new ComputeBuffer( 254 * 12, Marshal.SizeOf<int>() );
 
@@ -184,7 +185,7 @@ namespace MarchingCubes
                         //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
                         //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
                         orderby x.cubeId
-                    select x.vtxIdxs.Concat( Enumerable.Repeat( 0, 12 - x.vtxIdxs.Length ) )
+                    select x.vertexIndices.Concat( Enumerable.Repeat( 0, 12 - x.vertexIndices.Length ) )
                     ;
                 buffer.SetData( q.SelectMany( x => x ).Cast<int>().ToArray() );
 

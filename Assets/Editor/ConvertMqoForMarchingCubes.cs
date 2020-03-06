@@ -89,9 +89,9 @@ namespace MarchingCubes
             var asset = ScriptableObject.CreateInstance<MarchingCubeAsset>();
             var qCubeIndexLists =
                 from x in cubeIdsAndIndexLists
-                select new MarchingCubeAsset.CubeWrapper { cubeId = x.cubeId, indices = x.indices }
+                select new MarchingCubeAsset.CubeWrapper { cubeId = x.cubeId, vertexIndices = x.indices }
                 ;
-            asset.CubeIndexLists = qCubeIndexLists.ToArray();
+            asset.CubeIdAndVertexIndicesList = qCubeIndexLists.ToArray();
             asset.BaseVertexList = baseVertexList;
             AssetDatabase.CreateAsset( asset, dstFilePath );
             AssetDatabase.Refresh();
