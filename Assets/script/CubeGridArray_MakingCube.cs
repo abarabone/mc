@@ -46,7 +46,7 @@ namespace MarchingCubes
             ( ref NearCubeGrids g, int gridId, ref TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter
         {
-            var gcount = countEach( ref g );
+            var gcount = getEachCount( ref g );
             SampleAllCubes( ref g, ref gcount, gridId, ref outputCubes );
         }
 

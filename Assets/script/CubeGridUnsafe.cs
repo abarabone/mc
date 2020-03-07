@@ -39,16 +39,17 @@ namespace MarchingCubes
             this.alloc_( size, align, isFillAll );
         }
 
-        public CubeGrid32x32x32Unsafe ForDefault( bool isFillAll )
+        static public CubeGrid32x32x32Unsafe GetDefault( bool isFillAll )
         {
             //var align = UnsafeUtility.AlignOf<uint4>();
             const int align = 16;
             //const int size = sizeof( uint ) * 4;
             const int size = sizeof( uint ) * 1 * 32 * 32;
 
-            this.alloc_( size, align, isFillAll );
+            var grid = new CubeGrid32x32x32Unsafe();
+            grid.alloc_( size, align, isFillAll );
 
-            return this;
+            return grid;
         }
 
         void alloc_( int size, int align, bool isFillAll )

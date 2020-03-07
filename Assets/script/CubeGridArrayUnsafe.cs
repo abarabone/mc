@@ -60,13 +60,13 @@ namespace MarchingCubes
 
             void makeDefaultGrids_( ref CubeGridArrayUnsafe ga )
             {
-                ga.gridStock.AddNoResize( new CubeGrid32x32x32Unsafe().ForDefault( isFillAll: false ) );
+                ga.gridStock.AddNoResize( CubeGrid32x32x32Unsafe.GetDefault( isFillAll: false ) );
                 ga.defaultBlankCubePtr = new CubeGrid32x32x32UnsafePtr
                 {
                     p = (CubeGrid32x32x32Unsafe*)ga.gridStock.GetUnsafePtr() + 0
                 };
 
-                ga.gridStock.AddNoResize( new CubeGrid32x32x32Unsafe().ForDefault( isFillAll: true ) );
+                ga.gridStock.AddNoResize( CubeGrid32x32x32Unsafe.GetDefault( isFillAll: true ) );
                 ga.defaultFilledCubePtr = new CubeGrid32x32x32UnsafePtr
                 {
                     p = (CubeGrid32x32x32Unsafe*)ga.gridStock.GetUnsafePtr() + 1
@@ -103,7 +103,7 @@ namespace MarchingCubes
 
                 if( !grid.p->IsFullOrEmpty ) return grid;
 
-                if( grid.p == this.defaultFilledCubePtr.p || grid.p == this.defaultBlankCubePtr.p )
+                if( grid.p == this.defaultFilledCubePtr.p | grid.p == this.defaultBlankCubePtr.p )
                 {
                     var newGrid = new CubeGrid32x32x32Unsafe( isFillAll: grid.p->IsFull );
                     this.gridStock.AddNoResize( newGrid );// アドレスを変化させてはいけないので、拡張してはいけない。
@@ -174,7 +174,7 @@ namespace MarchingCubes
         {
             public int4 L, R;
         }
-        static GridCounts countEach( ref NearCubeGrids g )
+        static GridCounts getEachCount( ref NearCubeGrids g )
         {
             var gridCount = new int4
             (
@@ -202,46 +202,46 @@ namespace MarchingCubes
         }
 
 
-        static bool isNeedDraw_( ref NearCubeGrids g )
-        {
-            if( g.L.x.p->IsEmpty )
-            {
-                var isNoDraw =
-                    g.R.x.p->IsEmpty &
-                    g.L.y.p->IsEmpty &
-                    g.R.y.p->IsEmpty &
-                    g.L.z.p->IsEmpty &
-                    g.R.z.p->IsEmpty &
-                    g.L.w.p->IsEmpty &
-                    g.R.w.p->IsEmpty
-                    ;
-                if( isNoDraw ) return false;
+        //static bool isNeedDraw_( ref NearCubeGrids g )
+        //{
+        //    if( g.L.x.p->IsEmpty )
+        //    {
+        //        var isNoDraw =
+        //            g.R.x.p->IsEmpty &
+        //            g.L.y.p->IsEmpty &
+        //            g.R.y.p->IsEmpty &
+        //            g.L.z.p->IsEmpty &
+        //            g.R.z.p->IsEmpty &
+        //            g.L.w.p->IsEmpty &
+        //            g.R.w.p->IsEmpty
+        //            ;
+        //        if( isNoDraw ) return false;
 
-                // ブランク・フィル用のビルド関数も作るべき
+        //        // ブランク・フィル用のビルド関数も作るべき
 
-                return true;
-            }
+        //        return true;
+        //    }
 
-            if( g.L.x.p->IsFull )
-            {
-                var isNoDraw =
-                    g.R.x.p->IsFull &
-                    g.L.y.p->IsFull &
-                    g.R.y.p->IsFull &
-                    g.L.z.p->IsFull &
-                    g.R.z.p->IsFull &
-                    g.L.w.p->IsFull &
-                    g.R.w.p->IsFull
-                    ;
-                if( isNoDraw ) return false;
+        //    if( g.L.x.p->IsFull )
+        //    {
+        //        var isNoDraw =
+        //            g.R.x.p->IsFull &
+        //            g.L.y.p->IsFull &
+        //            g.R.y.p->IsFull &
+        //            g.L.z.p->IsFull &
+        //            g.R.z.p->IsFull &
+        //            g.L.w.p->IsFull &
+        //            g.R.w.p->IsFull
+        //            ;
+        //        if( isNoDraw ) return false;
 
-                // ブランク・フィル用のビルド関数も作るべき
+        //        // ブランク・フィル用のビルド関数も作るべき
 
-                return true;
-            }
+        //        return true;
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
 
 

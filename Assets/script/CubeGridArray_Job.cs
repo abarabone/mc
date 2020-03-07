@@ -82,7 +82,7 @@ namespace MarchingCubes
                         {
                             
                             var gridset = getGridSet_( ref this.gridArray, ix, iy, iz, yspan, zspan );
-                            var gridcount = countEach( ref gridset );
+                            var gridcount = getEachCount( ref gridset );
 
                             if( !isNeedDraw_( gridcount.L, gridcount.R ) ) continue;
                             //if( !isNeedDraw_( ref gridset ) ) continue;
