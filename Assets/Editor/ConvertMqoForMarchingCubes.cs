@@ -63,39 +63,43 @@ namespace MarchingCubes
                 var cubesAndIndexLists =
                     MarchingCubesDataBuilder.ConvertObjectDataToMachingCubesData( objdata, baseVtxList );
 
-                save( Selection.objects, cubesAndIndexLists, baseVtxList );
+                save_( Selection.objects, cubesAndIndexLists, baseVtxList );
+            }
+
+            return;
+
+
+            void save_(
+                UnityEngine.Object[] selectedObjects,
+                (byte cubeId, int[] indices)[] cubeIdsAndIndexLists,
+                Vector3[] baseVertexList
+            )
+            {
+
+                // 渡されたアセットと同じ場所のパス生成
+
+                var srcFilePath = AssetDatabase.GetAssetPath( selectedObjects.First() );
+
+                var folderPath = Path.GetDirectoryName( srcFilePath );
+
+                var fileName = Path.GetFileNameWithoutExtension( srcFilePath );
+
+                var dstFilePath = folderPath + $"/Marching Cubes Resource.asset";
+
+
+                // アセットとして生成
+                var asset = ScriptableObject.CreateInstance<MarchingCubeAsset>();
+                var qCubeIndexLists =
+                    from x in cubeIdsAndIndexLists
+                    select new MarchingCubeAsset.CubeWrapper { cubeId = x.cubeId, vertexIndices = x.indices }
+                    ;
+                asset.CubeIdAndVertexIndicesList = qCubeIndexLists.ToArray();
+                asset.BaseVertexList = baseVertexList;
+                AssetDatabase.CreateAsset( asset, dstFilePath );
+                AssetDatabase.Refresh();
             }
         }
 
-        static void save(
-            UnityEngine.Object[] selectedObjects,
-            (byte cubeId, int[] indices)[] cubeIdsAndIndexLists,
-            Vector3[] baseVertexList
-        )
-        {
-
-            // 渡されたアセットと同じ場所のパス生成
-
-            var srcFilePath = AssetDatabase.GetAssetPath( selectedObjects.First() );
-
-            var folderPath = Path.GetDirectoryName( srcFilePath );
-
-            var fileName = Path.GetFileNameWithoutExtension( srcFilePath );
-
-            var dstFilePath = folderPath + $"/Marching Cubes Resource.asset";
-
-
-            // アセットとして生成
-            var asset = ScriptableObject.CreateInstance<MarchingCubeAsset>();
-            var qCubeIndexLists =
-                from x in cubeIdsAndIndexLists
-                select new MarchingCubeAsset.CubeWrapper { cubeId = x.cubeId, vertexIndices = x.indices }
-                ;
-            asset.CubeIdAndVertexIndicesList = qCubeIndexLists.ToArray();
-            asset.BaseVertexList = baseVertexList;
-            AssetDatabase.CreateAsset( asset, dstFilePath );
-            AssetDatabase.Refresh();
-        }
 
 
 
@@ -118,6 +122,27 @@ namespace MarchingCubes
                 return mesh;
             }
         }
+
+
+        static (byte cubeId, Vector3[] normals)[] calculateNormals
+            ( (byte cubeId, int[] indices)[] cubeIdsAndIndexLists, Vector3[] baseVertexList )
+        {
+
+            var qNormalPerTriangleInCube =
+                from x in cubeIdsAndIndexLists
+                select
+                    from tri in x.indices.Buffer( 3 )
+                    let v0 = baseVertexList[ tri[ 0 ] ]
+                    let v1 = baseVertexList[ tri[ 1 ] ]
+                    let v2 = baseVertexList[ tri[ 2 ] ]
+                    select Vector3.Cross( ( v1 - v0 ), ( v2 - v0 ) )
+                ;
+
+            return Enumerable.Zip( cubeIdsAndIndexLists, qNormalPerTriangleInCube, ( x, y ) => (x.cubeId, normals: y) )
+                .Select( x => (x.cubeId, x.normals.ToArray()) )
+                .ToArray();
+        }
+
 
     }
 

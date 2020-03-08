@@ -47,7 +47,7 @@ namespace MarchingCubes
 
             var prototypeCubes = makePrototypeCubes_( objectsData );
             var cube254Pattarns = makeCube254Pattarns_( prototypeCubes );
-            var triVtxLists = transformSbvtxs_( cube254Pattarns, prototypeCubes );
+            var triVtxLists = transformSbyteVtxs_( cube254Pattarns, prototypeCubes );
 
             var triIdxLists = makeVtxIndexListsPerCube_( triVtxLists, baseVtxIndexBySbvtxDict );
             
@@ -162,7 +162,7 @@ namespace MarchingCubes
             }
 
 
-            IEnumerable<(byte cubeId, IEnumerable<IEnumerable<(sbyte x, sbyte y, sbyte z)>> triVtxs)> transformSbvtxs_(
+            IEnumerable<(byte cubeId, IEnumerable<IEnumerable<(sbyte x, sbyte y, sbyte z)>> triVtxs)> transformSbyteVtxs_(
                 IEnumerable<CubePattarn> cubePattarns,
                 IEnumerable<(byte id, IEnumerable<(Vector3 v0, Vector3 v1, Vector3 v2)> trivtxs)> prototypeCubes_
             )

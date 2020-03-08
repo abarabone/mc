@@ -208,7 +208,7 @@ namespace MarchingCubes
 
                 var qVtx =
                     from i in Enumerable.Range( 0, 12 )
-                    select new Vector3( i, 0, 0 )
+                    select new Vector3( i, i / 3, 0 )
                     ;
                 var qIdx =
                     from i in Enumerable.Range( 0, 3 * 4 )
