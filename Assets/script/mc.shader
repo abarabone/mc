@@ -45,6 +45,7 @@
             StructuredBuffer<int> IdxList;
             StructuredBuffer<float4> BaseVtxList;
             StructuredBuffer<float4> GridPositions;
+			StructuredBuffer<float4> Normals;
 
 
             v2f vert(appdata v, uint i : SV_InstanceID)
@@ -53,8 +54,8 @@
 
                 uint data = Instances[i];
                 uint cubeId = (data & 0xff) - 1;
-				uint2 idxofs = cubeId * 12 + v.vertex;
 
+				uint idxofs = cubeId * 12 + v.vertex.x;
                 uint vtxIdx = IdxList[idxofs.x];
 
                 uint gridId = data >> 8 & 0xff;
@@ -67,22 +68,23 @@
                 o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
 				
-				//uint nmlIdx = IdxList[idxofs.y];
-				//half3 worldNormal = UnityObjectToWorldNormal(v.normal);
-				//half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
+				uint nmlIdx = IdxList[cubeId * 4 + v.vertex.y];
+				half3 normal = Normals[nmlIdx];
+				half3 worldNormal = mul(UNITY_MATRIX_VP, normal);//UnityObjectToWorldNormal(normal);
+				fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
+				o.color = fixed4(nl, nl, nl, 1);
 
 
-                o.uv = lvtx.xy; TRANSFORM_TEX(lvtx.xy, _MainTex);
+				o.uv = half2(0,0);//lvtx.xy; TRANSFORM_TEX(lvtx.xy, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
 
-                o.color = fixed4(unitpos.y,1,1,1);
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
                 // sample the texture
-                fixed4 col = tex2D(_MainTex, i.uv);// *i.color;
+                fixed4 col = tex2D(_MainTex, i.uv) * i.color;
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;

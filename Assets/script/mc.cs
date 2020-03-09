@@ -28,6 +28,7 @@ namespace MarchingCubes
         ComputeBuffer instancesBuffer;
         ComputeBuffer argsBuffer;
         ComputeBuffer gridPositionBuffer;
+        ComputeBuffer normalsBuffer;
 
         //uint[] cubeInstances;
         NativeList<float4> gridPositions;// = new NativeList<float4>( 3000, Allocator.Persistent );
@@ -47,12 +48,14 @@ namespace MarchingCubes
             this.instancesBuffer = res.instance;
             this.gridPositionBuffer = res.gridposition;
             this.argsBuffer = ComputeShaderUtility.CreateIndirectArgumentsBuffer();
+            this.normalsBuffer = res.triangleNormals;
             this.mesh = res.mesh;
 
             this.Material.SetBuffer( "BaseVtxList", this.baseVtxsBuffer );
             this.Material.SetBuffer( "IdxList", this.idxListsBuffer );
             this.Material.SetBuffer( "Instances", this.instancesBuffer );
             this.Material.SetBuffer( "GridPositions", this.gridPositionBuffer );
+            this.Material.SetBuffer( "Normals", this.normalsBuffer );
             //this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
 
             this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
@@ -105,6 +108,7 @@ namespace MarchingCubes
             if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
             if( this.gridPositionBuffer != null ) this.gridPositionBuffer.Dispose();
             if( this.argsBuffer != null ) this.argsBuffer.Dispose();
+            if( this.normalsBuffer != null ) this.normalsBuffer.Dispose();
 
             this.cubeGrids.Dispose();
             this.gridPositions.Dispose();
@@ -147,7 +151,7 @@ namespace MarchingCubes
         int i;
 
 
-        (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, ComputeBuffer gridposition, Mesh mesh)
+        (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, ComputeBuffer gridposition, ComputeBuffer triangleNormals, Mesh mesh)
         convertMqoToMarchingCubesData()
         {
             var asset = this.MarchingCubeAsset;
@@ -156,9 +160,10 @@ namespace MarchingCubes
             var basevtxs = createBaseVtxShaderBuffer_( asset.BaseVertexList );
             var cubeid = createIdxListsShaderBuffer_( asset.CubeIdAndVertexIndicesList );
             var gridposition = createGridPositionShaderBuffer_( 3000 );
+            var triangleNormals = createNormalshaderBuffer_( asset.CubeIdAndVertexIndicesList );
             var mesh = createMesh_();
 
-            return (basevtxs, cubeid, instance, gridposition, mesh);
+            return (basevtxs, cubeid, instance, gridposition, triangleNormals, mesh);
             
 
             ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
@@ -184,7 +189,7 @@ namespace MarchingCubes
                     from x in cubeIdsAndVtxIndexLists_
                         //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
                         //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
-                        orderby x.cubeId
+                    orderby x.cubeId
                     select x.vertexIndices.Concat( Enumerable.Repeat( 0, 12 - x.vertexIndices.Length ) )
                     ;
                 buffer.SetData( q.SelectMany( x => x ).Cast<int>().ToArray() );
@@ -197,6 +202,23 @@ namespace MarchingCubes
                 var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector4>() );
 
                 buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+
+                return buffer;
+            }
+
+            ComputeBuffer createNormalshaderBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
+            {
+                var buffer = new ComputeBuffer( 254 * 4, Marshal.SizeOf<Vector3>() );
+
+                var q =
+                    from x in cubeIdsAndVtxIndexLists_
+                        //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
+                        //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
+                    orderby x.cubeId
+                    select x.normals.Concat( Enumerable.Repeat( Vector3.zero, 4 - x.normals.Length ) )
+                ;
+
+                buffer.SetData( q.SelectMany(x=>x).ToArray() );
 
                 return buffer;
             }

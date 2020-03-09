@@ -60,10 +60,23 @@ namespace MarchingCubes
                 var s = f.ReadToEnd();
                 var objdata = MqoParser.ConvertToObjectsData( s );
                 var baseVtxList = MarchingCubesDataBuilder.MakeBaseVtxList();
-                var cubesAndIndexLists =
+                var cubeIdAndIndicesList =
                     MarchingCubesDataBuilder.ConvertObjectDataToMachingCubesData( objdata, baseVtxList );
+                var cubeIdAndTriangleNormalsList =
+                    ConvertMqoForMarchingCubes.calculateNormals( cubeIdAndIndicesList, baseVtxList );
 
-                save_( Selection.objects, cubesAndIndexLists, baseVtxList );
+
+                // 確認
+                using( var wf = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
+                {
+
+                    cubeIdAndTriangleNormalsList.SelectMany( x => x.normals ).GroupBy( x => x ).ForEach( n => wf.WriteLine( n.Key ) );
+
+                }
+
+
+
+                save_( Selection.objects, cubeIdAndIndicesList, cubeIdAndTriangleNormalsList, baseVtxList );
             }
 
             return;
@@ -72,6 +85,7 @@ namespace MarchingCubes
             void save_(
                 UnityEngine.Object[] selectedObjects,
                 (byte cubeId, int[] indices)[] cubeIdsAndIndexLists,
+                (byte cubeId, Vector3[] normals)[] cubeIdsAndTriangleNormals,
                 Vector3[] baseVertexList
             )
             {
@@ -90,9 +104,17 @@ namespace MarchingCubes
                 // アセットとして生成
                 var asset = ScriptableObject.CreateInstance<MarchingCubeAsset>();
                 var qCubeIndexLists =
-                    from x in cubeIdsAndIndexLists
-                    select new MarchingCubeAsset.CubeWrapper { cubeId = x.cubeId, vertexIndices = x.indices }
+                    //from x in Enumerable.Zip( cubeIdsAndIndexLists, cubeIdsAndTriangleNormals, (x,y)=>(x.cubeId, x.indices, y.normals) )
+                    from i in cubeIdsAndIndexLists
+                    join n in cubeIdsAndTriangleNormals
+                        on i.cubeId equals n.cubeId
+                    orderby i.cubeId
+                    select new MarchingCubeAsset.CubeWrapper { cubeId = i.cubeId, vertexIndices = i.indices, normals = n.normals }
                     ;
+                //var qCubeTriangleNormalsList =
+                //    from x in cubeIdsAndTriangleNormals
+                //    select x.normals
+                //    ;
                 asset.CubeIdAndVertexIndicesList = qCubeIndexLists.ToArray();
                 asset.BaseVertexList = baseVertexList;
                 AssetDatabase.CreateAsset( asset, dstFilePath );
@@ -135,9 +157,8 @@ namespace MarchingCubes
                     let v0 = baseVertexList[ tri[ 0 ] ]
                     let v1 = baseVertexList[ tri[ 1 ] ]
                     let v2 = baseVertexList[ tri[ 2 ] ]
-                    select Vector3.Cross( ( v1 - v0 ), ( v2 - v0 ) )
+                    select Vector3.Cross( ( v1 - v0 ), ( v2 - v0 ) ).normalized
                 ;
-
             return Enumerable.Zip( cubeIdsAndIndexLists, qNormalPerTriangleInCube, ( x, y ) => (x.cubeId, normals: y) )
                 .Select( x => (x.cubeId, x.normals.ToArray()) )
                 .ToArray();
