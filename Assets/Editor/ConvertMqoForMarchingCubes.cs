@@ -66,13 +66,13 @@ namespace MarchingCubes
                     ConvertMqoForMarchingCubes.calculateNormals( cubeIdAndIndicesList, baseVtxList );
 
 
-                // 確認
-                using( var wf = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
-                {
+                //// 確認
+                //using( var wf = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
+                //{
 
-                    cubeIdAndTriangleNormalsList.SelectMany( x => x.normals ).GroupBy( x => x ).ForEach( n => wf.WriteLine( n.Key ) );
+                //    cubeIdAndTriangleNormalsList.SelectMany( x => x.normals ).GroupBy( x => x ).ForEach( n => wf.WriteLine( n.Key ) );
 
-                }
+                //}
 
 
 

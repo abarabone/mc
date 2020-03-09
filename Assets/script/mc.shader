@@ -6,7 +6,10 @@
     }
         SubShader
     {
-        Tags { "RenderType" = "Opaque" }
+		Tags {
+			"RenderType" = "Opaque"
+			"LightMode" = "ForwardBase"
+		}
         LOD 100
 
         Pass
@@ -21,6 +24,7 @@
             #pragma multi_compile_fog
             #include "UnityCG.cginc"
             //#include "AutoLight.cginc"
+            #include "UnityLightingCommon.cginc" // _LightColor0 に対し
 
 
             struct appdata
@@ -45,7 +49,7 @@
             StructuredBuffer<int> IdxList;
             StructuredBuffer<float4> BaseVtxList;
             StructuredBuffer<float4> GridPositions;
-			StructuredBuffer<float4> Normals;
+			StructuredBuffer<float3> Normals;
 
 
             v2f vert(appdata v, uint i : SV_InstanceID)
@@ -54,9 +58,10 @@
 
                 uint data = Instances[i];
                 uint cubeId = (data & 0xff) - 1;
+				uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
+                
 
-				uint idxofs = cubeId * 12 + v.vertex.x;
-                uint vtxIdx = IdxList[idxofs.x];
+				uint vtxIdx = IdxList[idxofs.x];
 
                 uint gridId = data >> 8 & 0xff;
                 float4 gridpos = GridPositions[gridId];
@@ -68,11 +73,14 @@
                 o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
 				
-				uint nmlIdx = IdxList[cubeId * 4 + v.vertex.y];
-				half3 normal = Normals[nmlIdx];
-				half3 worldNormal = mul(UNITY_MATRIX_VP, normal);//UnityObjectToWorldNormal(normal);
+				half3 normal = Normals[idxofs.y].xyz;
+				half3 worldNormal = normal;// mul(UNITY_MATRIX_VP, normal);//UnityObjectToWorldNormal(normal);//
 				fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
-				o.color = fixed4(nl, nl, nl, 1);
+				o.color = _LightColor0 * nl;
+				// この処理をしないと陰影が強くつきすぎる
+				// https://docs.unity3d.com/ja/current/Manual/SL-VertexFragmentShaderExamples.html
+				// の「アンビエントを使った拡散ライティング」を参考
+				o.color.rgb += ShadeSH9(half4(worldNormal, 1));
 
 
 				o.uv = half2(0,0);//lvtx.xy; TRANSFORM_TEX(lvtx.xy, _MainTex);
@@ -84,7 +92,7 @@
             fixed4 frag(v2f i) : SV_Target
             {
                 // sample the texture
-                fixed4 col = tex2D(_MainTex, i.uv) * i.color;
+				fixed4 col = i.color;// tex2D(_MainTex, i.uv) * i.color;
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
