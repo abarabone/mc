@@ -91,7 +91,8 @@ namespace MarchingCubes
                             SampleAllCubes( ref gridset, ref gridcount, gridId, ref dstCubeInstances );
                             //SampleAllCubes( ref gridset, gridId, dstCubeInstances );
 
-                            this.dstGridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
+                            var pos = (new float4( ix, iy, iz, 0 ) - new float4(1,1,1,0)) * new float4( 32, -32, -32, 0 );
+                            this.dstGridPositions.Add( pos );
 
                             gridId++;
 

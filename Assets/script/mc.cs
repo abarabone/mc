@@ -20,8 +20,8 @@ namespace MarchingCubes
         public MarchingCubeAsset MarchingCubeAsset;
         public Material Material;
 
-        CubeGridArrayUnsafe cubeGrids;
-        
+        public CubeGridArrayUnsafe cubeGrids { get; private set; }
+
         Mesh mesh;
         ComputeBuffer baseVtxsBuffer;
         ComputeBuffer idxListsBuffer;
@@ -78,25 +78,25 @@ namespace MarchingCubes
             this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             Debug.Log($"{cubeInstances.Length} / {this.instancesBuffer.count}");
 
-            //var idxLists = this.MarchingCubeAsset.CubeIdsAndIndexLists.Select( x => x.vtxIdxs ).ToArray();
-            //var vtxList = this.MarchingCubeAsset.BaseVertexList.Select( x => new float3( x.x, x.y, x.z ) ).ToArray();
-            //var q =
-            //    from x in this.cubeInstances
-            //    let gridId = CubeUtiilty.FromCubeInstance( x ).gridId
-            //    group x by gridId
-            //    ;
-            //foreach( var cubeId in q )
-            //{
-            //    var (i, v) = CubeUtiilty.MakeCollisionMeshData( cubeId.ToArray(), idxLists, vtxList );
-            //    var mesh = new Mesh();
-            //    mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            //    mesh.vertices = v.Select( x => new Vector3( x.x, x.y, x.z ) ).ToArray();
-            //    mesh.triangles = i;
-            //    var go = new GameObject( $"new {cubeId.Key}" );
-            //    var vc4 = gridPositions[ (int)cubeId.Key ];
-            //    go.transform.position = new float3( vc4.x, vc4.y, vc4.z );
-            //    go.AddComponent<MeshCollider>().sharedMesh = mesh;
-            //}
+            var idxLists = this.MarchingCubeAsset.CubeIdAndVertexIndicesList.Select( x => x.vertexIndices ).ToArray();
+            var vtxList = this.MarchingCubeAsset.BaseVertexList.Select( x => new float3( x.x, x.y, x.z ) ).ToArray();
+            var q =
+                from x in this.cubeInstances.ToArray()
+                let gridId = CubeUtiilty.FromCubeInstance( x.instance ).gridId
+                group x by gridId
+                ;
+            foreach( var cubeId in q )
+            {
+                var (i, v) = CubeUtiilty.MakeCollisionMeshData( cubeId.Select(x=>x.instance).ToArray(), idxLists, vtxList );
+                var mesh = new Mesh();
+                mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+                mesh.vertices = v.Select( x => new Vector3( x.x, x.y, x.z ) ).ToArray();
+                mesh.triangles = i;
+                var go = new GameObject( $"new {cubeId.Key}" );
+                var vc4 = gridPositions[ (int)cubeId.Key ];
+                go.transform.position = new float3( vc4.x, vc4.y, vc4.z );
+                go.AddComponent<MeshCollider>().sharedMesh = mesh;
+            }
         }
 
         private void OnDestroy()
@@ -120,6 +120,13 @@ namespace MarchingCubes
 
         private unsafe void Update()
         {
+            var c = this.cubeGrids[ 5, 1, 3 ];
+            c[ i, 0, 0 ] ^= 1;
+            i = i + 1 & 31;
+            this.gridPositions.Clear();
+            this.cubeInstances.Clear();
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+
             this.job.Complete();
             this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
@@ -141,12 +148,6 @@ namespace MarchingCubes
             var bounds = new Bounds() { center = Vector3.zero, size = Vector3.one * 1000.0f };
             Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, args );
 
-            var c = this.cubeGrids[ 5, 1, 3 ];
-            c[ i, 0, 0 ] ^= 1;
-            i = i + 1 & 31;
-            this.gridPositions.Clear();
-            this.cubeInstances.Clear();
-            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
         }
         int i;
 
