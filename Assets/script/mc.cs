@@ -21,6 +21,7 @@ namespace MarchingCubes
         public Material Material;
 
         public CubeGridArrayUnsafe cubeGrids { get; private set; }
+        public MeshCollider[,,] cubeGridMeshes { get; private set; }
 
         Mesh mesh;
         ComputeBuffer baseVtxsBuffer;
@@ -78,8 +79,14 @@ namespace MarchingCubes
             this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             Debug.Log($"{cubeInstances.Length} / {this.instancesBuffer.count}");
 
-            var idxLists = this.MarchingCubeAsset.CubeIdAndVertexIndicesList.Select( x => x.vertexIndices ).ToArray();
-            var vtxList = this.MarchingCubeAsset.BaseVertexList.Select( x => new float3( x.x, x.y, x.z ) ).ToArray();
+
+            var glen = this.cubeGrids.GridLength;
+            this.cubeGridMeshes = new MeshCollider[ glen.x, glen.y, glen.z ];
+
+            this.idxLists = this.MarchingCubeAsset.CubeIdAndVertexIndicesList.Select( x => x.vertexIndices ).ToArray();
+            this.vtxList = this.MarchingCubeAsset.BaseVertexList.Select( x => new float3( x.x, x.y, x.z ) ).ToArray();
+            //var idxLists = this.MarchingCubeAsset.CubeIdAndVertexIndicesList.Select( x => x.vertexIndices ).ToArray();
+            //var vtxList = this.MarchingCubeAsset.BaseVertexList.Select( x => new float3( x.x, x.y, x.z ) ).ToArray();
             var q =
                 from x in this.cubeInstances.ToArray()
                 let gridId = CubeUtiilty.FromCubeInstance( x.instance ).gridId
@@ -98,6 +105,33 @@ namespace MarchingCubes
                 go.AddComponent<MeshCollider>().sharedMesh = mesh;
             }
         }
+
+
+        int[][] idxLists;
+        float3[] vtxList;
+        public MeshCollider BuildMeshCollider( MeshCollider mc, IEnumerable<CubeInstance> cubeInstances )
+        {
+            var gridid = CubeUtiilty.FromCubeInstance( cubeInstances.First().instance ).gridId;
+
+            if( mc == null )
+            {
+                var go = new GameObject( $"grid {gridid}" );
+                go.transform.position = this.gridPositions[ (int)gridid ].xyz;
+
+                mc = go.AddComponent<MeshCollider>();
+            }
+            
+            var (i, v) = CubeUtiilty.MakeCollisionMeshData( cubeInstances.Select( x => x.instance ).ToArray(), this.idxLists, this.vtxList );
+            var mesh = new Mesh();
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.SetVertices( .vertices = v.Select( x => x.xyz ).ToArray();
+            mesh.triangles = i;
+
+            mc.sharedMesh = mesh;
+            return mc;
+        }
+
+
 
         private void OnDestroy()
         {
