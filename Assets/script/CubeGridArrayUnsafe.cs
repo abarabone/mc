@@ -246,6 +246,36 @@ namespace MarchingCubes
 
 
 
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void BuildCubeInstanceDataSingle( int3 gridIndex, NativeList<CubeInstance> cubeInstances )
+        {
+
+            var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
+            var zspan = this.wholeGridLength.x;
+
+            var gridset = getGridSet_( ref this, gridIndex.x, gridIndex.y, gridIndex.z, yspan, zspan );
+            var gridcount = getEachCount( ref gridset );
+
+            if( !isNeedDraw_( gridcount.L, gridcount.R ) ) return;
+
+
+            new SingleGridJob
+            {
+                gridArray = this,
+                dstCubeInstances = cubeInstances,
+                gridset = gridset,
+                gridcount = gridcount,
+            }
+            .Run();
+        }
+
+
+
+
         /// <summary>
         /// 
         /// </summary>

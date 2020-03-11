@@ -57,6 +57,30 @@ namespace MarchingCubes
 
 
         [BurstCompile]
+        struct SingleGridJob : IJob
+        {
+
+            [ReadOnly]
+            public CubeGridArrayUnsafe gridArray;
+
+            public NearCubeGrids gridset;
+            public GridCounts gridcount;
+
+
+            [WriteOnly]
+            public NativeList<CubeInstance> dstCubeInstances;
+
+
+            public void Execute()
+            {
+                var dstCubeInstances = new InstanceCubeByList { list = this.dstCubeInstances };
+                SampleAllCubes( ref gridset, ref gridcount, 0, ref dstCubeInstances );
+                //SampleAllCubes( ref gridset, gridId, dstCubeInstances );
+            }
+        }
+
+
+        [BurstCompile]
         struct GridJob : IJob
         {
 
@@ -137,7 +161,7 @@ namespace MarchingCubes
                             gridset.gridId = gridId++;
 
                             this.dstNearGrids.Add( gridset );
-                            this.dstGridPositions.Add( new float4( ix * 32, -iy * 32, -iz * 32, 0 ) );
+                            this.dstGridPositions.Add( new float4( (ix-1) * 32, -(iy-1) * 32, -(iz-1) * 32, 0 ) );
 
                         }
             }

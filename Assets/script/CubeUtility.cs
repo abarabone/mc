@@ -52,19 +52,20 @@ namespace MarchingCubes
 
 
 
-        static public (int[] tris, float3[] vtxs) MakeCollisionMeshData
-            ( uint[] cubeInstances, int[][] srcIdxLists, float3[] srcVtxList )
+        static public (NativeList<int> tris, NativeList<float3> vtxs) MakeCollisionMeshData
+            ( IEnumerable<CubeInstance> cubeInstances, int[][] srcIdxLists, float3[] srcVtxList )
         {
-            var dstIdxs = new List<int>();
-            var dstVtxs = new List<float3>();
+            var dstIdxs = new NativeList<int>( 32*32*32*12 / 2, Allocator.Temp );
+            var dstVtxs = new NativeList<float3>( 32*32*32*12 / 2, Allocator.Temp );
 
             var vtxOffset = 0;
-            for( var i = 0; i < cubeInstances.Length; i++ )
+            //for( var i = 0; i < cubeInstances.Length; i++ )
+            foreach( var ci in cubeInstances )
             {
-                vtxOffset = addCube_( cubeInstances[ i ], vtxOffset );
+                vtxOffset = addCube_( ci.instance, vtxOffset );
             }
 
-            return (dstIdxs.ToArray(), dstVtxs.ToArray());
+            return (dstIdxs, dstVtxs);
 
 
             int addCube_( uint cubeInstance, int vtxOffset_ )

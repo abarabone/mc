@@ -21,7 +21,7 @@ namespace MarchingCubes
         public Material Material;
 
         public CubeGridArrayUnsafe cubeGrids { get; private set; }
-        public MeshCollider[,,] cubeGridMeshes { get; private set; }
+        public MeshCollider[,,] cubeGridColliders { get; private set; }
 
         Mesh mesh;
         ComputeBuffer baseVtxsBuffer;
@@ -81,7 +81,7 @@ namespace MarchingCubes
 
 
             var glen = this.cubeGrids.GridLength;
-            this.cubeGridMeshes = new MeshCollider[ glen.x, glen.y, glen.z ];
+            this.cubeGridColliders = new MeshCollider[ glen.x, glen.y, glen.z ];
 
             this.idxLists = this.MarchingCubeAsset.CubeIdAndVertexIndicesList.Select( x => x.vertexIndices ).ToArray();
             this.vtxList = this.MarchingCubeAsset.BaseVertexList.Select( x => new float3( x.x, x.y, x.z ) ).ToArray();
@@ -94,40 +94,56 @@ namespace MarchingCubes
                 ;
             foreach( var cubeId in q )
             {
-                var (i, v) = CubeUtiilty.MakeCollisionMeshData( cubeId.Select(x=>x.instance).ToArray(), idxLists, vtxList );
-                var mesh = new Mesh();
-                mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-                mesh.vertices = v.Select( x => new Vector3( x.x, x.y, x.z ) ).ToArray();
-                mesh.triangles = i;
-                var go = new GameObject( $"new {cubeId.Key}" );
-                var vc4 = gridPositions[ (int)cubeId.Key ];
-                go.transform.position = new float3( vc4.x, vc4.y, vc4.z );
-                go.AddComponent<MeshCollider>().sharedMesh = mesh;
+                //var (i, v) = CubeUtiilty.MakeCollisionMeshData( cubeId, idxLists, vtxList );
+                //var mesh = new Mesh();
+                //mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+                //mesh.vertices = v.Select( x => new Vector3( x.x, x.y, x.z ) ).ToArray();
+                //mesh.triangles = i;
+                //var go = new GameObject( $"new {cubeId.Key}" );
+                //var vc4 = gridPositions[ (int)cubeId.Key ];
+                //go.transform.position = new float3( vc4.x, vc4.y, vc4.z );
+                //go.AddComponent<MeshCollider>().sharedMesh = mesh;
+                var gridid = (int)cubeId.Key;
+                var gpos = this.gridPositions[ gridid ] / 32;
+                if( gpos.x < 0 || -gpos.y < 0 || -gpos.z < 0 ) continue;
+                var mc = this.cubeGridColliders[ (int)gpos.x, -(int)gpos.y, -(int)gpos.z ];
+                this.cubeGridColliders[ (int)gpos.x, -(int)gpos.y, -(int)gpos.z ] =
+                    this.BuildMeshCollider( this.gridPositions[ gridid ].xyz, mc, cubeId );
             }
         }
 
 
         int[][] idxLists;
         float3[] vtxList;
-        public MeshCollider BuildMeshCollider( MeshCollider mc, IEnumerable<CubeInstance> cubeInstances )
+        public MeshCollider BuildMeshCollider( float3 gridpos, MeshCollider mc, IEnumerable<CubeInstance> cubeInstances )
         {
+            if( !cubeInstances.Any() ) return mc;
+
             var gridid = CubeUtiilty.FromCubeInstance( cubeInstances.First().instance ).gridId;
 
             if( mc == null )
             {
                 var go = new GameObject( $"grid {gridid}" );
-                go.transform.position = this.gridPositions[ (int)gridid ].xyz;
+                go.transform.position = gridpos;// this.gridPositions[ (int)gridid ].xyz;
 
                 mc = go.AddComponent<MeshCollider>();
+                mc.sharedMesh = new Mesh();
             }
-            
-            var (i, v) = CubeUtiilty.MakeCollisionMeshData( cubeInstances.Select( x => x.instance ).ToArray(), this.idxLists, this.vtxList );
-            var mesh = new Mesh();
-            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            mesh.SetVertices( .vertices = v.Select( x => x.xyz ).ToArray();
-            mesh.triangles = i;
+            mc.enabled = false;
 
-            mc.sharedMesh = mesh;
+            var (i, v) = CubeUtiilty.MakeCollisionMeshData( cubeInstances, this.idxLists, this.vtxList );
+            using( i )
+            using( v )
+            {
+                var mesh = mc.sharedMesh;
+                mesh.Clear();
+                mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+                mesh.SetVertices( v.AsArray() );
+                mesh.SetIndices( i.AsArray(), MeshTopology.Triangles, 0 );
+
+                mc.sharedMesh = mesh;
+            }
+            mc.enabled = true;
             return mc;
         }
 
