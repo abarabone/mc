@@ -61,7 +61,7 @@ namespace MarchingCubes
 
             this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
             this.cubeGrids.FillCubes( new int3( -1, 2, -1 ), new int3( 11, 11, 11 ), isFillAll: true );
-            this.cubeGrids.FillCubes( new int3( 2, 0, 3 ), new int3( 1, 2, 1 ), isFillAll: true );
+            this.cubeGrids.FillCubes( new int3( 2, 1, 3 ), new int3( 1, 2, 1 ), isFillAll: true );
             
             var c = this.cubeGrids[ 0, 0, 0 ];
             (*c.p)[ 1, 1, 1 ] = 1;
@@ -94,21 +94,14 @@ namespace MarchingCubes
                 ;
             foreach( var cubeId in q )
             {
-                //var (i, v) = CubeUtiilty.MakeCollisionMeshData( cubeId, idxLists, vtxList );
-                //var mesh = new Mesh();
-                //mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-                //mesh.vertices = v.Select( x => new Vector3( x.x, x.y, x.z ) ).ToArray();
-                //mesh.triangles = i;
-                //var go = new GameObject( $"new {cubeId.Key}" );
-                //var vc4 = gridPositions[ (int)cubeId.Key ];
-                //go.transform.position = new float3( vc4.x, vc4.y, vc4.z );
-                //go.AddComponent<MeshCollider>().sharedMesh = mesh;
                 var gridid = (int)cubeId.Key;
-                var gpos = this.gridPositions[ gridid ] / 32;
-                if( gpos.x < 0 || -gpos.y < 0 || -gpos.z < 0 ) continue;
-                var mc = this.cubeGridColliders[ (int)gpos.x, -(int)gpos.y, -(int)gpos.z ];
-                this.cubeGridColliders[ (int)gpos.x, -(int)gpos.y, -(int)gpos.z ] =
-                    this.BuildMeshCollider( this.gridPositions[ gridid ].xyz, mc, cubeId );
+                var gridpos = this.gridPositions[ gridid ];
+                var igrid = ((int4)gridpos >> 5) * new int4( 1, -1, -1, 0 );
+
+                if( igrid.x < 0 || igrid.y < 0 || igrid.z < 0 ) continue;
+
+                var collider = this.cubeGridColliders[ igrid.x, igrid.y, igrid.z ];
+                this.cubeGridColliders[ igrid.x, igrid.y, igrid.z ] = this.BuildMeshCollider( gridpos.xyz, collider, cubeId );
             }
         }
 
@@ -123,8 +116,9 @@ namespace MarchingCubes
 
             if( mc == null )
             {
-                var go = new GameObject( $"grid {gridid}" );
-                go.transform.position = gridpos;// this.gridPositions[ (int)gridid ].xyz;
+                var igrid = ( (int3)gridpos >> 5 ) * new int3( 1, -1, -1 );
+                var go = new GameObject( $"grid {igrid.x} {igrid.y} {igrid.z}" );
+                go.transform.position = gridpos;
 
                 mc = go.AddComponent<MeshCollider>();
                 mc.sharedMesh = new Mesh();

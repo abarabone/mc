@@ -100,6 +100,7 @@ namespace MarchingCubes
 
                 var gridId = 0;
 
+                // 0 は 1 以上との境界面を描くことが目的だが、0 同士の境界面が生成された場合、描画されてしまう、要考慮
                 for( var iy = 0; iy < this.gridArray.wholeGridLength.y - 1; iy++ )
                     for( var iz = 0; iz < this.gridArray.wholeGridLength.z - 1; iz++ )
                         for( var ix = 0; ix < this.gridArray.wholeGridLength.x - 1; ix++ )

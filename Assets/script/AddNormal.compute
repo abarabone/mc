@@ -1,0 +1,66 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+const element_block_size = 32 * 32 * 32;
+int element_bases[] =
+{
+				element_block_size * 0,
+	element_block_size * 2,	element_block_size * 2,
+				element_block_size * 0,
+	element_block_size * 1,	element_block_size * 1,
+	element_block_size * 1,	element_block_size * 1,
+				element_block_size * 0,
+	element_block_size * 2,	element_block_size * 2,
+				element_block_size * 0,
+}
+
+struct NextGridUnit
+{
+	public int x, y, z;
+};
+NextGridUnit next_gridid[];
+
+int3 element_spans =
+{
+				(32 ^ 0, 32 ^ 1, 32 ^ 2),
+	(32 ^ 2, 32 ^ 0, 32 ^ 1), (32 ^ 2, 32 ^ 0, 32 ^ 1),
+				(32 ^ 0, 32 ^ 1, 32 ^ 2),
+	(32 ^ 1, 32 ^ 2, 32 ^ 0), (32 ^ 1, 32 ^ 2, 32 ^ 0),
+	(32 ^ 1, 32 ^ 2, 32 ^ 0), (32 ^ 1, 32 ^ 2, 32 ^ 0),
+				(32 ^ 0, 32 ^ 1, 32 ^ 2),
+	(32 ^ 2, 32 ^ 0, 32 ^ 1), (32 ^ 2, 32 ^ 0, 32 ^ 1),
+				(32 ^ 0, 32 ^ 1, 32 ^ 2),
+
+
+}
+
+int3 element_offsets =
+{
+		(0,0,0),
+	(0,0,0), (1,0,0),
+		(0,0,1),
+	(0,0,0), (1,0,0),
+	(0,0,1), (1,0,1),
+		(0,1,0),
+	(0,1,0), (1,1,0),
+		(0,1,1),
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+
+
+	int3 cubepos = getpos(cube) + element_offsets[isrcvtx];
+	int3 innerpos = cubepos & 0x1f;
+	int3 outerpos = cubepos >> 5;
+
+	int3 dstspan = element_spans[isrcvtx];
+
+	const int grid_spn = 32 * 32 * 32 * 3;
+	int target_grid = lerp(gridid, dot(next_gridid[gridid], outerpos), any(outerpos));
+	int base_element = target_gridid * grid_span + element_bases[isrcvtx];
+
+	int idstvtx = base_element + dot(innerpos, dstspan);
+
+}

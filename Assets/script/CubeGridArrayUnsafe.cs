@@ -200,64 +200,21 @@ namespace MarchingCubes
             var isFull = math.all( addvalue == 0x8000 << 1);
             return !(isZero | isFull);
         }
-
-
-        //static bool isNeedDraw_( ref NearCubeGrids g )
-        //{
-        //    if( g.L.x.p->IsEmpty )
-        //    {
-        //        var isNoDraw =
-        //            g.R.x.p->IsEmpty &
-        //            g.L.y.p->IsEmpty &
-        //            g.R.y.p->IsEmpty &
-        //            g.L.z.p->IsEmpty &
-        //            g.R.z.p->IsEmpty &
-        //            g.L.w.p->IsEmpty &
-        //            g.R.w.p->IsEmpty
-        //            ;
-        //        if( isNoDraw ) return false;
-
-        //        // ブランク・フィル用のビルド関数も作るべき
-
-        //        return true;
-        //    }
-
-        //    if( g.L.x.p->IsFull )
-        //    {
-        //        var isNoDraw =
-        //            g.R.x.p->IsFull &
-        //            g.L.y.p->IsFull &
-        //            g.R.y.p->IsFull &
-        //            g.L.z.p->IsFull &
-        //            g.R.z.p->IsFull &
-        //            g.L.w.p->IsFull &
-        //            g.R.w.p->IsFull
-        //            ;
-        //        if( isNoDraw ) return false;
-
-        //        // ブランク・フィル用のビルド関数も作るべき
-
-        //        return true;
-        //    }
-
-        //    return true;
-        //}
-
-
-
+        
 
 
 
         /// <summary>
         /// 
         /// </summary>
-        public void BuildCubeInstanceDataSingle( int3 gridIndex, NativeList<CubeInstance> cubeInstances )
+        public void BuildCubeInstanceDataDirect( int3 gridIndex, NativeList<CubeInstance> cubeInstances )
         {
 
             var yspan = this.wholeGridLength.x * this.wholeGridLength.z;
             var zspan = this.wholeGridLength.x;
 
-            var gridset = getGridSet_( ref this, gridIndex.x, gridIndex.y, gridIndex.z, yspan, zspan );
+            var igrid = gridIndex + 1;
+            var gridset = getGridSet_( ref this, igrid.x, igrid.y, igrid.z, yspan, zspan );
             var gridcount = getEachCount( ref gridset );
 
             if( !isNeedDraw_( gridcount.L, gridcount.R ) ) return;

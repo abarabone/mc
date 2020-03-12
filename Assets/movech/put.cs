@@ -29,18 +29,29 @@ public class put : MonoBehaviour
             var res = Physics.Raycast( cam.transform.position, cam.transform.forward, out var hit );
             if( res )
             {
-                var p = Vector3.Scale( hit.point + hit.normal, new Vector3(1,-1,-1) );
-                Debug.Log( p );
-                var g = new int3( (int)p.x >> 5, (int)p.y >> 5, (int)p.z >> 5 );
-                var c = this.mc.cubeGrids[ g.x, g.y, g.z ];
-                c[ (int)p.x & 0x1f, (int)p.y & 0x1f, (int)p.z & 0x1f ] = 1;
+                var targetpos = (float3)( hit.point + hit.normal * 0.1f );
+
+                var cubepos = (int3)targetpos * new int3(1,-1,-1);
+                Debug.Log( cubepos );
+
+                var igrid = cubepos >> 5;
+                var gridpos = igrid * new float3( 32, -32, -32 );
 
 
+                // グリッド書き換え
+                var cube = this.mc.cubeGrids[ igrid.x, igrid.y, igrid.z ];
+                var innerpos = cubepos & 0x1f;
+                cube[ innerpos.x, innerpos.y, innerpos.z ] = 1;
+
+
+                // コライダ
                 var instances = new NativeList<CubeInstance>( 32 * 32 * 32, Allocator.TempJob );
-                this.mc.cubeGrids.BuildCubeInstanceDataSingle( g, instances );
 
-                var cc = this.mc.cubeGridColliders[ g.x, g.y, g.z ];
-                this.mc.cubeGridColliders[ g.x, g.y, g.z ] = this.mc.BuildMeshCollider( p, cc, instances.AsArray() );
+                this.mc.cubeGrids.BuildCubeInstanceDataDirect( igrid, instances );
+
+                var collider = this.mc.cubeGridColliders[ igrid.x, igrid.y, igrid.z ];
+                this.mc.cubeGridColliders[ igrid.x, igrid.y, igrid.z ] =
+                    this.mc.BuildMeshCollider( gridpos, collider, instances.AsArray() );
 
                 instances.Dispose();
             }
