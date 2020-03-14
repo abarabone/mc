@@ -1,6 +1,16 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
+
+RWStructureBuffer<float3> dst_normals;
+
+struct NextGridUnit
+{
+	public int x, y, z;
+};
+NextGridUnit next_gridid[];
+
+
 const element_block_size = 32 * 32 * 32;
 int element_bases[] =
 {
@@ -13,12 +23,6 @@ int element_bases[] =
 	element_block_size * 2,	element_block_size * 2,
 				element_block_size * 0,
 }
-
-struct NextGridUnit
-{
-	public int x, y, z;
-};
-NextGridUnit next_gridid[];
 
 int3 element_spans =
 {
@@ -45,6 +49,8 @@ int3 element_offsets =
 	(0,1,0), (1,1,0),
 		(0,1,1),
 }
+
+
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
