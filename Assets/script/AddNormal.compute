@@ -2,13 +2,14 @@
 #pragma kernel CSMain
 
 
-RWStructureBuffer<float3> dst_normals;
+StructuredBuffer<uint> src_instances;
+StructuredBuffer<int> src_indices;
+StructuredBuffer<float4> src_base_vertices;
+StructuredBuffer<float4> src_grid_positions;
+StructuredBuffer<float3> src_tri_normals;
 
-struct NextGridUnit
-{
-	public int x, y, z;
-};
-NextGridUnit next_gridid[];
+StructuredBuffer<int3> src_next_gridids;
+RWStructuredBuffer<float3> dst_normals;
 
 
 const element_block_size = 32 * 32 * 32;
@@ -26,38 +27,40 @@ int element_bases[] =
 
 int3 element_spans =
 {
-				(32 ^ 0, 32 ^ 1, 32 ^ 2),
-	(32 ^ 2, 32 ^ 0, 32 ^ 1), (32 ^ 2, 32 ^ 0, 32 ^ 1),
-				(32 ^ 0, 32 ^ 1, 32 ^ 2),
-	(32 ^ 1, 32 ^ 2, 32 ^ 0), (32 ^ 1, 32 ^ 2, 32 ^ 0),
-	(32 ^ 1, 32 ^ 2, 32 ^ 0), (32 ^ 1, 32 ^ 2, 32 ^ 0),
-				(32 ^ 0, 32 ^ 1, 32 ^ 2),
-	(32 ^ 2, 32 ^ 0, 32 ^ 1), (32 ^ 2, 32 ^ 0, 32 ^ 1),
-				(32 ^ 0, 32 ^ 1, 32 ^ 2),
+				int3(32 ^ 0, 32 ^ 1, 32 ^ 2),
+	int3(32 ^ 2, 32 ^ 0, 32 ^ 1), int3(32 ^ 2, 32 ^ 0, 32 ^ 1),
+				int3(32 ^ 0, 32 ^ 1, 32 ^ 2),
+	int3(32 ^ 1, 32 ^ 2, 32 ^ 0), int3(32 ^ 1, 32 ^ 2, 32 ^ 0),
+	int3(32 ^ 1, 32 ^ 2, 32 ^ 0), int3(32 ^ 1, 32 ^ 2, 32 ^ 0),
+				int3(32 ^ 0, 32 ^ 1, 32 ^ 2),
+	int3(32 ^ 2, 32 ^ 0, 32 ^ 1), int3(32 ^ 2, 32 ^ 0, 32 ^ 1),
+				int3(32 ^ 0, 32 ^ 1, 32 ^ 2),
 
 
 }
 
-int3 element_offsets =
+int3 vtx_offsets =
 {
-		(0,0,0),
-	(0,0,0), (1,0,0),
-		(0,0,1),
-	(0,0,0), (1,0,0),
-	(0,0,1), (1,0,1),
-		(0,1,0),
-	(0,1,0), (1,1,0),
-		(0,1,1),
+		int3(0,0,0),
+	int3(0,0,0), int3(1,0,0),
+		int3(0,0,1),
+	int3(0,0,0), int3(1,0,0),
+	int3(0,0,1), int3(1,0,1),
+		int3(0,1,0),
+	int3(0,1,0), int3(1,1,0),
+		int3(0,1,1),
 }
 
 
 
-[numthreads(8,8,1)]
+[numthreads(64,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
 
+	uint cube_instance = src_instances[id.x];
+	int isrcvtx = getivtx(cube_instatnce);
 
-	int3 cubepos = getpos(cube) + element_offsets[isrcvtx];
+	int3 cubepos = getpos(cube_instance) + vtx_offsets[isrcvtx];
 	int3 innerpos = cubepos & 0x1f;
 	int3 outerpos = cubepos >> 5;
 
@@ -70,3 +73,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 	int idstvtx = base_element + dot(innerpos, dstspan);
 
 }
+
+int3 getpos(uint cube_instance)
+{
+
+}
+
+int getivtx(uint cube_instance)
+{
+
+}
+
