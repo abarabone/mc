@@ -43,10 +43,11 @@ public class put : MonoBehaviour
                 var cubepos_ = (int3)targetpos * new int3(1,-1,-1);
                 //Debug.Log( cubepos_ );
 
-                for(var ix=0; ix<3; ix++ )
-                    for(var iy=0; iy<3; iy++ )
-                        for(var iz=0; iz<3; iz++ )
-                            setVisible_( cubepos_ + new int3( ix-1, iy-1, iz-1 ) );
+                //setVisible_( cubepos_ );
+                for( var ix = 0; ix < 3; ix++ )
+                    for( var iy = 0; iy < 3; iy++ )
+                        for( var iz = 0; iz < 3; iz++ )
+                            setVisible_( cubepos_ + new int3( ix - 1, iy - 1, iz - 1 ) );
 
 
                 void setVisible_( int3 cubepos )
