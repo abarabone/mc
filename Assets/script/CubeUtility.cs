@@ -95,5 +95,35 @@ namespace MarchingCubes
         }
 
 
+
+
+        static public void GetNextGridList
+            ( NativeList<float4> gridPositions, float3 gridScaleR, NativeList<int3> dstNextGrids )
+        {
+            var posDict = new NativeHashMap<int3, int>( gridPositions.Length, Allocator.Temp );
+
+            for( var i = 0; i < gridPositions.Length; i++ )
+            {
+                var pos = gridPositions[ i ];
+                posDict.Add( (int3)( pos.xyz * gridScaleR ), i );
+            }
+            for( var i = 0; i < gridPositions.Length; i++ )
+            {
+                var pos = gridPositions[ i ];
+                var index = (int3)( pos.xyz * gridScaleR );
+                var nextx = index + new int3( 1, 0, 0 );
+                var nexty = index + new int3( 0, 1, 0 );
+                var nextz = index + new int3( 0, 0, 1 );
+                var nextId = new int3( -1, -1, -1 );
+                posDict.TryGetValue( nextx, out nextId.x );
+                posDict.TryGetValue( nexty, out nextId.y );
+                posDict.TryGetValue( nextz, out nextId.z );
+                dstNextGrids.AddNoResize( nextId );
+            }
+
+            posDict.Dispose();
+        }
+
+
     }
 }

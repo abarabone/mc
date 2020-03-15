@@ -20,44 +20,46 @@ namespace MarchingCubes
         public MarchingCubeAsset MarchingCubeAsset;
         public Material Material;
 
+        public ComputeShader calculateVertexNormalShader;
+
         public CubeGridArrayUnsafe cubeGrids { get; private set; }
         public MeshCollider[,,] cubeGridColliders { get; private set; }
 
-        Mesh mesh;
-        ComputeBuffer baseVtxsBuffer;
-        ComputeBuffer idxListsBuffer;
-        ComputeBuffer instancesBuffer;
-        ComputeBuffer argsBuffer;
-        ComputeBuffer gridPositionBuffer;
-        ComputeBuffer normalsBuffer;
-
         //uint[] cubeInstances;
-        NativeList<float4> gridPositions;// = new NativeList<float4>( 3000, Allocator.Persistent );
-        NativeList<CubeInstance> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
-        //NativeQueue<CubeInstance> cubeInstances;// = new NativeList<uint>( 80000, Allocator.Persistent );
+        NativeList<float4> gridPositions;
+        NativeList<int3> nextGrids;
+        NativeList<CubeInstance> cubeInstances;
+        //NativeQueue<CubeInstance> cubeInstances;
+
+        MeshResources meshResources;
+
+        public int maxDrawGridLength;
+
 
         unsafe void Awake()
         {
-            this.gridPositions = new NativeList<float4>( 3000, Allocator.Persistent );
+            this.gridPositions = new NativeList<float4>( this.maxDrawGridLength, Allocator.Persistent );
+            this.nextGrids = new NativeList<int3>( this.maxDrawGridLength, Allocator.Persistent );
             this.cubeInstances = new NativeList<CubeInstance>( 1000000, Allocator.Persistent );
             //this.cubeInstances = new NativeQueue<CubeInstance>( Allocator.Persistent );
 
-            var res = convertMqoToMarchingCubesData();
+            this.meshResources = new MeshResources( this.MarchingCubeAsset, this.maxDrawGridLength );
+            var res = this.meshResources;
 
-            this.baseVtxsBuffer = res.basevtxs;
-            this.idxListsBuffer = res.idxLists;
-            this.instancesBuffer = res.instance;
-            this.gridPositionBuffer = res.gridposition;
-            this.argsBuffer = ComputeShaderUtility.CreateIndirectArgumentsBuffer();
-            this.normalsBuffer = res.triangleNormals;
-            this.mesh = res.mesh;
+            this.Material.SetBuffer( "BaseVtxList", res.baseVtxsBuffer );
+            this.Material.SetBuffer( "IdxList", res.idxListsBuffer );
+            this.Material.SetBuffer( "Instances", res.instancesBuffer );
+            this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
+            this.Material.SetBuffer( "src_next_gridids", res.nextGridIdBuffer );
+            this.Material.SetBuffer( "Normals", res.triNormalsBuffer );
 
-            this.Material.SetBuffer( "BaseVtxList", this.baseVtxsBuffer );
-            this.Material.SetBuffer( "IdxList", this.idxListsBuffer );
-            this.Material.SetBuffer( "Instances", this.instancesBuffer );
-            this.Material.SetBuffer( "GridPositions", this.gridPositionBuffer );
-            this.Material.SetBuffer( "Normals", this.normalsBuffer );
-            //this.Material.SetVector( "UnitLength", new Vector4(32,32,32,0) );
+            this.calculateVertexNormalShader.SetBuffer( 0, "src_instances", res.instancesBuffer );
+            this.calculateVertexNormalShader.SetBuffer( 0, "src_indices", res.idxListsBuffer );
+            this.calculateVertexNormalShader.SetBuffer( 0, "src_base_vertices", res.baseVtxsBuffer );
+            this.calculateVertexNormalShader.SetBuffer( 0, "src_grid_positions", res.gridPositionBuffer );
+            this.calculateVertexNormalShader.SetBuffer( 0, "src_tri_normals", res.triNormalsBuffer );
+            this.calculateVertexNormalShader.SetBuffer( 0, "src_next_gridids", res.nextGridIdBuffer );
+            this.calculateVertexNormalShader.SetBuffer( 0, "dst_normals", res.vtxNormalsBuffer );
 
             this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
             this.cubeGrids.FillCubes( new int3( -1, 2, -1 ), new int3( 11, 11, 11 ), isFillAll: true );
@@ -72,12 +74,13 @@ namespace MarchingCubes
                 for( var iz = 0; iz < 15; iz++ )
                     for( var ix = 0; ix < 13; ix++ )
                         c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
-            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.nextGrids, this.cubeInstances );
             this.job.Complete();
 
-            this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
-            this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
-            Debug.Log($"{cubeInstances.Length} / {this.instancesBuffer.count}");
+            res.instancesBuffer.SetData( this.cubeInstances.AsArray() );
+            res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
+            res.nextGridIdBuffer.SetData( this.nextGrids.AsArray() );
+            Debug.Log($"{cubeInstances.Length} / {res.instancesBuffer.count}");
 
 
             var glen = this.cubeGrids.GridLength;
@@ -147,13 +150,7 @@ namespace MarchingCubes
         {
             this.job.Complete();
 
-            if( this.baseVtxsBuffer != null ) this.baseVtxsBuffer.Dispose();
-            if( this.idxListsBuffer != null ) this.idxListsBuffer.Dispose();
-            if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
-            if( this.gridPositionBuffer != null ) this.gridPositionBuffer.Dispose();
-            if( this.argsBuffer != null ) this.argsBuffer.Dispose();
-            if( this.normalsBuffer != null ) this.normalsBuffer.Dispose();
-
+            this.meshResources.Dispose();
             this.cubeGrids.Dispose();
             this.gridPositions.Dispose();
             this.cubeInstances.Dispose();
@@ -168,17 +165,21 @@ namespace MarchingCubes
             c[ i, 0, 0 ] ^= 1;
             i = i + 1 & 31;
             this.gridPositions.Clear();
+            this.nextGrids.Clear();
             this.cubeInstances.Clear();
-            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.cubeInstances );
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.nextGrids, this.cubeInstances );
 
             this.job.Complete();
-            this.instancesBuffer.SetData( this.cubeInstances.AsArray() );
-            this.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
+
+            var res = this.meshResources;
+            res.instancesBuffer.SetData( this.cubeInstances.AsArray() );
+            res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
+            res.nextGridIdBuffer.SetData( this.nextGrids.AsArray() );
 
 
-            var mesh = this.mesh;
+            var mesh = res.mesh;
             var mat = this.Material;
-            var args = this.argsBuffer;
+            var args = res.argsBuffer;
 
             //var vectorOffset = offset.pVectorOffsetInBuffer - nativeBuffer.pBuffer;
             //mat.SetInt( "BoneVectorOffset", (int)vectorOffset );
@@ -196,20 +197,42 @@ namespace MarchingCubes
         int i;
 
 
-        (ComputeBuffer basevtxs, ComputeBuffer idxLists, ComputeBuffer instance, ComputeBuffer gridposition, ComputeBuffer triangleNormals, Mesh mesh)
-        convertMqoToMarchingCubesData()
+        struct MeshResources : System.IDisposable
         {
-            var asset = this.MarchingCubeAsset;
+            public ComputeBuffer argsBuffer;
+            public ComputeBuffer baseVtxsBuffer;
+            public ComputeBuffer idxListsBuffer;
+            public ComputeBuffer instancesBuffer;
+            public ComputeBuffer gridPositionBuffer;
+            public ComputeBuffer triNormalsBuffer;
+            public ComputeBuffer vtxNormalsBuffer;
+            public ComputeBuffer nextGridIdBuffer;
+            public Mesh mesh;
 
-            var instance = createCubeIdInstancingShaderBuffer_( 32*32*32*3000 );
-            var basevtxs = createBaseVtxShaderBuffer_( asset.BaseVertexList );
-            var cubeid = createIdxListsShaderBuffer_( asset.CubeIdAndVertexIndicesList );
-            var gridposition = createGridPositionShaderBuffer_( 3000 );
-            var triangleNormals = createNormalshaderBuffer_( asset.CubeIdAndVertexIndicesList );
-            var mesh = createMesh_();
+            public MeshResources( MarchingCubeAsset asset, int maxGridLength ) : this()
+            {
+                this.argsBuffer = ComputeShaderUtility.CreateIndirectArgumentsBuffer();
+                this.instancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
+                this.baseVtxsBuffer = createBaseVtxShaderBuffer_( asset.BaseVertexList );
+                this.idxListsBuffer = createIdxListsShaderBuffer_( asset.CubeIdAndVertexIndicesList );
+                this.gridPositionBuffer = createGridPositionShaderBuffer_( maxGridLength );
+                this.nextGridIdBuffer = createNextGridShaderBuffer_( maxGridLength );
+                this.triNormalsBuffer = createTriangleNormalshaderBuffer_( asset.CubeIdAndVertexIndicesList );
+                this.vtxNormalsBuffer = createVertexNormalshaderBuffer_( maxGridLength );
+                this.mesh = createMesh_();
+            }
 
-            return (basevtxs, cubeid, instance, gridposition, triangleNormals, mesh);
-            
+            public void Dispose()
+            {
+                if( this.baseVtxsBuffer != null ) this.baseVtxsBuffer.Dispose();
+                if( this.idxListsBuffer != null ) this.idxListsBuffer.Dispose();
+                if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
+                if( this.gridPositionBuffer != null ) this.gridPositionBuffer.Dispose();
+                if( this.nextGridIdBuffer != null ) this.nextGridIdBuffer.Dispose();
+                if( this.argsBuffer != null ) this.argsBuffer.Dispose();
+                if( this.triNormalsBuffer != null ) this.triNormalsBuffer.Dispose();
+                if( this.vtxNormalsBuffer != null ) this.vtxNormalsBuffer.Dispose();
+            }
 
             ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
             {
@@ -221,6 +244,12 @@ namespace MarchingCubes
             ComputeBuffer createGridPositionShaderBuffer_( int maxBufferLength )
             {
                 var buffer = new ComputeBuffer( maxBufferLength, Marshal.SizeOf<float4>() );
+
+                return buffer;
+            }
+            ComputeBuffer createNextGridShaderBuffer_( int maxBufferLength )
+            {
+                var buffer = new ComputeBuffer( maxBufferLength, Marshal.SizeOf<int3>() );
 
                 return buffer;
             }
@@ -251,7 +280,7 @@ namespace MarchingCubes
                 return buffer;
             }
 
-            ComputeBuffer createNormalshaderBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
+            ComputeBuffer createTriangleNormalshaderBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
             {
                 var buffer = new ComputeBuffer( 254 * 4, Marshal.SizeOf<Vector3>() );
 
@@ -267,6 +296,13 @@ namespace MarchingCubes
 
                 return buffer;
             }
+            ComputeBuffer createVertexNormalshaderBuffer_( int maxGridLength )
+            {
+                var buffer = new ComputeBuffer( 32*32*32*3 * maxGridLength, Marshal.SizeOf<Vector3>() );
+                
+                return buffer;
+            }
+
 
             Mesh createMesh_()
             {

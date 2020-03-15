@@ -41,7 +41,7 @@ public class put : MonoBehaviour
                 Graphics.DrawMesh( this.hitmark, targetpos, quaternion.identity, this.mat, 0 );
 
                 var cubepos_ = (int3)targetpos * new int3(1,-1,-1);
-                Debug.Log( cubepos_ );
+                //Debug.Log( cubepos_ );
 
                 for(var ix=0; ix<3; ix++ )
                     for(var iy=0; iy<3; iy++ )

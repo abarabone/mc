@@ -51,8 +51,7 @@ namespace MarchingCubes
         }
 
 
-
-        // 標準 -------------------------------------------------------------
+        // ------------------------------------------------------------------
 
         /// <summary>
         /// native contener 化必要、とりあえずは配列で動作チェック
@@ -130,6 +129,7 @@ namespace MarchingCubes
 
         }
         
+        // ループ削減試行錯誤中（端っこもやれないか？）
         static void SampleAllCubes_<TCubeInstanceWriter>
             ( ref NearCubeGrids g, ref GridCounts gcount, int gridId, ref TCubeInstanceWriter outputCubes )
             where TCubeInstanceWriter : ICubeInstanceWriter

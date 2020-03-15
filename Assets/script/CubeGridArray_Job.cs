@@ -56,6 +56,9 @@ namespace MarchingCubes
 
 
 
+        /// <summary>
+        /// 単一グリッドでのキューブ生成
+        /// </summary>
         [BurstCompile]
         struct SingleGridJob : IJob
         {
@@ -91,6 +94,8 @@ namespace MarchingCubes
             public NativeList<CubeInstance> dstCubeInstances;
             [WriteOnly]
             public NativeList<float4> dstGridPositions;
+            [WriteOnly]
+            public NativeList<int3> dstNextGrids;
 
 
             public void Execute()
@@ -122,6 +127,9 @@ namespace MarchingCubes
                             gridId++;
 
                         }
+
+                var gridScale = new float3( 32, 32, 32 );
+                CubeUtiilty.GetNextGridList( this.dstGridPositions, gridScale, this.dstNextGrids );
             }
         }
 
@@ -163,7 +171,6 @@ namespace MarchingCubes
 
                             this.dstNearGrids.Add( gridset );
                             this.dstGridPositions.Add( new float4( (ix-1) * 32, -(iy-1) * 32, -(iz-1) * 32, 0 ) );
-
                         }
             }
         }

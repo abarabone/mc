@@ -237,7 +237,7 @@ namespace MarchingCubes
         /// 
         /// </summary>
         public JobHandle BuildCubeInstanceData
-            ( NativeList<float4> gridPositions, NativeList<CubeInstance> cubeInstances )
+            ( NativeList<float4> gridPositions, NativeList<int3> nextGrids, NativeList<CubeInstance> cubeInstances )
         {
 
             var job = new GridJob
@@ -245,6 +245,7 @@ namespace MarchingCubes
                 gridArray = this,
                 dstCubeInstances = cubeInstances,
                 dstGridPositions = gridPositions,
+                dstNextGrids = nextGrids,
             }
             .Schedule();
 
