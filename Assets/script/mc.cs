@@ -135,6 +135,7 @@ namespace MarchingCubes
             {
                 var mesh = mc.sharedMesh;
                 mesh.Clear();
+                mesh.MarkDynamic();
                 mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
                 mesh.SetVertices( v.AsArray() );
                 mesh.SetIndices( i.AsArray(), MeshTopology.Triangles, 0 );
@@ -177,7 +178,7 @@ namespace MarchingCubes
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             res.nextGridIdBuffer.SetData( this.nextGrids.AsArray() );
 
-            this.calculateVertexNormalShader.Dispatch( 1, this.maxDrawGridLength, 1, 1 );
+            this.calculateVertexNormalShader.Dispatch( 1, this.gridPositions.Length, 1, 1 );
             //this.calculateVertexNormalShader.Dispatch(0, )
 
 
