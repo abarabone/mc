@@ -13,6 +13,15 @@ RWStructuredBuffer<float3> dst_normals;
 
 
 
+int vtx_offset[] =
+{
+		  0,
+	1,		1*3+1,
+		32*3+0,
+	4,		
+};
+
+
 
 int calculate_idstnm(int gridid, int3 cubepos, int isrcvtx)
 {
