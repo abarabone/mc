@@ -1,0 +1,65 @@
+﻿#pragma kernel CSMain
+
+
+StructuredBuffer<uint> src_instances;
+StructuredBuffer<int> src_triangles;
+StructuredBuffer<float4> src_base_vertices;
+StructuredBuffer<float4> src_grid_positions;
+StructuredBuffer<float3> src_tri_normals;
+StructuredBuffer<int3> src_next_gridids;
+
+RWStructuredBuffer<float3> dst_normals;
+
+
+
+
+
+int calculate_idstnm(int gridid, int3 cubepos, int isrcvtx)
+{
+	int3 elementpos = cubepos + vtx_offsets[isrcvtx];
+	int3 innerpos = elementpos & 0x1f;
+	int3 outerpos = elementpos >> 5;
+
+	int next_grid = dot(src_next_gridids[gridid], outerpos);
+	int current_grid = gridid;
+	int target_grid = lerp(current_grid, next_grid, any(outerpos));
+
+	const int grid_span = 32 * 32 * 32 * 3;
+	int base_element = target_grid * grid_span + element_bases[isrcvtx];
+
+	int3 dst_span = element_spans[isrcvtx];
+	int idstnm = base_element + dot(innerpos, dst_span);
+	return idstnm;
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+
+	uint cube_instance = src_instances[id.x];
+	int gridid = get_gridid(cube_instance);
+	int cubeid = get_cubeid(cube_instance);
+	int3 cubepos = get_pos_in_grid(cube_instance);
+
+	int tri_base = cubeid * 4;
+	for (int i = 0; i < 4; i++)
+	{
+		int isrcvtx = src_triangles[tri_base + i];
+
+		//float3 v0 = src_base_vertices[isrcvtx.x].xyz;
+		//float3 v1 = src_base_vertices[isrcvtx.y].xyz;
+		//float3 v2 = src_base_vertices[isrcvtx.z].xyz;
+		//float3 n = normalize(cross(v1 - v0, v2 - v0));
+		float3 n = src_tri_normals[tri_base + i];
+
+		int idstnm0 = calculate_idstnm(gridid, cubepos, isrcvtx.x);
+		int idstnm1 = calculate_idstnm(gridid, cubepos, isrcvtx.y);
+		int idstnm2 = calculate_idstnm(gridid, cubepos, isrcvtx.z);
+
+		dst_normals[idstnm0] += n;
+		dst_normals[idstnm1] += n;
+		dst_normals[idstnm2] += n;
+	}
+
+
+}

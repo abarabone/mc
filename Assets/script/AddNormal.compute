@@ -125,10 +125,10 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 }
 
 
-[numthreads(32, 32, 1)]
+[numthreads(16, 8, 8)]
 void clear(uint3 id : SV_DispatchThreadID)
 {
-	int ibase = (id.x*32) + 32 * 32*3;
+	int ibase = (id.x*16 + id.y*8 + id.z*8) * 32*3;
 	for (int i = 0; i < 3; i++)
 	{
 		dst_normals[ibase++] = float3(0, 0, 0);
