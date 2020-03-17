@@ -2,7 +2,8 @@
 
 
 StructuredBuffer<uint> src_instances;
-StructuredBuffer<int> src_triangles;
+//StructuredBuffer<int3> src_triangles;
+StructuredBuffer<int> src_indices;
 StructuredBuffer<float4> src_base_vertices;
 StructuredBuffer<float4> src_grid_positions;
 StructuredBuffer<float3> src_tri_normals;
@@ -61,17 +62,26 @@ void calculate_cube_normal(uint3 id : SV_DispatchThreadID)
 	int cubeid = get_cubeid(cube_instance);
 	int3 cubepos = get_pos_in_grid(cube_instance);
 
-	float3 vtx_nms[12];
+	float3 vtx_nms[12] =
+	{
+		{0,0,0}, {0,0,0}, {0,0,0}, {0,0,0},
+		{0,0,0}, {0,0,0}, {0,0,0}, {0,0,0},
+		{0,0,0}, {0,0,0}, {0,0,0}, {0,0,0},
+	};
 
 	int tri_base = cubeid * 4;
+	int idx_base = cubeid * 12;
 	for (int i = 0; i < 4; i++)
 	{
-		int3 isrc_vtx = src_triangles[tri_base + i];
+		int3 isrc_vtx;// = src_triangles[tri_base + i];
+		isrc_vtx.x = src_indices[idx_base + i * 3 + 0];
+		isrc_vtx.y = src_indices[idx_base + i * 3 + 1];
+		isrc_vtx.z = src_indices[idx_base + i * 3 + 2];
 		float3 nm = src_tri_normals[tri_base + i];
 
-		vtx_nms[isrc_vtx.x] = nm;
-		vtx_nms[isrc_vtx.y] = nm;
-		vtx_nms[isrc_vtx.z] = nm;
+		vtx_nms[isrc_vtx.x] += nm;
+		vtx_nms[isrc_vtx.y] += nm;
+		vtx_nms[isrc_vtx.z] += nm;
 	}
 
 	const int grid_span = 32 * 32 * 32 * 3;
@@ -83,5 +93,5 @@ void calculate_cube_normal(uint3 id : SV_DispatchThreadID)
 	int idst_nm_base = igrid_top + icube * 3;
 	dst_normals[idst_nm_base + 0] = vtx_nms[0];
 	dst_normals[idst_nm_base + 1] = vtx_nms[1];
-	dst_normals[idst_nm_base + 4] = vtx_nms[4];
+	dst_normals[idst_nm_base + 2] = vtx_nms[4];
 }
