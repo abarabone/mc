@@ -61,6 +61,7 @@ namespace MarchingCubes
             this.calculateVertexNormalShader.SetBuffer( 0, "src_tri_normals", res.triNormalsBuffer );
             this.calculateVertexNormalShader.SetBuffer( 0, "src_next_gridids", res.nextGridIdBuffer );
             this.calculateVertexNormalShader.SetBuffer( 0, "dst_normals", res.vtxNormalsBuffer );
+            this.calculateVertexNormalShader.SetBuffer( 0, "grid_cubeids", res.vtxNormalsBuffer );
 
             this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
             this.cubeGrids.FillCubes( new int3( -1, 2, -1 ), new int3( 11, 11, 11 ), isFillAll: true );

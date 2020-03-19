@@ -1,4 +1,4 @@
-﻿#pragma kernel calculate_cube_normal
+﻿#pragma kernel write_cubeid_grid;//calculate_cube_normal
 
 
 StructuredBuffer<uint> src_instances;
@@ -10,10 +10,12 @@ StructuredBuffer<float3> src_tri_normals;
 StructuredBuffer<int3> src_next_gridids;
 
 RWStructuredBuffer<float3> dst_normals;
+RWStructuredBuffer<uint> grid_cubeids;
 
 static const int _32e0 = 1;
 static const int _32e1 = 32;
 static const int _32e2 = 32 * 32;
+static const int _32e3 = 32 * 32 * 32;
 
 
 
@@ -57,11 +59,30 @@ int get_normal_index(uint cubeid)
 	return cubeid;
 }
 
-int write_cubeid_to_gridbuf(uint cubeid, uint3 innerpos)
+int write_cubeid_to_grid(int gridid, int cubeid, int3 innerpos)
 {
+	int igrid_base = gridid * _32e3;
 
+	const int3 inner_span = int3(_32e0, _32e1, _32e2);
+	int icube = dot(innerpos, inner_span);
+	
+	grid_cubeids[igrid_base + icube] = cubeid;
 }
 
+
+[numthreads(64, 1, 1)]
+void write_cubeid_grid(uint3 id : SV_DispatchThreadID)
+{
+
+	uint cube_instance = src_instances[id.x];
+
+	int gridid = get_gridid(cube_instance);
+	int cubeid = get_cubeid(cube_instance);
+	int3 cubepos = get_pos_in_grid(cube_instance);
+
+
+	write_cubeid_to_grid(gridid, cubeid, innerpos);
+}
 
 
 [numthreads(64,1,1)]
