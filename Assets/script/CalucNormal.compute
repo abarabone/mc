@@ -51,6 +51,17 @@ int3 get_pos_in_grid(uint cube_instance)
 	int z = cube_instance >> 26 & 0x1f;
 	return int3(x, y, z);
 }
+int get_normal_index(uint cubeid)
+{
+
+	return cubeid;
+}
+
+int write_cubeid_to_gridbuf(uint cubeid, uint3 innerpos)
+{
+
+}
+
 
 
 [numthreads(64,1,1)]
