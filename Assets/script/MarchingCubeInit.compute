@@ -1,0 +1,37 @@
+﻿#pragma kernel CSMain
+
+StructuredBuffer<uint> src_instances;
+
+RWTexture1D<float4> dst_grid_cubeids;
+
+uniform uint frame_unique_24bit;
+
+static const int _32e0 = 1;
+static const int _32e1 = 32;
+static const int _32e2 = 32 * 32;
+static const int _32e3 = 32 * 32 * 32;
+
+
+int write_cubeid_to_grid(int gridid, int cubeid, int3 innerpos, int frame_unique_24bit_)
+{
+	int igrid = gridid * _32e3;
+
+	static const int3 inner_span = int3(_32e0, _32e2, _32e1);
+	int icube = dot(innerpos, inner_span);
+
+	dst_grid_cubeids[igrid + icube] = cubeid & frame_unique_24bit_ << 8;
+}
+
+
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	uint cube_instance = src_instances[id.x];
+
+	int gridid = get_gridid(cube_instance);
+	int cubeid = get_cubeid(cube_instance);
+	int3 cubepos = get_pos_in_grid(cube_instance);
+
+	write_cubeid_to_grid(gridid, cubeid, cubepos, frame_unique_24bit);
+}

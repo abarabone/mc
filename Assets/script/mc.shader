@@ -51,7 +51,7 @@
             StructuredBuffer<float4> GridPositions;
 			StructuredBuffer<float3> Normals;
 
-			StructuredBuffer<int3> src_next_gridids;
+			StructuredBuffer<int> src_next_gridids;
 
 			static const int _32e0 = 1;
 			static const int _32e1 = 32;
@@ -87,11 +87,6 @@
 			//	return idstnm;
 			//}
 
-			int aaa[] =
-			{
-				0,1,0,0, 2,0,0,0, 0,0,0,0
-			};
-
 
             v2f vert(appdata v, uint i : SV_InstanceID)
             {
@@ -100,7 +95,6 @@
                 uint data = Instances[i];
                 uint cubeId = (data & 0xff) - 1;
 				uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
-                
 
 				uint vtxIdx = IdxList[idxofs.x];
 
@@ -114,10 +108,10 @@
                 o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
 				
-				//half3 normal = Normals[idxofs.y].xyz;
-				const int3 inner_span = int3(_32e0, _32e1, _32e2);
-				int icube = dot(cubepos.xyz, inner_span);
-				half3 normal = normalize(Normals[ gridId * (32*32*32*3) + icube * 3 + aaa[1] ]);
+				half3 normal = Normals[idxofs.y].xyz;
+				////const int3 inner_span = int3(_32e0, _32e1, _32e2);/*
+				////int icube = dot(cubepos.xyz, inner_span);
+				////half3 normal = normalize(Normals[ gridId * (32*32*32*3) + icube * 3 + aaa[1] ]);*/
 				half3 worldNormal = normal;// mul(UNITY_MATRIX_VP, normal);//UnityObjectToWorldNormal(normal);//
 				fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
