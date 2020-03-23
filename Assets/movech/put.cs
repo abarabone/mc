@@ -37,17 +37,18 @@ public class put : MonoBehaviour
             var res = Physics.Raycast( pos + dir, dir, out var hit );
             if( res )
             {
-                var targetpos = (float3)( hit.point );// + hit.normal * 0.5f * (Input.GetMouseButton( 0 ) ? 1f : -1f) );
-                Graphics.DrawMesh( this.hitmark, targetpos, quaternion.identity, this.mat, 0 );
+                Graphics.DrawMesh( this.hitmark, hit.point, quaternion.identity, this.mat, 0 );
 
-                var cubepos_ = (int3)targetpos * new int3(1,-1,-1);
+                var targetpos = (float3)( hit.point + hit.normal * 0.5f * (Input.GetMouseButton( 0 ) ? 1f : -1f) );
+
+                var cubepos_ = (int3)( math.floor(targetpos * new float3(1,-1,-1) + new float3(0.5f,0.5f,0.5f)) );
                 //Debug.Log( cubepos_ );
 
-                //setVisible_( cubepos_ );
-                for( var ix = 0; ix < 3; ix++ )
-                    for( var iy = 0; iy < 3; iy++ )
-                        for( var iz = 0; iz < 3; iz++ )
-                            setVisible_( cubepos_ + new int3( ix - 1, iy - 1, iz - 1 ) );
+                setVisible_( cubepos_ );
+                //for( var ix = 0; ix < 3; ix++ )
+                //    for( var iy = 0; iy < 3; iy++ )
+                //        for( var iz = 0; iz < 3; iz++ )
+                //            setVisible_( cubepos_ + new int3( ix - 1, iy - 1, iz - 1 ) );
 
 
                 void setVisible_( int3 cubepos )
