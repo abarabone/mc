@@ -76,6 +76,9 @@
 				int icube = dot(cubepos, cube_span);
 				int3 inear = icube.xxx - cubeid_span;	// left, up, forward
 				int3 inear_slant = icube.xxx - cubeid_span_slant;	// leftup, upforward, forwardleft
+				int3 inext = icube.xxx + cubeid_span;
+				int3 inext_slant = icube.xxx + cubeid_span_slant;
+
 
 				int3 outer = inear >> 15;
 				int3 outer_slant = inear_slant >> 15;
@@ -83,8 +86,8 @@
 				int3 inner_slant = inear_slant & 0x7fff;
 
 				int igrid_current = gridid;
-				int3 igrid_near = lerp(src_prenear_gridids[gridid * 2 + 0], igrid_current, -outer) * _32e3;
-				int3 igrid_near_slant = lerp(src_prenear_gridids[gridid * 2 + 1], igrid_current, -outer) * _32e3;
+				int3 igrid_near = int3(0,0,0,0);//lerp(src_prenear_gridids[gridid * 2 + 0], igrid_current, -outer) * _32e3;
+				int3 igrid_near_slant = int3(0, 0, 0, 0);// lerp(src_prenear_gridids[gridid * 2 + 1], igrid_current, -outer) * _32e3;
 
 				uint cubeid_current		= cubeid * 12;
 				uint cubeid_left		= grid_cubeids[igrid_naar.x + inear.x] * 12;
@@ -93,6 +96,28 @@
 				uint cubeid_leftup		= grid_cubeids[igrid_naar_slant.x + inear_slant.x] * 12;
 				uint cubeid_upforward	= grid_cubeids[igrid_naar_slant.y + inear_slant.y] * 12;
 				uint cubeid_forwardleft	= grid_cubeids[igrid_naar_slant.z + inear_slant.z] * 12;
+				uint cubeid_right		= grid_cubeids[igrid_naar.x + inext.x] * 12;
+				uint cubeid_down		= grid_cubeids[igrid_naar.y + inext.y] * 12;
+				uint cubeid_back		= grid_cubeids[igrid_naar.z + inext.z] * 12;
+				uint cubeid_rightdown	= grid_cubeids[igrid_naar_slant.x + inext_slant.x] * 12;
+				uint cubeid_downback	= grid_cubeids[igrid_naar_slant.y + inext_slant.y] * 12;
+				uint cubeid_backright	= grid_cubeids[igrid_naar_slant.z + inext_slant.z] * 12;
+
+				//float3 nm0 = cube_normals[cubeid_current + 0];
+				//nm0 += cube_normals[cubeid_forward + 3];
+				//nm0 += cube_normals[cubeid_up + 8];
+				//nm0 += cube_normals[cubeid_upforward + 11];
+
+				//float3 nm1 = cube_normals[cubeid_current + 1];
+				//nm1 += cube_normals[cubeid_left + 2];
+				//nm1 += cube_normals[cubeid_up + 9];
+				//nm1 += cube_normals[cubeid_leftup + 10];
+
+				//float3 nm4 = cube_normals[cubeid_current + 4];
+				//nm4 += cube_normals[cubeid_left + 5];
+				//nm4 += cube_normals[cubeid_forward + 6];
+				//nm4 += cube_normals[cubeid_forwardleft + 7];
+
 
 				float3 nm0 = cube_normals[cubeid_current + 0];
 				nm0 += cube_normals[cubeid_forward + 3];
@@ -104,10 +129,58 @@
 				nm1 += cube_normals[cubeid_up + 9];
 				nm1 += cube_normals[cubeid_leftup + 10];
 
+				float3 nm2 = cube_normals[cubeid_current + 2];
+				nm2 += cube_normals[cubeid_right + 1];
+				nm2 += cube_normals[cubeid_down + 10];
+				nm2 += cube_normals[cubeid_rightdown + 9];
+
+
+				float3 nm3 = cube_normals[cubeid_current + 3];
+				nm3 += cube_normals[cubeid_back + 0];
+				nm3 += cube_normals[cubeid_up + 11];
+				nm3 += cube_normals[cubeid_upback + 8];//
+
 				float3 nm4 = cube_normals[cubeid_current + 4];
 				nm4 += cube_normals[cubeid_left + 5];
 				nm4 += cube_normals[cubeid_forward + 6];
 				nm4 += cube_normals[cubeid_forwardleft + 7];
+
+				float3 nm5 = cube_normals[cubeid_current + 5];
+				nm5 += cube_normals[cubeid_right + 4];
+				nm5 += cube_normals[cubeid_back + 7];
+				nm5 += cube_normals[cubeid_backright + 6];
+
+
+				float3 nm6 = cube_normals[cubeid_current + 6];
+				nm6 += cube_normals[cubeid_ + ];
+				nm6 += cube_normals[cubeid_ + ];
+				nm6 += cube_normals[cubeid_ + ];
+
+				float3 nm7 = cube_normals[cubeid_current + 7];
+				nm7 += cube_normals[cubeid_ + ];
+				nm7 += cube_normals[cubeid_ + ];
+				nm7 += cube_normals[cubeid_ + ];
+
+				float3 nm8 = cube_normals[cubeid_current + 8];
+				nm8 += cube_normals[cubeid_ + ];
+				nm8 += cube_normals[cubeid_ + ];
+				nm8 += cube_normals[cubeid_ + ];
+
+
+				float3 nm9 = cube_normals[cubeid_current + 9];
+				nm9 += cube_normals[cubeid_ + ];
+				nm9 += cube_normals[cubeid_ + ];
+				nm9 += cube_normals[cubeid_ + ];
+
+				float3 nm10 = cube_normals[cubeid_current + 10];
+				nm10 += cube_normals[cubeid_ + ];
+				nm10 += cube_normals[cubeid_ + ];
+				nm10 += cube_normals[cubeid_ + ];
+
+				float3 nm11 = cube_normals[cubeid_current + 11];
+				nm11 += cube_normals[cubeid_ + ];
+				nm11 += cube_normals[cubeid_ + ];
+				nm11 += cube_normals[cubeid_ + ];
 
 
 
