@@ -15,6 +15,8 @@
 		Pass
 		{
 			CGPROGRAM
+// Upgrade NOTE: excluded shader from DX11 because it uses wrong array syntax (type[size] name)
+//#pragma exclude_renderers d3d11
 			// Upgrade NOTE: excluded shader from DX11, OpenGL ES 2.0 because it uses unsized arrays
 			//#pragma exclude_renderers d3d11 gles
 
@@ -59,13 +61,21 @@
 			static const int _32e1 = 32;
 			static const int _32e2 = 32 * 32;
 			static const int _32e3 = 32 * 32 * 32;
+			static const int xspan = _32e0;
+			static const int yspan = _32e2;
+			static const int zspan = _32e1;
+			static const int gridspan = _32e3;
+
 
 
 			appdata vert(appdata v, uint i : SV_InstanceID)
 			{
-				v.z = i;
+				v.vertex.z = i;
 				return v;
 			}
+
+
+			//groupshared float3[64*12];
 
 			[maxvertexcount(12)]
 			void geom(point appdata input[1], inout TriangleStream<v2f> outStream)
@@ -123,68 +133,93 @@
 				nm0 += cube_normals[cubeid_forward + 3];
 				nm0 += cube_normals[cubeid_up + 8];
 				nm0 += cube_normals[cubeid_upforward + 11];
+				nm0 = normalize(nm0);
 
 				float3 nm1 = cube_normals[cubeid_current + 1];
 				nm1 += cube_normals[cubeid_left + 2];
 				nm1 += cube_normals[cubeid_up + 9];
 				nm1 += cube_normals[cubeid_leftup + 10];
+				nm1 = normalize(nm1);
 
 				float3 nm2 = cube_normals[cubeid_current + 2];
 				nm2 += cube_normals[cubeid_right + 1];
 				nm2 += cube_normals[cubeid_down + 10];
 				nm2 += cube_normals[cubeid_rightdown + 9];
+				nm2 = normalize(nm2);
 
 
 				float3 nm3 = cube_normals[cubeid_current + 3];
 				nm3 += cube_normals[cubeid_back + 0];
 				nm3 += cube_normals[cubeid_up + 11];
 				nm3 += cube_normals[cubeid_upback + 8];//
+				nm3 = normalize(nm3);
 
 				float3 nm4 = cube_normals[cubeid_current + 4];
 				nm4 += cube_normals[cubeid_left + 5];
 				nm4 += cube_normals[cubeid_forward + 6];
 				nm4 += cube_normals[cubeid_forwardleft + 7];
+				nm4 = normalize(nm4);
 
 				float3 nm5 = cube_normals[cubeid_current + 5];
 				nm5 += cube_normals[cubeid_right + 4];
 				nm5 += cube_normals[cubeid_back + 7];
 				nm5 += cube_normals[cubeid_backright + 6];
+				nm5 = normalize(nm5);
 
 
 				float3 nm6 = cube_normals[cubeid_current + 6];
-				nm6 += cube_normals[cubeid_ + ];
-				nm6 += cube_normals[cubeid_ + ];
-				nm6 += cube_normals[cubeid_ + ];
+				nm6 += cube_normals[cubeid_left + 7];
+				nm6 += cube_normals[cubeid_back + 4];
+				nm6 += cube_normals[cubeid_backleft + 5];//
+				nm6 = normalize(nm6);
 
 				float3 nm7 = cube_normals[cubeid_current + 7];
-				nm7 += cube_normals[cubeid_ + ];
-				nm7 += cube_normals[cubeid_ + ];
-				nm7 += cube_normals[cubeid_ + ];
+				nm7 += cube_normals[cubeid_right + 6];
+				nm7 += cube_normals[cubeid_back + 5];
+				nm7 += cube_normals[cubeid_backright + 4];
+				nm7 = normalize(nm7);
 
 				float3 nm8 = cube_normals[cubeid_current + 8];
-				nm8 += cube_normals[cubeid_ + ];
-				nm8 += cube_normals[cubeid_ + ];
-				nm8 += cube_normals[cubeid_ + ];
+				nm8 += cube_normals[cubeid_forward + 11];
+				nm8 += cube_normals[cubeid_down + 0];
+				nm8 += cube_normals[cubeid_forwarddown + 3];//
+				nm8 = normalize(nm8);
 
 
 				float3 nm9 = cube_normals[cubeid_current + 9];
-				nm9 += cube_normals[cubeid_ + ];
-				nm9 += cube_normals[cubeid_ + ];
-				nm9 += cube_normals[cubeid_ + ];
+				nm9 += cube_normals[cubeid_left + 10];
+				nm9 += cube_normals[cubeid_down + 1];
+				nm9 += cube_normals[cubeid_leftdown + 2];//
+				nm9 = normalize(nm9);
 
 				float3 nm10 = cube_normals[cubeid_current + 10];
-				nm10 += cube_normals[cubeid_ + ];
-				nm10 += cube_normals[cubeid_ + ];
-				nm10 += cube_normals[cubeid_ + ];
+				nm10 += cube_normals[cubeid_right + 9];
+				nm10 += cube_normals[cubeid_down + 2];
+				nm10 += cube_normals[cubeid_rightdown + 1];
+				nm10 = normalize(nm10);
 
 				float3 nm11 = cube_normals[cubeid_current + 11];
-				nm11 += cube_normals[cubeid_ + ];
-				nm11 += cube_normals[cubeid_ + ];
-				nm11 += cube_normals[cubeid_ + ];
+				nm11 += cube_normals[cubeid_back + 8];
+				nm11 += cube_normals[cubeid_down + 3];
+				nm11 += cube_normals[cubeid_backdown + 0];
+				nm11 = normalize(nm11);
 
 
 
 			}
+			float3 caluclate_vertex_normal(int cubeid, int inm)
+			{
+				int3 span = near_cube_spans[inm_current];
+				int3 inm = near_cube_inms[inm_current];
+
+				float3 nm = cube_normals[cubeid * 12 + ivtx];
+				nm += cube_normals[grid_cubeids[span.x] * 12 + inm.x];
+				nm += cube_normals[grid_cubeids[span.y] * 12 + inm.y];
+				nm += cube_normals[grid_cubeids[span.z] * 12 + inm.z];
+
+				return normalize(nm);
+			}
+
 
 			fixed4 frag(v2f i) : SV_Target
 			{
