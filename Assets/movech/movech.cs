@@ -44,10 +44,10 @@ public class movech : MonoBehaviour
 
 
         var move = Vector3.zero;
-        if( Input.GetKey( KeyCode.W ) ) move += tf.forward;
-        if( Input.GetKey( KeyCode.S ) ) move -= tf.forward;
-        if( Input.GetKey( KeyCode.D ) ) move += tf.right;
-        if( Input.GetKey( KeyCode.A ) ) move -= tf.right;
+        if( Input.GetKey( KeyCode.E ) ) move += tf.forward;
+        if( Input.GetKey( KeyCode.D ) ) move -= tf.forward;
+        if( Input.GetKey( KeyCode.F ) ) move += tf.right;
+        if( Input.GetKey( KeyCode.S ) ) move -= tf.right;
 
         rb.AddForce( move*0.01f / Time.fixedDeltaTime, ForceMode.VelocityChange );
 

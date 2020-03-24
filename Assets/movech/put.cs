@@ -19,10 +19,12 @@ public class put : MonoBehaviour
     public MarchingCubes.mc mc;
 
     public Mesh hitmark;
-    public Material mat;
+    public Material mathit;
 
     Transform tfCam;
 
+    public Mesh cubemark;
+    public Material matcube;
 
 
     // Update is called once per frame
@@ -37,18 +39,22 @@ public class put : MonoBehaviour
             var res = Physics.Raycast( pos + dir, dir, out var hit );
             if( res )
             {
-                Graphics.DrawMesh( this.hitmark, hit.point, quaternion.identity, this.mat, 0 );
+                //Graphics.DrawMesh( this.hitmark, hit.point, quaternion.identity, this.mathit, 0 );
 
-                var targetpos = (float3)( hit.point + hit.normal * 0.5f * (Input.GetMouseButton( 0 ) ? 1f : -1f) );
+                var targetpos = (float3)( hit.point + hit.normal * 0.5f * (Input.GetMouseButton( 0 ) ? 1f : 0f) );
 
-                var cubepos_ = (int3)( math.floor(targetpos * new float3(1,-1,-1) + new float3(0.5f,0.5f,0.5f)) );
-                //Debug.Log( cubepos_ );
+                var cubepos_ = (int3)( math.floor( targetpos * new float3( 1, -1, -1 ) + new float3(0.5f,0.5f,0.5f)) );
+                Debug.Log( $"{hit.point}->{targetpos}->{cubepos_}" );
+                //Graphics.DrawMesh( this.hitmark, cubepos_ * new float3( 1, -1, -1 ), quaternion.identity, this.matcube, 0 );
 
-                setVisible_( cubepos_ );
-                //for( var ix = 0; ix < 3; ix++ )
-                //    for( var iy = 0; iy < 3; iy++ )
-                //        for( var iz = 0; iz < 3; iz++ )
-                //            setVisible_( cubepos_ + new int3( ix - 1, iy - 1, iz - 1 ) );
+
+                //Graphics.DrawMesh( this.cubemark, cubepos_ * new float3( 1, -1, -1 ) + new float3( 0.5f, -0.5f, -0.5f ), quaternion.identity, this.matcube, 0 );
+
+                //setVisible_( cubepos_ );
+                for( var ix = 0; ix < 3; ix++ )
+                    for( var iy = 0; iy < 3; iy++ )
+                        for( var iz = 0; iz < 3; iz++ )
+                            setVisible_( cubepos_ + new int3( ix - 1, iy - 1, iz - 1 ) );
 
 
                 void setVisible_( int3 cubepos )

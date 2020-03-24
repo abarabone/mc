@@ -294,7 +294,7 @@ namespace MarchingCubes
             var ix = 0;
             var iz_ = new int4( iz + 0, iz + 1, iz + 2, iz + 3 );
             for( var ipack = 0; ipack < 32 / 8; ipack++ )// 8 は 1cube の 8bit
-            {
+            {// レジスタ１つずつ見ていったほうがいいのでは
                 addCubeIfVisible_( cubes._98109810 >> i & 0xff, gridId_, ix++, iy, iz_, ref outputCubes_ );
                 addCubeIfVisible_( cubes._a921a921 >> i & 0xff, gridId_, ix++, iy, iz_, ref outputCubes_ );
                 addCubeIfVisible_( cubes._ba32ba32 >> i & 0xff, gridId_, ix++, iy, iz_, ref outputCubes_ );
