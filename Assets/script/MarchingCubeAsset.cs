@@ -16,9 +16,10 @@ namespace MarchingCubes
         {
             public byte cubeId;
             public int[] vertexIndices;
-            public Vector3[] normals;
+            public Vector3[] normalsForTriangle;
+            public Vector3[] normalsForVertex;
         }
-
+        
         //public (byte cubeId, int[] vtxIdxs)[] CubeIdsAndIndexLists =>
         //    this.CubeIndexLists.Select( x => (x.cubeId, x.indices) ).ToArray();
 

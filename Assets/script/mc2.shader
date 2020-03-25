@@ -207,6 +207,37 @@
 
 
 			}
+
+			int3 near_cube_spans[] =
+			{
+				{-z, -y, -z-y},
+				{-x, -y, -x-y},
+				{+x, +y, +x+y},
+				{+z, -y, +z-y},
+				{-x, -z, -x-z},
+				{+x, +z, +x+z},
+				{-x, -z, -x-z},
+				{+x, +z, +x+z},
+				{-z, +y, -z+y},
+				{-x, +y, -x+y},
+				{+x, +y, +x+y},
+				{+z, +y, +x+y},
+			};
+			int3 near_cube_inms[] =
+			{
+				3,8,11,
+				2,9,10,
+				1,10,9,
+				0,11,8,
+				5,6,7,
+				4,7,6,
+				7,4,5,
+				6,5,4,
+				11,0,3,
+				10,1,2,
+				9,2,1,
+				8,3,0,
+			};
 			float3 caluclate_vertex_normal(int cubeid, int inm)
 			{
 				int3 span = near_cube_spans[inm_current];

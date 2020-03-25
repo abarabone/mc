@@ -295,7 +295,7 @@ namespace MarchingCubes
                         //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
                         //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
                     orderby x.cubeId
-                    select x.normals.Concat( Enumerable.Repeat( Vector3.zero, 4 - x.normals.Length ) )
+                    select x.normalsForTriangle.Concat( Enumerable.Repeat( Vector3.zero, 4 - x.normalsForTriangle.Length ) )
                 ;
 
                 buffer.SetData( q.SelectMany(x=>x).ToArray() );

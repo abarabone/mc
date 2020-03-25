@@ -62,21 +62,28 @@ namespace MarchingCubes
                 var baseVtxList = MarchingCubesDataBuilder.MakeBaseVtxList();
                 var cubeIdAndIndicesList =
                     MarchingCubesDataBuilder.ConvertObjectDataToMachingCubesData( objdata, baseVtxList );
-                var cubeIdAndTriangleNormalsList =
+                var cubeIdAnd4TrianglesNormalsList =
                     ConvertMqoForMarchingCubes.calculateNormals( cubeIdAndIndicesList, baseVtxList );
+                var cubeIdAnd12VerticesNormalsList =
+                    ConvertMqoForMarchingCubes.calculate12VerticesNormalsPerCubePattern( cubeIdAndIndicesList, cubeIdAnd4TrianglesNormalsList );
 
 
-                //// 確認
-                //using( var wf = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
-                //{
+                // 確認
+                using( var wf = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
+                {
 
-                //    cubeIdAndTriangleNormalsList.SelectMany( x => x.normals ).GroupBy( x => x ).ForEach( n => wf.WriteLine( n.Key ) );
+                    //cubeIdAndTriangleNormalsList.SelectMany( x => x.normals ).GroupBy( x => x ).ForEach( n => wf.WriteLine( n.Key ) );
+                    (from x in cubeIdAnd12VerticesNormalsList group x by x.normals.Select(n=>math.dot(n,n)).ToArray()).ForEach( x => draw12(x.First()) );
+                    void draw12( (byte cubeId, Vector3[] normals) x )
+                    {
+                        wf.WriteLine( $"{x.cubeId} {string.Join(", ", x.normals)}" );
+                    }
 
-                //}
+                }
 
 
 
-                save_( Selection.objects, cubeIdAndIndicesList, cubeIdAndTriangleNormalsList, baseVtxList );
+                save_( Selection.objects, cubeIdAndIndicesList, cubeIdAnd4TrianglesNormalsList, cubeIdAnd12VerticesNormalsList, baseVtxList );
             }
 
             return;
@@ -85,7 +92,8 @@ namespace MarchingCubes
             void save_(
                 UnityEngine.Object[] selectedObjects,
                 (byte cubeId, int[] indices)[] cubeIdsAndIndexLists,
-                (byte cubeId, Vector3[] normals)[] cubeIdsAndTriangleNormals,
+                (byte cubeId, Vector3[] normals)[] cubeIdsAnd4TrianglesNormals,
+                (byte cubeId, Vector3[] normals)[] cubeIdAnd12VerticesNormalsList,
                 Vector3[] baseVertexList
             )
             {
@@ -106,11 +114,18 @@ namespace MarchingCubes
                 var qCubeIndexLists =
                     //from x in Enumerable.Zip( cubeIdsAndIndexLists, cubeIdsAndTriangleNormals, (x,y)=>(x.cubeId, x.indices, y.normals) )
                     from i in cubeIdsAndIndexLists
-                    join n in cubeIdsAndTriangleNormals
-                        on i.cubeId equals n.cubeId
+                    join tn in cubeIdsAnd4TrianglesNormals
+                        on i.cubeId equals tn.cubeId
+                    join vn in cubeIdAnd12VerticesNormalsList
+                        on i.cubeId equals vn.cubeId
                     orderby i.cubeId
-                    select new MarchingCubeAsset.CubeWrapper { cubeId = i.cubeId, vertexIndices = i.indices, normals = n.normals }
-                    ;
+                    select new MarchingCubeAsset.CubeWrapper
+                    {
+                        cubeId = i.cubeId,
+                        vertexIndices = i.indices,
+                        normalsForTriangle = tn.normals,
+                        normalsForVertex = vn.normals,
+                    };
                 //var qCubeTriangleNormalsList =
                 //    from x in cubeIdsAndTriangleNormals
                 //    select x.normals
@@ -146,6 +161,7 @@ namespace MarchingCubes
         }
 
 
+        // とりあえずここに
         static (byte cubeId, Vector3[] normals)[] calculateNormals
             ( (byte cubeId, int[] indices)[] cubeIdsAndIndexLists, Vector3[] baseVertexList )
         {
@@ -164,7 +180,30 @@ namespace MarchingCubes
                 .ToArray();
         }
 
+        static (byte cubeId, Vector3[] normals)[] calculate12VerticesNormalsPerCubePattern
+            ( (byte cubeId, int[] indices)[] cubeIdsAndIndexLists, (byte cubeId, Vector3[] normals)[] normals )
+        {
 
+            var q =
+                from x in Enumerable.Zip( cubeIdsAndIndexLists, normals, ( l, r ) => (l.cubeId, l.indices, r.normals) )
+                select (x.cubeId, to12Indices(x.indices, x.normals))
+                ;
+            return q.ToArray();
+
+
+            Vector3[] to12Indices( int[] idx, Vector3[] nms )
+            {
+                var res = Enumerable.Repeat( Vector3.zero, 12 ).ToArray();
+                var qidxnm = Enumerable.Zip( idx.Buffer( 3 ), nms, ( l, r ) => (i3: l, nm: r) );
+                foreach(var x in qidxnm)
+                {
+                    res[ x.i3[ 0 ] ] += x.nm;
+                    res[ x.i3[ 1 ] ] += x.nm;
+                    res[ x.i3[ 2 ] ] += x.nm;
+                }
+                return res.Select( x => x.normalized ).ToArray();
+            }
+        }
     }
 
 }
