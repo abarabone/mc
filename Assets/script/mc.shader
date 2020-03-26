@@ -75,23 +75,25 @@
 			};
 			half3 cube_normals[] =
 			{
-
+				{1,1,1}
 			};
 
 			int3 near_cube_spans[] =
 			{
-				{-zspan, -yspan, -zspan - yspan},
-				{-xspan, -yspan, -xspan - yspan},
-				{+xspan, +yspan, +xspan + yspan},
-				{+zspan, -yspan, +zspan - yspan},
-				{-xspan, -zspan, -xspan - zspan},
-				{+xspan, +zspan, +xspan + zspan},
-				{-xspan, -zspan, -xspan - zspan},
-				{+xspan, +zspan, +xspan + zspan},
-				{-zspan, +yspan, -zspan + yspan},
-				{-xspan, +yspan, -xspan + yspan},
-				{+xspan, +yspan, +xspan + yspan},
-				{+zspan, +yspan, +xspan + yspan},
+				{-zspan, -yspan, -zspan-yspan},
+				{-xspan, -yspan, -xspan-yspan},
+				{+xspan, -yspan, +xspan-yspan},
+				{+zspan, -yspan, +zspan-yspan},
+
+				{-xspan, -zspan, -xspan-zspan},
+				{+xspan, -zspan, +xspan-zspan},
+				{-xspan, +zspan, -xspan+zspan},
+				{+xspan, +zspan, +xspan+zspan},
+
+				{-zspan, +yspan, -zspan+yspan},
+				{-xspan, +yspan, -xspan+yspan},
+				{+xspan, +yspan, +xspan+yspan},
+				{+zspan, +yspan, +xspan+yspan},
 			};
 			int3 near_cube_inms[] =
 			{
@@ -99,10 +101,12 @@
 				2,9,10,
 				1,10,9,
 				0,11,8,
+
 				5,6,7,
 				4,7,6,
 				7,4,5,
 				6,5,4,
+
 				11,0,3,
 				10,1,2,
 				9,2,1,

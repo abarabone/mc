@@ -68,18 +68,40 @@ namespace MarchingCubes
                     ConvertMqoForMarchingCubes.calculate12VerticesNormalsPerCubePattern( cubeIdAndIndicesList, cubeIdAnd4TrianglesNormalsList );
 
 
-                // 確認
-                using( var wf = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
-                {
+                //// 確認
+                //using( var wf = new StreamWriter( @"C:\Users\abarabone\Desktop\mydata\mc.txt" ) )
+                //{
 
-                    //cubeIdAndTriangleNormalsList.SelectMany( x => x.normals ).GroupBy( x => x ).ForEach( n => wf.WriteLine( n.Key ) );
-                    (from x in cubeIdAnd12VerticesNormalsList group x by x.normals.Select(n=>math.dot(n,n)).ToArray()).ForEach( x => draw12(x.First()) );
-                    void draw12( (byte cubeId, Vector3[] normals) x )
-                    {
-                        wf.WriteLine( $"{x.cubeId} {string.Join(", ", x.normals)}" );
-                    }
+                //    ////cubeIdAndTriangleNormalsList.SelectMany( x => x.normals ).GroupBy( x => x ).ForEach( n => wf.WriteLine( n.Key ) );
+                //    //(from x in cubeIdAnd12VerticesNormalsList group x by x.normals.Select(n=>math.dot(n,n)).ToArray()).ForEach( x => draw12(x.First()) );
+                //    //void draw12( (byte cubeId, Vector3[] normals) x )
+                //    //{
+                //    //    wf.WriteLine( $"{x.cubeId} {string.Join(", ", x.normals)}" );
+                //    //}
 
-                }
+                //    //var a =
+                //    //cubeIdAndIndicesList
+                //    //    .Select( x => x.cubeId )
+                //    //    .Select( x =>
+                //    //        new byte[] {
+                //    //            x,
+                //    //            //(byte)( ( x & 0x0f ) << 4 | ( x & 0xf0 ) >> 4 ),
+                //    //            (byte)( ( x & 0b_0011_0011 ) << 2 | ( x & 0b_1100_1100 ) >> 2 ),
+                //    //            //(byte)( ( x & 0b_0101_0101 ) << 1 | ( x & 0b_1010_1010 ) >> 1 ),
+                //    //        }
+                //    //    )
+                //    //    .Select( x => x.OrderBy( b => b ) )
+                //    //    //.Select( x => string.Join( ", ", x ) )
+                //    //    //.GroupBy( x => x.First() )
+                //    //    //.Select( x => x.Key )
+                //    //    .OrderBy( x => x.First() )
+                //    //    //.Select( x => string.Join( ", ", x ) )
+                //    //    .ToArray()
+                //    //    ;
+                //    //wf.WriteLine( a.GroupBy(x=>x.First()).Count() );
+                //    //a.ForEach( x => wf.WriteLine( string.Join( ", ", x ) ) )
+                //    //;
+                //}
 
 
 
@@ -179,6 +201,7 @@ namespace MarchingCubes
                 .Select( x => (x.cubeId, x.normals.ToArray()) )
                 .ToArray();
         }
+
 
         static (byte cubeId, Vector3[] normals)[] calculate12VerticesNormalsPerCubePattern
             ( (byte cubeId, int[] indices)[] cubeIdsAndIndexLists, (byte cubeId, Vector3[] normals)[] normals )
