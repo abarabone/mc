@@ -51,7 +51,10 @@
             StructuredBuffer<float4> GridPositions;
 			StructuredBuffer<float3> Normals;
 
-			StructuredBuffer<int> src_next_gridids;
+			StructuredBuffer<int3> src_next_gridids;
+
+			StructuredBuffer<uint> grid_cubeids;
+			StructuredBuffer<float3> cube_normals;
 
 			static const int _32e0 = 1;
 			static const int _32e1 = 32;
@@ -73,10 +76,10 @@
 				{0,1,0}, {1,1,0},
 					{0,1,1},
 			};
-			half3 cube_normals[] =
-			{
-				{1,1,1}
-			};
+			//half3 cube_normals[] =
+			//{
+			//	{1,1,1}
+			//};
 
 			int3 near_cube_spans[] =
 			{
@@ -147,6 +150,7 @@
 				
 				//half3 normal = Normals[idxofs.y].xyz;
 				half3 normal = get_and_caluclate_triangle_to_vertex_normal(cubeId, idxofs.x);
+				half3 worldNormal = normal;
 				fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
 				// この処理をしないと陰影が強くつきすぎる
