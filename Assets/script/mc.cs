@@ -35,7 +35,7 @@ namespace MarchingCubes
 
         public int maxDrawGridLength;
 
-
+        int frameIdentity;
         unsafe void Awake()
         {
             this.gridPositions = new NativeList<float4>( this.maxDrawGridLength, Allocator.Persistent );
@@ -46,6 +46,10 @@ namespace MarchingCubes
             this.meshResources = new MeshResources( this.MarchingCubeAsset, this.maxDrawGridLength );
             var res = this.meshResources;
 
+            this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.instancesBuffer );
+            this.setGridCubeIdShader.SetBuffer( 0, "dst_grid_cubeids", res.gridCubeIdBuffer );
+            this.setGridCubeIdShader.SetInt( "frame_unique_24bit", frameIdentity++ );//
+
             this.Material.SetBuffer( "BaseVtxList", res.baseVtxsBuffer );
             this.Material.SetBuffer( "IdxList", res.idxListsBuffer );
             this.Material.SetBuffer( "Instances", res.instancesBuffer );
@@ -54,10 +58,8 @@ namespace MarchingCubes
             this.Material.SetBuffer( "Normals", res.triNormalsBuffer );
             this.Material.SetBuffer( "grid_cubeids", res.gridCubeIdBuffer );
             this.Material.SetBuffer( "cube_normals", res.cubeNormalBuffer );
+            this.Material.SetInt( "frame_unique_24bit", frameIdentity );//
             res.cubeNormalBuffer.SetData(this.MarchingCubeAsset.CubeIdAndVertexIndicesList.SelectMany(x=>x.normalsForVertex).ToArray());
-
-            this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.instancesBuffer );
-            this.setGridCubeIdShader.SetBuffer( 0, "dst_grid_cubeids", res.gridCubeIdBuffer );
 
             this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
             this.cubeGrids.FillCubes( new int3( -1, 2, -1 ), new int3( 11, 11, 11 ), isFillAll: true );

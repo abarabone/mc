@@ -56,6 +56,8 @@
 			StructuredBuffer<uint> grid_cubeids;
 			StructuredBuffer<float3> cube_normals;
 
+			uniform uint frame_unique_24bit;
+
 			static const int _32e0 = 1;
 			static const int _32e1 = 32;
 			static const int _32e2 = 32 * 32;
@@ -65,17 +67,17 @@
 			static const int zspan = _32e1;
 			static const int gridspan = _32e3;
 
-			int3 vtx_offsets[] =
-			{
-					{0,0,0},
-				{0,0,0}, {1,0,0},
-					{0,0,1},
-				{0,0,0}, {1,0,0},
-				{0,0,1}, {1,0,1},
-					{0,1,0},
-				{0,1,0}, {1,1,0},
-					{0,1,1},
-			};
+			//int3 vtx_offsets[] =
+			//{
+			//		{0,0,0},
+			//	{0,0,0}, {1,0,0},
+			//		{0,0,1},
+			//	{0,0,0}, {1,0,0},
+			//	{0,0,1}, {1,0,1},
+			//		{0,1,0},
+			//	{0,1,0}, {1,1,0},
+			//		{0,1,1},
+			//};
 			//half3 cube_normals[] =
 			//{
 			//	{1,1,1}
@@ -96,34 +98,43 @@
 				{-zspan, +yspan, -zspan+yspan},
 				{-xspan, +yspan, -xspan+yspan},
 				{+xspan, +yspan, +xspan+yspan},
-				{+zspan, +yspan, +xspan+yspan},
+				{+zspan, +yspan, +zspan+yspan},
 			};
 			int3 near_cube_inms[] =
 			{
-				3,8,11,
-				2,9,10,
-				1,10,9,
-				0,11,8,
+				{3,8,11},
+				{2,9,10},
+				{1,10,9},
+				{0,11,8},
 
-				5,6,7,
-				4,7,6,
-				7,4,5,
-				6,5,4,
+				{5,6,7},
+				{4,7,6},
+				{7,4,5},
+				{6,5,4},
 
-				11,0,3,
-				10,1,2,
-				9,2,1,
-				8,3,0,
+				{11,0,3},
+				{10,1,2},
+				{9,2,1},
+				{8,3,0},
 			};
-			float3 get_and_caluclate_triangle_to_vertex_normal(int cubeid, int inm_current)
+			float3 get_and_caluclate_triangle_to_vertex_normal(int gridid, int cubeid, int inm_current, int3 innerpos)
 			{
 				int3 span = near_cube_spans[inm_current];
 				int3 inm = near_cube_inms[inm_current];
 
-				float3 nm = cube_normals[cubeid * 12 + inm_current];
-				nm += cube_normals[grid_cubeids[span.x] * 12 + inm.x];
-				nm += cube_normals[grid_cubeids[span.y] * 12 + inm.y];
-				nm += cube_normals[grid_cubeids[span.z] * 12 + inm.z];
+				int igrid = gridid * gridspan;
+
+				static const int3 inner_span = int3(xspan, yspan, zspan);
+				int icube = dot(innerpos, inner_span);
+
+				//float3 nm = cube_normals[cubeid * 12 + inm_current];
+				float3 nm = cube_normals[grid_cubeids[igrid + icube] * 12 + inm_current];
+				//nm += cube_normals[grid_cubeids[igrid + span.x] * 12 + inm.x];
+				//nm += cube_normals[grid_cubeids[igrid + span.y] * 12 + inm.y];
+				//nm += cube_normals[grid_cubeids[igrid + span.z] * 12 + inm.z];
+				//nm += cube_normals[((grid_cubeids[igrid + icube + span.x] & 0xff)) * 12 + inm.x];
+				//nm += cube_normals[((grid_cubeids[igrid + icube + span.y] & 0xff)) * 12 + inm.y];
+				//nm += cube_normals[((grid_cubeids[igrid + icube + span.z] & 0xff)) * 12 + inm.z];
 
 				return normalize(nm);
 			}
@@ -149,7 +160,7 @@
 
 				
 				//half3 normal = Normals[idxofs.y].xyz;
-				half3 normal = get_and_caluclate_triangle_to_vertex_normal(cubeId, idxofs.x);
+				half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridId, cubeId, vtxIdx, cubepos.xyz);
 				half3 worldNormal = normal;
 				fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
@@ -158,6 +169,7 @@
 				// の「アンビエントを使った拡散ライティング」を参考
 				o.color.rgb += ShadeSH9(half4(worldNormal, 1));
 
+				o.normal = worldNormal;
 
 				o.uv = half2(0,0);//lvtx.xy; TRANSFORM_TEX(lvtx.xyspan, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
