@@ -128,13 +128,13 @@
 				static const int3 inner_span = int3(xspan, yspan, zspan);
 				int3 icube = dot(innerpos, inner_span).xxx + span;
 
-				int3 prev_gridid = near_girdids[gridid * 2 + 0];
-				int3 next_gridid = near_girdids[gridid * 2 + 1];
+				//int3 prev_gridid = near_girdids[gridid * 2 + 0];
+				//int3 next_gridid = near_girdids[gridid * 2 + 1];
 
 				float3 nm = cube_normals[cubeid * 12 + inm_current];
-				nm += cube_normals[((grid_cubeids[igrid + icube + span.x] & 0xff)) * 12 + inm.x];
-				nm += cube_normals[((grid_cubeids[igrid + icube + span.y] & 0xff)) * 12 + inm.y];
-				nm += cube_normals[((grid_cubeids[igrid + icube + span.z] & 0xff)) * 12 + inm.z];
+				nm += cube_normals[((grid_cubeids[igrid + icube.x] & 0xff)) * 12 + inm.x];
+				nm += cube_normals[((grid_cubeids[igrid + icube.y] & 0xff)) * 12 + inm.y];
+				nm += cube_normals[((grid_cubeids[igrid + icube.z] & 0xff)) * 12 + inm.z];
 
 				return normalize(nm);
 			}
