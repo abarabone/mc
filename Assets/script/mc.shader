@@ -51,7 +51,7 @@
             StructuredBuffer<float4> GridPositions;
 			StructuredBuffer<float3> Normals;
 
-			StructuredBuffer<int3> src_next_gridids;
+			StructuredBuffer<int3> near_gridids;;
 
 			StructuredBuffer<uint> grid_cubeids;
 			StructuredBuffer<float3> cube_normals;
@@ -67,40 +67,41 @@
 			static const int zspan = _32e1;
 			static const int gridspan = _32e3;
 
-			//int3 vtx_offsets[] =
+			//static int3 near_cube_spans[] =
 			//{
-			//		{0,0,0},
-			//	{0,0,0}, {1,0,0},
-			//		{0,0,1},
-			//	{0,0,0}, {1,0,0},
-			//	{0,0,1}, {1,0,1},
-			//		{0,1,0},
-			//	{0,1,0}, {1,1,0},
-			//		{0,1,1},
-			//};
-			//half3 cube_normals[] =
-			//{
-			//	{1,1,1}
-			//};
+			//	{-zspan, -yspan, -zspan-yspan},
+			//	{-xspan, -yspan, -xspan-yspan},
+			//	{+xspan, -yspan, +xspan-yspan},
+			//	{+zspan, -yspan, +zspan-yspan},
 
-			int3 near_cube_spans[] =
+			//	{-xspan, -zspan, -xspan-zspan},
+			//	{+xspan, -zspan, +xspan-zspan},
+			//	{-xspan, +zspan, -xspan+zspan},
+			//	{+xspan, +zspan, +xspan+zspan},
+
+			//	{-zspan, +yspan, -zspan+yspan},
+			//	{-xspan, +yspan, -xspan+yspan},
+			//	{+xspan, +yspan, +xspan+yspan},
+			//	{+zspan, +yspan, +zspan+yspan},
+			//};
+			static int3 near_cube_spans[] =
 			{
-				{-zspan, -yspan, -zspan-yspan},
-				{-xspan, -yspan, -xspan-yspan},
-				{+xspan, -yspan, +xspan-yspan},
-				{+zspan, -yspan, +zspan-yspan},
+				{-zspan, -yspan, -zspan - yspan},
+				{-xspan, -yspan, -xspan - yspan},
+				{+xspan, -yspan, +xspan - yspan},
+				{+zspan, -yspan, +zspan - yspan},
 
-				{-xspan, -zspan, -xspan-zspan},
-				{+xspan, -zspan, +xspan-zspan},
-				{-xspan, +zspan, -xspan+zspan},
-				{+xspan, +zspan, +xspan+zspan},
+				{-xspan, -zspan, -xspan - zspan},
+				{+xspan, -zspan, +xspan - zspan},
+				{-xspan, +zspan, -xspan + zspan},
+				{+xspan, +zspan, +xspan + zspan},
 
-				{-zspan, +yspan, -zspan+yspan},
-				{-xspan, +yspan, -xspan+yspan},
-				{+xspan, +yspan, +xspan+yspan},
-				{+zspan, +yspan, +zspan+yspan},
+				{-zspan, +yspan, -zspan + yspan},
+				{-xspan, +yspan, -xspan + yspan},
+				{+xspan, +yspan, +xspan + yspan},
+				{+zspan, +yspan, +zspan + yspan},
 			};
-			int3 near_cube_inms[] =
+			static int3 near_cube_inms[] =
 			{
 				{3,8,11},
 				{2,9,10},
@@ -125,16 +126,15 @@
 				int igrid = gridid * gridspan;
 
 				static const int3 inner_span = int3(xspan, yspan, zspan);
-				int icube = dot(innerpos, inner_span);
+				int3 icube = dot(innerpos, inner_span).xxx + span;
 
-				//float3 nm = cube_normals[cubeid * 12 + inm_current];
-				float3 nm = cube_normals[grid_cubeids[igrid + icube] * 12 + inm_current];
-				//nm += cube_normals[grid_cubeids[igrid + span.x] * 12 + inm.x];
-				//nm += cube_normals[grid_cubeids[igrid + span.y] * 12 + inm.y];
-				//nm += cube_normals[grid_cubeids[igrid + span.z] * 12 + inm.z];
-				//nm += cube_normals[((grid_cubeids[igrid + icube + span.x] & 0xff)) * 12 + inm.x];
-				//nm += cube_normals[((grid_cubeids[igrid + icube + span.y] & 0xff)) * 12 + inm.y];
-				//nm += cube_normals[((grid_cubeids[igrid + icube + span.z] & 0xff)) * 12 + inm.z];
+				int3 prev_gridid = near_girdids[gridid * 2 + 0];
+				int3 next_gridid = near_girdids[gridid * 2 + 1];
+
+				float3 nm = cube_normals[cubeid * 12 + inm_current];
+				nm += cube_normals[((grid_cubeids[igrid + icube + span.x] & 0xff)) * 12 + inm.x];
+				nm += cube_normals[((grid_cubeids[igrid + icube + span.y] & 0xff)) * 12 + inm.y];
+				nm += cube_normals[((grid_cubeids[igrid + icube + span.z] & 0xff)) * 12 + inm.z];
 
 				return normalize(nm);
 			}
