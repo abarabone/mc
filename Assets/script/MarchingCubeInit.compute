@@ -19,7 +19,7 @@ void write_cubeid_to_grid(int gridid, int cubeid, int3 innerpos, int frame_uniqu
 	static const int3 inner_span = int3(_32e0, _32e2, _32e1);
 	int icube = dot(innerpos, inner_span);
 
-	dst_grid_cubeids[igrid + icube] = (uint)(cubeid | frame_unique_24bit_ << 8 );
+	dst_grid_cubeids[igrid + icube] = (uint)(cubeid);// | frame_unique_24bit_ << 8 );
 }
 
 int get_cubeid(uint cube_instance)
