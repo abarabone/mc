@@ -95,7 +95,7 @@ namespace MarchingCubes
             [WriteOnly]
             public NativeList<float4> dstGridPositions;
             [WriteOnly]
-            public NativeList<int3> dstNextGrids;
+            public NativeList<int4> dstNearGrids;
 
 
             public void Execute()
@@ -129,7 +129,7 @@ namespace MarchingCubes
                         }
 
                 var gridScale = new float3( 32, 32, 32 );
-                CubeUtiilty.GetNextGridList( this.dstGridPositions, gridScale, this.dstNextGrids );
+                CubeUtiilty.GetNearGridList( this.dstGridPositions, gridScale, this.dstNearGrids );
             }
         }
 

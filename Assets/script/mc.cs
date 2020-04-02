@@ -27,7 +27,7 @@ namespace MarchingCubes
 
         //uint[] cubeInstances;
         NativeList<float4> gridPositions;
-        NativeList<int3> nextGrids;
+        NativeList<int4> nearGrids;
         NativeList<CubeInstance> cubeInstances;
         //NativeQueue<CubeInstance> cubeInstances;
 
@@ -39,7 +39,7 @@ namespace MarchingCubes
         unsafe void Awake()
         {
             this.gridPositions = new NativeList<float4>( this.maxDrawGridLength, Allocator.Persistent );
-            this.nextGrids = new NativeList<int3>( this.maxDrawGridLength, Allocator.Persistent );
+            this.nearGrids = new NativeList<int4>( this.maxDrawGridLength, Allocator.Persistent );
             this.cubeInstances = new NativeList<CubeInstance>( 1000000, Allocator.Persistent );
             //this.cubeInstances = new NativeQueue<CubeInstance>( Allocator.Persistent );
 
@@ -48,17 +48,15 @@ namespace MarchingCubes
 
             this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.instancesBuffer );
             this.setGridCubeIdShader.SetBuffer( 0, "dst_grid_cubeids", res.gridCubeIdBuffer );
-            this.setGridCubeIdShader.SetInt( "frame_unique_24bit", frameIdentity++ );//
 
             this.Material.SetBuffer( "BaseVtxList", res.baseVtxsBuffer );
             this.Material.SetBuffer( "IdxList", res.idxListsBuffer );
             this.Material.SetBuffer( "Instances", res.instancesBuffer );
             this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
-            this.Material.SetBuffer( "src_next_gridids", res.nextGridIdBuffer );
+            this.Material.SetBuffer( "near_gridids_prev_and_next", res.nearGridIdBuffer );
             this.Material.SetBuffer( "Normals", res.triNormalsBuffer );
             this.Material.SetBuffer( "grid_cubeids", res.gridCubeIdBuffer );
             this.Material.SetBuffer( "cube_normals", res.cubeNormalBuffer );
-            this.Material.SetInt( "frame_unique_24bit", frameIdentity );//
             res.cubeNormalBuffer.SetData(this.MarchingCubeAsset.CubeIdAndVertexIndicesList.SelectMany(x=>x.normalsForVertex).ToArray());
 
             this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
@@ -74,12 +72,12 @@ namespace MarchingCubes
                 for( var iz = 0; iz < 15; iz++ )
                     for( var ix = 0; ix < 13; ix++ )
                         c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
-            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.nextGrids, this.cubeInstances );
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.nearGrids, this.cubeInstances );
             this.job.Complete();
 
             res.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
-            res.nextGridIdBuffer.SetData( this.nextGrids.AsArray() );
+            res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
             Debug.Log($"{cubeInstances.Length} / {res.instancesBuffer.count}");
 
 
@@ -166,16 +164,16 @@ namespace MarchingCubes
             c[ i, 0, 0 ] ^= 1;
             i = i + 1 & 31;
             this.gridPositions.Clear();
-            this.nextGrids.Clear();
+            this.nearGrids.Clear();
             this.cubeInstances.Clear();
-            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.nextGrids, this.cubeInstances );
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.nearGrids, this.cubeInstances );
 
             this.job.Complete();
 
             var res = this.meshResources;
             res.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
-            res.nextGridIdBuffer.SetData( this.nextGrids.AsArray() );
+            res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
 
             this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
 
@@ -207,7 +205,7 @@ namespace MarchingCubes
             public ComputeBuffer idxListsBuffer;
             public ComputeBuffer instancesBuffer;
             public ComputeBuffer gridPositionBuffer;
-            public ComputeBuffer nextGridIdBuffer;
+            public ComputeBuffer nearGridIdBuffer;
             public ComputeBuffer triNormalsBuffer;
             //public ComputeBuffer vtxNormalsBuffer;
             public ComputeBuffer gridCubeIdBuffer;
@@ -221,7 +219,7 @@ namespace MarchingCubes
                 this.baseVtxsBuffer = createBaseVtxShaderBuffer_( asset.BaseVertexList );
                 this.idxListsBuffer = createIdxListsShaderBuffer_( asset.CubeIdAndVertexIndicesList );
                 this.gridPositionBuffer = createGridPositionShaderBuffer_( maxGridLength );
-                this.nextGridIdBuffer = createNextGridShaderBuffer_( maxGridLength );
+                this.nearGridIdBuffer = createNearGridShaderBuffer_( maxGridLength );
                 this.triNormalsBuffer = createTriangleNormalshaderBuffer_( asset.CubeIdAndVertexIndicesList );
                 //this.vtxNormalsBuffer = createVertexNormalshaderBuffer_( maxGridLength );
                 this.gridCubeIdBuffer = createGridCubeIdShaderBuffer_( maxGridLength );
@@ -235,7 +233,7 @@ namespace MarchingCubes
                 if( this.idxListsBuffer != null ) this.idxListsBuffer.Dispose();
                 if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
                 if( this.gridPositionBuffer != null ) this.gridPositionBuffer.Dispose();
-                if( this.nextGridIdBuffer != null ) this.nextGridIdBuffer.Dispose();
+                if( this.nearGridIdBuffer != null ) this.nearGridIdBuffer.Dispose();
                 if( this.argsBuffer != null ) this.argsBuffer.Dispose();
                 if( this.triNormalsBuffer != null ) this.triNormalsBuffer.Dispose();
                 //if( this.vtxNormalsBuffer != null ) this.vtxNormalsBuffer.Dispose();
@@ -256,9 +254,9 @@ namespace MarchingCubes
 
                 return buffer;
             }
-            ComputeBuffer createNextGridShaderBuffer_( int maxBufferLength )
+            ComputeBuffer createNearGridShaderBuffer_( int maxBufferLength )
             {
-                var buffer = new ComputeBuffer( maxBufferLength, Marshal.SizeOf<int3>() );
+                var buffer = new ComputeBuffer( maxBufferLength * 2, Marshal.SizeOf<int4>() );
 
                 return buffer;
             }

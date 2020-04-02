@@ -51,12 +51,12 @@
             StructuredBuffer<float4> GridPositions;
 			StructuredBuffer<float3> Normals;
 
-			StructuredBuffer<int3> near_gridids;;
+			StructuredBuffer<int4> near_gridids_prev_and_next;
+			// +0 -> prev gridid { x:left,  y:up,   z:front, w:current }
+			// +1 -> next gridid { x:right, y:down, z:back,  w:current }
 
 			StructuredBuffer<uint> grid_cubeids;
 			StructuredBuffer<float3> cube_normals;
-
-			uniform uint frame_unique_24bit;
 
 			static const int _32e0 = 1;
 			static const int _32e1 = 32;
@@ -65,43 +65,27 @@
 			static const int xspan = _32e0;
 			static const int yspan = _32e2;
 			static const int zspan = _32e1;
-			static const int gridspan = _32e3;
+			static const int grid_span = _32e3;
+			static const int3 inner_span = int3(xspan, yspan, zspan);
 
-			//static int3 near_cube_spans[] =
-			//{
-			//	{-zspan, -yspan, -zspan-yspan},
-			//	{-xspan, -yspan, -xspan-yspan},
-			//	{+xspan, -yspan, +xspan-yspan},
-			//	{+zspan, -yspan, +zspan-yspan},
-
-			//	{-xspan, -zspan, -xspan-zspan},
-			//	{+xspan, -zspan, +xspan-zspan},
-			//	{-xspan, +zspan, -xspan+zspan},
-			//	{+xspan, +zspan, +xspan+zspan},
-
-			//	{-zspan, +yspan, -zspan+yspan},
-			//	{-xspan, +yspan, -xspan+yspan},
-			//	{+xspan, +yspan, +xspan+yspan},
-			//	{+zspan, +yspan, +zspan+yspan},
-			//};
-			static int3 near_cube_spans[] =
+			static int3 near_cube_offsets[] =
 			{
-				{-zspan, -yspan, -zspan - yspan},
-				{-xspan, -yspan, -xspan - yspan},
-				{+xspan, -yspan, +xspan - yspan},
-				{+zspan, -yspan, +zspan - yspan},
+				{0, 0, -1}, {0, -1, 0},
+				{-1, 0, 0}, {0, -1, 0},
+				{+1, 0, 0}, {0, -1, 0},
+				{0, 0, +1}, {0, -1, 0},
 
-				{-xspan, -zspan, -xspan - zspan},
-				{+xspan, -zspan, +xspan - zspan},
-				{-xspan, +zspan, -xspan + zspan},
-				{+xspan, +zspan, +xspan + zspan},
+				{-1, 0, 0}, {0, 0, -1},
+				{+1, 0, 0}, {0, 0, -1},
+				{-1, 0, 0}, {0, 0, +1},
+				{+1, 0, 0}, {0, 0, +1},
 
-				{-zspan, +yspan, -zspan + yspan},
-				{-xspan, +yspan, -xspan + yspan},
-				{+xspan, +yspan, +xspan + yspan},
-				{+zspan, +yspan, +zspan + yspan},
+				{0, 0, -1}, {0, +1, 0},
+				{-1, 0, 0}, {0, +1, 0},
+				{+1, 0, 0}, {0, +1, 0},
+				{0, 0, +1}, {0, +1, 0},
 			};
-			static int3 near_cube_inms[] =
+			static int3 near_cube_ivtxs[] =
 			{
 				{3,8,11},
 				{2,9,10},
@@ -118,23 +102,73 @@
 				{9,2,1},
 				{8,3,0},
 			};
-			float3 get_and_caluclate_triangle_to_vertex_normal(int gridid, int cubeid, int inm_current, int3 innerpos)
+			int get_gridid_ortho(int gridid_current, int3 cubepos, out int outer_offset, out int4 grid_mask)
 			{
-				int3 span = near_cube_spans[inm_current];
-				int3 inm = near_cube_inms[inm_current];
+				int3 outerpos = cubepos >> 5;
 
-				int igrid = gridid * gridspan;
+				outer_offset = (outerpos.x + outerpos.y + outerpos.z) + 1 >> 1 & 1;//
+				int4 near_grid = near_gridids_prev_and_next[gridid_current * 2 + outer_offset];
 
-				static const int3 inner_span = int3(xspan, yspan, zspan);
-				int3 icube = dot(innerpos, inner_span).xxx + span;
+				grid_mask = int4(outerpos, 1 - any(outerpos));
 
-				//int3 prev_gridid = near_girdids[gridid * 2 + 0];
-				//int3 next_gridid = near_girdids[gridid * 2 + 1];
+				return dot(near_grid, grid_mask);
+			}
+			int get_gridid_slant(int gridid0, int outer_offset1, int4 grid_mask1)
+			{
+				int3 near_grid = near_gridids_prev_and_next[gridid0 * 2 + outer_offset1];
+				return dot(near_grid, grid_mask1);
+			}
+			int get_cubeid(int gridid, int3 cubepos)
+			{
+				int igrid = gridid * grid_span;
 
-				float3 nm = cube_normals[cubeid * 12 + inm_current];
-				nm += cube_normals[((grid_cubeids[igrid + icube.x] & 0xff)) * 12 + inm.x];
-				nm += cube_normals[((grid_cubeids[igrid + icube.y] & 0xff)) * 12 + inm.y];
-				nm += cube_normals[((grid_cubeids[igrid + icube.z] & 0xff)) * 12 + inm.z];
+				int3 innerpos = cubepos & 0x1f;
+				int icube = dot(innerpos, inner_span);
+
+				return grid_cubeids[igrid + icube];
+			}
+
+			struct OrthoTempData
+			{
+				int3 offset;
+				int gridid;
+				int outer_offset;
+				int4 grid_mask;
+			};
+
+			float3 get_vtx_normal_current(int gridid_current, int3 cubepos, int ivtx_current, int cubeid_current)
+			{
+				int igrid = gridid_current * grid_span;
+				int3 innerpos = cubepos & 0x1f;
+				int3 icube = dot(innerpos, inner_span);
+				return cube_normals[cubeid_current * 12 + ivtx_current];
+				//return cube_normals[get_cubeid(gridid_current, cubepos) * 12 + ivtx_current];
+			}
+			float3 get_vtx_normal_ortho
+				(int index, int gridid_current, int3 cubepos, int ivtx_current, int ivtx, out OrthoTempData o)
+			{
+				o.offset = near_cube_offsets[ivtx_current * 2 + index];
+				int3 pos = cubepos + o.offset;
+				o.gridid = get_gridid_ortho(gridid_current, pos, o.outer_offset, o.grid_mask);
+				return cube_normals[get_cubeid(o.gridid, pos) * 12 + ivtx];
+			}
+			float3 get_vtx_normal_slant(int3 cubepos, int ivtx, int offset0, int offset1, int gridid0, int outer_offset1, int4 grid_mask1)
+			{
+				int3 offset = offset0 + offset1;
+				int3 pos = cubepos + offset;
+				int gridid = get_gridid_slant(gridid0, outer_offset1, grid_mask1);
+				return cube_normals[get_cubeid(gridid, pos) * 12 + ivtx];
+			}
+
+			float3 get_and_caluclate_triangle_to_vertex_normal(int gridid_current, int cubeid_current, int ivtx_current, int3 cubepos)
+			{
+				int3 ivtx = near_cube_ivtxs[ivtx_current];
+
+				OrthoTempData o0, o1;
+				float3 nm = get_vtx_normal_current(gridid_current, cubepos, ivtx_current, cubeid_current);
+				nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_current, ivtx.x, o0);
+				nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_current, ivtx.y, o1);
+				//nm += get_vtx_normal_slant(cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.outer_offset, o1.grid_mask);
 
 				return normalize(nm);
 			}

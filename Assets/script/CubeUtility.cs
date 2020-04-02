@@ -97,31 +97,63 @@ namespace MarchingCubes
 
 
 
-        static public void GetNextGridList
-            ( NativeList<float4> gridPositions, float3 gridScaleR, NativeList<int3> dstNextGrids )
+        static public void GetNearGridList
+            ( NativeList<float4> gridPositions, float3 gridScaleR, NativeList<int4> dstNextGrids )
         {
             var posDict = new NativeHashMap<int3, int>( gridPositions.Length, Allocator.Temp );
 
-            for( var i = 0; i < gridPositions.Length; i++ )
-            {
-                var pos = gridPositions[ i ];
-                posDict.Add( (int3)( pos.xyz * gridScaleR ), i );
-            }
-            for( var i = 0; i < gridPositions.Length; i++ )
-            {
-                var pos = gridPositions[ i ];
-                var index = (int3)( pos.xyz * gridScaleR );
-                var nextx = index + new int3( 1, 0, 0 );
-                var nexty = index + new int3( 0, 1, 0 );
-                var nextz = index + new int3( 0, 0, 1 );
-                var nextId = new int3( -1, -1, -1 );
-                posDict.TryGetValue( nextx, out nextId.x );
-                posDict.TryGetValue( nexty, out nextId.y );
-                posDict.TryGetValue( nextz, out nextId.z );
-                dstNextGrids.AddNoResize( nextId );
-            }
+            addToDict_();
+            getNearGridIds_();
 
             posDict.Dispose();
+            return;
+
+
+            void addToDict_()
+            {
+                for( var i = 0; i < gridPositions.Length; i++ )
+                {
+                    var pos = gridPositions[ i ];
+                    posDict.Add( (int3)( pos.xyz * gridScaleR ), i );
+                }
+            }
+            void getNearGridIds_()
+            {
+                for( var i = 0; i < gridPositions.Length; i++ )
+                {
+                    var pos = gridPositions[ i ];
+
+                    var current = (int3)( pos.xyz * gridScaleR );
+                    posDict.TryGetValue( current, out var currentId );
+
+
+                    var prevx = current + new int3( -1, 0, 0 );
+                    var prevy = current + new int3( 0, -1, 0 );
+                    var prevz = current + new int3( 0, 0, -1 );
+
+                    var prevId = new int4( -1, -1, -1, currentId );
+
+                    posDict.TryGetValue( prevx, out prevId.x );
+                    posDict.TryGetValue( prevy, out prevId.y );
+                    posDict.TryGetValue( prevz, out prevId.z );
+
+                    dstNextGrids.AddNoResize( prevId );
+
+
+                    var nextx = current + new int3( 1, 0, 0 );
+                    var nexty = current + new int3( 0, 1, 0 );
+                    var nextz = current + new int3( 0, 0, 1 );
+
+                    var nextId = new int4( -1, -1, -1, currentId );
+
+                    posDict.TryGetValue( nextx, out nextId.x );
+                    posDict.TryGetValue( nexty, out nextId.y );
+                    posDict.TryGetValue( nextz, out nextId.z );
+
+                    dstNextGrids.AddNoResize( nextId );
+
+                }
+            }
         }
 
 
