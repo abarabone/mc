@@ -106,10 +106,10 @@
 			{
 				int3 outerpos = cubepos >> 5;
 
-				outer_offset = (outerpos.x + outerpos.y + outerpos.z) + 1 >> 1 & 1;//
+				outer_offset = (outerpos.x + outerpos.y + outerpos.z) + 1 >> 1;//
 				int4 near_grid = near_gridids_prev_and_next[gridid_current * 2 + outer_offset];
 
-				grid_mask = int4(outerpos, 1 - any(outerpos));
+				grid_mask = int4(abs(outerpos), 1 - any(outerpos));
 
 				return dot(near_grid, grid_mask);
 			}
@@ -168,7 +168,7 @@
 				float3 nm = get_vtx_normal_current(gridid_current, cubepos, ivtx_current, cubeid_current);
 				nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_current, ivtx.x, o0);
 				nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_current, ivtx.y, o1);
-				//nm += get_vtx_normal_slant(cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.outer_offset, o1.grid_mask);
+				nm += get_vtx_normal_slant(cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.outer_offset, o1.grid_mask);
 
 				return normalize(nm);
 			}
