@@ -39,7 +39,7 @@ namespace MarchingCubes
         unsafe void Awake()
         {
             this.gridPositions = new NativeList<float4>( this.maxDrawGridLength, Allocator.Persistent );
-            this.nearGrids = new NativeList<int4>( this.maxDrawGridLength, Allocator.Persistent );
+            this.nearGrids = new NativeList<int4>( this.maxDrawGridLength * 2, Allocator.Persistent );
             this.cubeInstances = new NativeList<CubeInstance>( 1000000, Allocator.Persistent );
             //this.cubeInstances = new NativeQueue<CubeInstance>( Allocator.Persistent );
 
@@ -73,6 +73,7 @@ namespace MarchingCubes
                     for( var ix = 0; ix < 13; ix++ )
                         c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.nearGrids, this.cubeInstances );
+            nearGrids.AsArray().ForEach( x => Debug.Log( x ) );
             this.job.Complete();
 
             res.instancesBuffer.SetData( this.cubeInstances.AsArray() );

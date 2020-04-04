@@ -127,9 +127,9 @@ namespace MarchingCubes
                     posDict.TryGetValue( current, out var currentId );
 
 
-                    var prevx = current + new int3( -1, 0, 0 );
-                    var prevy = current + new int3( 0, -1, 0 );
-                    var prevz = current + new int3( 0, 0, -1 );
+                    var prevx = current + new int3( -1,  0,  0 );
+                    var prevy = current + new int3(  0, -1,  0 );
+                    var prevz = current + new int3(  0,  0, -1 );
 
                     var prevId = new int4( -1, -1, -1, currentId );
 
@@ -151,7 +151,6 @@ namespace MarchingCubes
                     posDict.TryGetValue( nextz, out nextId.z );
 
                     dstNextGrids.AddNoResize( nextId );
-
                 }
             }
         }
