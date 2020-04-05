@@ -145,16 +145,17 @@
 				return cube_normals[get_cubeid(o.gridid, pos) * 12 + ivtx];
 			}
 
-			int get_gridid_slant(int gridid0, int near_offset1, int4 grid_mask1)
+			int get_gridid_slant(int gridid_current, int gridid0, int near_offset1, int4 grid_mask1)
 			{
 				int4 near_grid = near_gridids_prev_and_next[gridid0 * 2 + near_offset1];
-				return dot(near_grid, grid_mask1);
+				int4 near_grid01 = int4(near_grid.xyz, gridid_current);
+				return gridid_current;// dot(near_grid01, grid_mask1);
 			}
-			float3 get_vtx_normal_slant(int3 cubepos, int ivtx, int offset0, int offset1, int gridid0, int near_offset1, int4 grid_mask1)
+			float3 get_vtx_normal_slant(int gridid_current, int3 cubepos, int ivtx, int offset0, int offset1, int gridid0, int near_offset1, int4 grid_mask1)
 			{
 				int3 offset = offset0 + offset1;
 				int3 pos = cubepos + offset;
-				int gridid = get_gridid_slant(gridid0, near_offset1, grid_mask1);
+				int gridid = get_gridid_slant(gridid_current, gridid0, near_offset1, grid_mask1);
 				return cube_normals[get_cubeid(gridid, pos) * 12 + ivtx];
 			}
 
@@ -166,7 +167,7 @@
 				float3 nm = get_vtx_normal_current(cubeid_current, ivtx_current);
 				nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_current, ivtx.x, o0);
 				nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_current, ivtx.y, o1);
-				//nm += get_vtx_normal_slant(cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.near_offset, o1.grid_mask);
+				nm += get_vtx_normal_slant(gridid_current, cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.near_offset, o1.grid_mask);
 
 				return normalize(nm);
 			}

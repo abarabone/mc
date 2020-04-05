@@ -98,9 +98,11 @@ namespace MarchingCubes
 
 
         static public void GetNearGridList
-            ( NativeList<float4> gridPositions, float3 gridScaleR, NativeList<int4> dstNextGrids )
+            ( NativeList<float4> gridPositions, float3 gridScale, NativeList<int4> dstNextGrids )
         {
             var posDict = new NativeHashMap<int3, int>( gridPositions.Length, Allocator.Temp );
+
+            var i_to_gridpos = gridScale * new float3(1,-1,-1);
 
             addToDict_();
             getNearGridIds_();
@@ -114,7 +116,7 @@ namespace MarchingCubes
                 for( var i = 0; i < gridPositions.Length; i++ )
                 {
                     var pos = gridPositions[ i ];
-                    posDict.Add( (int3)( pos.xyz * gridScaleR ), i );
+                    posDict.Add( (int3)( pos.xyz * i_to_gridpos ), i );
                 }
             }
             void getNearGridIds_()
@@ -123,7 +125,7 @@ namespace MarchingCubes
                 {
                     var pos = gridPositions[ i ];
 
-                    var current = (int3)( pos.xyz * gridScaleR );
+                    var current = (int3)( pos.xyz * i_to_gridpos );
                     posDict.TryGetValue( current, out var currentId );
 
 
