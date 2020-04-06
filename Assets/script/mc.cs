@@ -59,11 +59,11 @@ namespace MarchingCubes
             this.Material.SetBuffer( "cube_normals", res.cubeNormalBuffer );
             res.cubeNormalBuffer.SetData(this.MarchingCubeAsset.CubeIdAndVertexIndicesList.SelectMany(x=>x.normalsForVertex).ToArray());
 
-            this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
+            this.cubeGrids = new CubeGridArrayUnsafe(5,3,5);// 8, 3, 8 );
             this.cubeGrids.FillCubes( new int3( -1, 2, -1 ), new int3( 11, 11, 11 ), isFillAll: true );
             this.cubeGrids.FillCubes( new int3( 2, 1, 3 ), new int3( 1, 2, 1 ), isFillAll: true );
             
-            var c = this.cubeGrids[ 0, 0, 0 ];
+            var c = this.cubeGrids[ 0, 0, 0 ];           
             (*c.p)[ 1, 1, 1 ] = 1;
             c[ 31, 1, 1 ] = 1;
             c[ 31, 31, 31 ] = 1;
@@ -80,6 +80,7 @@ namespace MarchingCubes
             res.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
+            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length /*>> 6*/, 1, 1 );
             Debug.Log($"{cubeInstances.Length} / {res.instancesBuffer.count}");
 
 
@@ -177,7 +178,7 @@ namespace MarchingCubes
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
 
-            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
+            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length/* >> 6*/, 1, 1 );
 
 
             var mesh = res.mesh;

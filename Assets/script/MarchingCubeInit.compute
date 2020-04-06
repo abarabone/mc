@@ -18,7 +18,7 @@ void write_cubeid_to_grid(int gridid, int cubeid, int3 innerpos)
 	int icube = dot(innerpos, inner_span);
 
 	dst_grid_cubeids[igrid + icube] = (uint)(cubeid);
-}
+}        
 
 int get_cubeid(uint cube_instance)
 {
@@ -37,7 +37,7 @@ int3 get_pos_in_grid(uint cube_instance)
 }
 
 
-[numthreads(64,1,1)]
+[numthreads(1,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
 	uint cube_instance = src_instances[id.x];
