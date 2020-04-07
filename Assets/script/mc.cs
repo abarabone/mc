@@ -178,6 +178,9 @@ namespace MarchingCubes
             this.cubeInstances.Clear();
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridPositions, this.nearGrids, this.cubeInstances );
 
+        }
+        private void LateUpdate()
+        {
             this.job.Complete();
 
             var res = this.meshResources;
@@ -185,12 +188,11 @@ namespace MarchingCubes
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
 
+            var remain = (64 - (this.cubeInstances.Length & 0x3f) ) & 0x3f;
+            for(var i=0; i<remain; i++) this.cubeInstances.AddNoResize( new CubeInstance { instance = 0 } );
             this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
 
-        }
-        private void LateUpdate()
-        {
-            var res = this.meshResources;
+            //var res = this.meshResources;
             var mesh = res.mesh;
             var mat = this.Material;
             var args = res.argsBuffer;
