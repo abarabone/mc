@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Linq;
@@ -59,7 +60,7 @@ namespace MarchingCubes
             this.Material.SetBuffer( "cube_normals", res.cubeNormalBuffer );
             res.cubeNormalBuffer.SetData(this.MarchingCubeAsset.CubeIdAndVertexIndicesList.SelectMany(x=>x.normalsForVertex).ToArray());
 
-            this.cubeGrids = new CubeGridArrayUnsafe(5,3,5);// 8, 3, 8 );
+            this.cubeGrids = new CubeGridArrayUnsafe(8, 3, 8 );
             this.cubeGrids.FillCubes( new int3( -1, 2, -1 ), new int3( 11, 11, 11 ), isFillAll: true );
             this.cubeGrids.FillCubes( new int3( 2, 1, 3 ), new int3( 1, 2, 1 ), isFillAll: true );
             
@@ -80,7 +81,7 @@ namespace MarchingCubes
             res.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
-            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length /*>> 6*/, 1, 1 );
+            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
             Debug.Log($"{cubeInstances.Length} / {res.instancesBuffer.count}");
 
 
@@ -108,6 +109,12 @@ namespace MarchingCubes
                 this.cubeGridColliders[ igrid.x, igrid.y, igrid.z ] = this.BuildMeshCollider( gridpos.xyz, collider, cubeId );
             }
         }
+
+        
+        //CommandBuffer createCommandBuffer()
+        //{
+
+        //}
 
 
         int[][] idxLists;
@@ -178,25 +185,23 @@ namespace MarchingCubes
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
 
-            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length/* >> 6*/, 1, 1 );
+            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
 
-
+        }
+        private void LateUpdate()
+        {
+            var res = this.meshResources;
             var mesh = res.mesh;
             var mat = this.Material;
             var args = res.argsBuffer;
-
-            //var vectorOffset = offset.pVectorOffsetInBuffer - nativeBuffer.pBuffer;
-            //mat.SetInt( "BoneVectorOffset", (int)vectorOffset );
-            ////mat.SetInt( "BoneLengthEveryInstance", mesh.bindposes.Length );
-            ////mat.SetBuffer( "BoneVectorBuffer", computeBuffer );
-
+            
             var instanceCount = this.cubeInstances.Length;
             var argparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             args.SetData( ref argparams );
 
             var bounds = new Bounds() { center = Vector3.zero, size = Vector3.one * 1000.0f };
             Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, args );
-
+            
         }
         int i;
 
