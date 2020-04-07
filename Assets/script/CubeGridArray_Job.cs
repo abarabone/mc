@@ -129,7 +129,7 @@ namespace MarchingCubes
                         }
 
                 var gridScale = 1.0f / new float3( 32, 32, 32 );
-                CubeUtiilty.GetNearGridList( this.dstGridPositions, gridScale, this.dstNearGrids );
+                CubeUtility.GetNearGridList( this.dstGridPositions, gridScale, this.dstNearGrids );
             }
         }
 

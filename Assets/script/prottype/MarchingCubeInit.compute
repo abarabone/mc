@@ -2,7 +2,7 @@
 
 StructuredBuffer<uint> src_instances;
 
-RWTexture2DArray<uint> dst_grid_cubeids;
+RWStructuredBuffer<uint> dst_grid_cubeids;
 
 static const int _32e0 = 1;
 static const int _32e1 = 32;
@@ -17,7 +17,7 @@ void write_cubeid_to_grid(int gridid, int cubeid, int3 innerpos)
 	static const int3 inner_span = int3(_32e0, _32e2, _32e1);
 	int icube = dot(innerpos, inner_span);
 
-	dst_grid_cubeids[int3(0, igrid + icube, 0)] = (uint)(cubeid);
+	dst_grid_cubeids[igrid + icube] = (uint)(cubeid);
 }        
 
 int get_cubeid(uint cube_instance)

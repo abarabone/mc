@@ -12,7 +12,7 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace MarchingCubes
 {
-    static public class CubeUtiilty
+    static public class CubeUtility
     {
 
 
@@ -75,7 +75,7 @@ namespace MarchingCubes
 
                 //var center = new float3( cubeInstance >> 8 & 0xff, -( cubeInstance >> 16 & 0xff ), -( cubeInstance >> 24 & 0xff ) );
 
-                var (center, gridId, cubeId) = CubeUtiilty.FromCubeInstance( cubeInstance );
+                var (center, gridId, cubeId) = CubeUtility.FromCubeInstance( cubeInstance );
                 if( cubeId == 0 || cubeId == 255 ) return vtxOffset_;
 
                 var srcIdxList = srcIdxLists[ cubeId - 1 ];

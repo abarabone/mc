@@ -11,10 +11,14 @@ using Unity.Mathematics;
 using Unity.Jobs;
 using Unity.Burst;
 
-namespace MarchingCubes
+namespace MarchingCubes_
 {
 
     using vc = Vector3;
+    using MarchingCubeAsset = MarchingCubes.MarchingCubeAsset;
+    using CubeGridArrayUnsafe = MarchingCubes.CubeGridArrayUnsafe;
+    using CubeInstance = MarchingCubes.CubeInstance;
+    using CubeUtility = MarchingCubes.CubeUtility;
 
     public class mc : MonoBehaviour
     {
@@ -48,7 +52,7 @@ namespace MarchingCubes
             var res = this.meshResources;
 
             this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.instancesBuffer );
-            this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.gridCubeIdBuffer );
+            this.setGridCubeIdShader.SetBuffer( 0, "dst_grid_cubeids", res.gridCubeIdBuffer );
 
             this.Material.SetBuffer( "BaseVtxList", res.baseVtxsBuffer );
             this.Material.SetBuffer( "IdxList", res.idxListsBuffer );
@@ -56,7 +60,7 @@ namespace MarchingCubes
             this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
             this.Material.SetBuffer( "near_gridids_prev_and_next", res.nearGridIdBuffer );
             this.Material.SetBuffer( "Normals", res.triNormalsBuffer );
-            this.Material.SetTexture( "grid_cubeids", res.gridCubeIdBuffer );
+            this.Material.SetBuffer( "grid_cubeids", res.gridCubeIdBuffer );
             this.Material.SetBuffer( "cube_normals", res.cubeNormalBuffer );
             res.cubeNormalBuffer.SetData(this.MarchingCubeAsset.CubeIdAndVertexIndicesList.SelectMany(x=>x.normalsForVertex).ToArray());
 
@@ -232,7 +236,7 @@ namespace MarchingCubes
             public ComputeBuffer nearGridIdBuffer;
             public ComputeBuffer triNormalsBuffer;
             //public ComputeBuffer vtxNormalsBuffer;
-            public Texture2DArray gridCubeIdBuffer;
+            public ComputeBuffer gridCubeIdBuffer;
             public ComputeBuffer cubeNormalBuffer;//
             public Mesh mesh;
 
@@ -263,7 +267,7 @@ namespace MarchingCubes
                 if( this.nearGridIdBuffer != null ) this.nearGridIdBuffer.Dispose();
                 if( this.triNormalsBuffer != null ) this.triNormalsBuffer.Dispose();
                 //if( this.vtxNormalsBuffer != null ) this.vtxNormalsBuffer.Dispose();
-                //if( this.gridCubeIdBuffer != null ) this.gridCubeIdBuffer.Dispose();
+                if( this.gridCubeIdBuffer != null ) this.gridCubeIdBuffer.Dispose();
                 if( this.cubeNormalBuffer != null ) this.cubeNormalBuffer.Dispose();//
             }
 
@@ -332,13 +336,13 @@ namespace MarchingCubes
             //ComputeBuffer createVertexNormalshaderBuffer_( int maxGridLength )
             //{
             //    var buffer = new ComputeBuffer( 32*32*32*3 * maxGridLength, Marshal.SizeOf<Vector3>() );
-
+                
             //    return buffer;
             //}
-            Texture2DArray createGridCubeIdShaderBuffer_( int maxGridLength )
+            ComputeBuffer createGridCubeIdShaderBuffer_( int maxGridLength )
             {
-                var buffer = new Texture2DArray( 32 * 32, 32, maxGridLength, TextureFormat.R8, false, false );
-                
+                var buffer = new ComputeBuffer( 32 * 32 * 32 * maxGridLength, Marshal.SizeOf<uint>() );
+
                 return buffer;
             }
             ComputeBuffer createCubeNormalShaderBuffer_()

@@ -314,7 +314,7 @@ namespace MarchingCubes
             var _0or255to0 = cubeId + 1 & 0xfe;
             if( !math.any( _0or255to0 ) ) return;// すべての cubeId が 0 か 255 なら何もしない
 
-            var cubeInstance = CubeUtiilty.ToCubeInstance( ix_, iy_, iz_, gridId__, cubeId );
+            var cubeInstance = CubeUtility.ToCubeInstance( ix_, iy_, iz_, gridId__, cubeId );
 
             if( _0or255to0.x != 0 ) cubeInstances.Add( cubeInstance.x );
             if( _0or255to0.y != 0 ) cubeInstances.Add( cubeInstance.y );

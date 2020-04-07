@@ -1,4 +1,4 @@
-﻿Shader "Custom/mc"
+﻿Shader "Custom/mc_"
 {
     Properties
     {
@@ -55,7 +55,7 @@
 			// +0 -> prev gridid { x:left,  y:up,   z:front, w:current }
 			// +1 -> next gridid { x:right, y:down, z:back,  w:current }
 
-			Texture2DArray<uint> grid_cubeids;
+			StructuredBuffer<uint> grid_cubeids;
 			StructuredBuffer<float3> cube_normals;
 
 			static const int _32e0 = 1;
@@ -118,7 +118,7 @@
 				int3 innerpos = cubepos & 0x1f;
 				int icube = dot(innerpos, inner_span);
 
-				return grid_cubeids[int3(0, igrid + icube, 0)];
+				return grid_cubeids[igrid + icube] & 0xff;
 			}
 			float3 get_vtx_normal_current(int cubeid_current, int ivtx_current)
 			{
