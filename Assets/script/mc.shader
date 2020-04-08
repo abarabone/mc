@@ -1,4 +1,4 @@
-﻿Shader "Custom/mc0"
+﻿Shader "Custom/mc"
 {
     Properties
     {
@@ -47,7 +47,8 @@
 
             StructuredBuffer<uint> Instances;
             StructuredBuffer<int> IdxList;
-            StructuredBuffer<float4> BaseVtxList;
+            //StructuredBuffer<float4> BaseVtxList;
+			float4 BaseVtxList[12];
             StructuredBuffer<float4> GridPositions;
 			StructuredBuffer<float3> Normals;
 

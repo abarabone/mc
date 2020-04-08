@@ -20,7 +20,7 @@ namespace MarchingCubes
     //using CubeInstance = MarchingCubes.CubeInstance;
     //using CubeUtility = MarchingCubes.CubeUtility;
 
-    public class mc : MonoBehaviour
+    public class mc_ : MonoBehaviour
     {
         public MarchingCubeAsset MarchingCubeAsset;
         public Material Material;
@@ -85,7 +85,7 @@ namespace MarchingCubes
             res.instancesBuffer.SetData( this.cubeInstances.AsArray() );
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
-            //this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
+            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
             Debug.Log($"{cubeInstances.Length} / {res.instancesBuffer.count}");
 
 
@@ -206,9 +206,9 @@ namespace MarchingCubes
             var dargs = res.argsBufferForDispatch;
             var remain = (64 - (this.cubeInstances.Length & 0x3f) ) & 0x3f;
             for(var i=0; i<remain; i++) this.cubeInstances.AddNoResize( new CubeInstance { instance = 0 } );
-            //this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
             var dargparams = new IndirectArgumentsForDispatch( this.cubeInstances.Length >> 6, 1, 1 );
             dargs.SetData( ref dargparams );
+            //this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
 
             var mesh = res.mesh;
             var mat = this.Material;
@@ -380,88 +380,88 @@ namespace MarchingCubes
 
 
 
-    public struct IndirectArgumentsForInstancing
-    {
-        public uint MeshIndexCount;
-        public uint InstanceCount;
-        public uint MeshBaseIndex;
-        public uint MeshBaseVertex;
-        public uint BaseInstance;
+    //public struct IndirectArgumentsForInstancing
+    //{
+    //    public uint MeshIndexCount;
+    //    public uint InstanceCount;
+    //    public uint MeshBaseIndex;
+    //    public uint MeshBaseVertex;
+    //    public uint BaseInstance;
 
-        public IndirectArgumentsForInstancing
-            ( Mesh mesh, int instanceCount = 0, int submeshId = 0, int baseInstance = 0 )
-        {
-            //if( mesh == null ) return;
+    //    public IndirectArgumentsForInstancing
+    //        ( Mesh mesh, int instanceCount = 0, int submeshId = 0, int baseInstance = 0 )
+    //    {
+    //        //if( mesh == null ) return;
 
-            this.MeshIndexCount = mesh.GetIndexCount( submeshId );
-            this.InstanceCount = (uint)instanceCount;
-            this.MeshBaseIndex = mesh.GetIndexStart( submeshId );
-            this.MeshBaseVertex = mesh.GetBaseVertex( submeshId );
-            this.BaseInstance = (uint)baseInstance;
-        }
+    //        this.MeshIndexCount = mesh.GetIndexCount( submeshId );
+    //        this.InstanceCount = (uint)instanceCount;
+    //        this.MeshBaseIndex = mesh.GetIndexStart( submeshId );
+    //        this.MeshBaseVertex = mesh.GetBaseVertex( submeshId );
+    //        this.BaseInstance = (uint)baseInstance;
+    //    }
 
-        public NativeArray<uint> ToNativeArray( Allocator allocator )
-        {
-            var arr = new NativeArray<uint>( 5, allocator );
-            arr[ 0 ] = this.MeshIndexCount;
-            arr[ 1 ] = this.InstanceCount;
-            arr[ 2 ] = this.MeshBaseIndex;
-            arr[ 3 ] = this.MeshBaseVertex;
-            arr[ 4 ] = this.BaseInstance;
-            return arr;
-        }
-    }
+    //    public NativeArray<uint> ToNativeArray( Allocator allocator )
+    //    {
+    //        var arr = new NativeArray<uint>( 5, allocator );
+    //        arr[ 0 ] = this.MeshIndexCount;
+    //        arr[ 1 ] = this.InstanceCount;
+    //        arr[ 2 ] = this.MeshBaseIndex;
+    //        arr[ 3 ] = this.MeshBaseVertex;
+    //        arr[ 4 ] = this.BaseInstance;
+    //        return arr;
+    //    }
+    //}
 
-    static public class IndirectArgumentsExtensions
-    {
-        static public ComputeBuffer SetData( this ComputeBuffer cbuf, ref IndirectArgumentsForInstancing args )
-        {
-            using( var nativebuf = args.ToNativeArray( Allocator.Temp ) )
-                cbuf.SetData( nativebuf );
+    //static public class IndirectArgumentsExtensions
+    //{
+    //    static public ComputeBuffer SetData( this ComputeBuffer cbuf, ref IndirectArgumentsForInstancing args )
+    //    {
+    //        using( var nativebuf = args.ToNativeArray( Allocator.Temp ) )
+    //            cbuf.SetData( nativebuf );
 
-            return cbuf;
-        }
+    //        return cbuf;
+    //    }
 
-        static public ComputeBuffer SetData( this ComputeBuffer cbuf, ref IndirectArgumentsForDispatch args )
-        {
-            using( var nativebuf = args.ToNativeArray( Allocator.Temp ) )
-                cbuf.SetData( nativebuf );
+    //    static public ComputeBuffer SetData( this ComputeBuffer cbuf, ref IndirectArgumentsForDispatch args )
+    //    {
+    //        using( var nativebuf = args.ToNativeArray( Allocator.Temp ) )
+    //            cbuf.SetData( nativebuf );
 
-            return cbuf;
-        }
-    }
+    //        return cbuf;
+    //    }
+    //}
 
-    static public class ComputeShaderUtility
-    {
-        static public ComputeBuffer CreateIndirectArgumentsBufferForInstancing() =>
-            new ComputeBuffer( 1, sizeof( uint ) * 5, ComputeBufferType.IndirectArguments, ComputeBufferMode.Immutable );
+    //static public class ComputeShaderUtility
+    //{
+    //    static public ComputeBuffer CreateIndirectArgumentsBufferForInstancing() =>
+    //        new ComputeBuffer( 1, sizeof( uint ) * 5, ComputeBufferType.IndirectArguments, ComputeBufferMode.Immutable );
 
-        static public ComputeBuffer CreateIndirectArgumentsBufferForDispatch() =>
-            new ComputeBuffer( 1, sizeof( int ) * 3, ComputeBufferType.IndirectArguments, ComputeBufferMode.Immutable );
-    }
+    //    static public ComputeBuffer CreateIndirectArgumentsBufferForDispatch() =>
+    //        new ComputeBuffer( 1, sizeof( int ) * 3, ComputeBufferType.IndirectArguments, ComputeBufferMode.Immutable );
+    //}
 
 
 
-    public struct IndirectArgumentsForDispatch
-    {
-        public int x, y, z;
+    //public struct IndirectArgumentsForDispatch
+    //{
+    //    public int x, y, z;
 
-        public IndirectArgumentsForDispatch( int numx, int numy, int numz )
-        {
-            this.x = numx;
-            this.y = numy;
-            this.z = numz;
-        }
+    //    public IndirectArgumentsForDispatch( int numx, int numy, int numz )
+    //    {
+    //        this.x = numx;
+    //        this.y = numy;
+    //        this.z = numz;
+    //    }
 
-        public NativeArray<int> ToNativeArray( Allocator allocator )
-        {
-            var arr = new NativeArray<int>( 3, allocator );
-            arr[ 0 ] = this.x;
-            arr[ 1 ] = this.y;
-            arr[ 2 ] = this.z;
-            return arr;
-        }
-    }
+    //    public NativeArray<int> ToNativeArray( Allocator allocator )
+    //    {
+    //        var arr = new NativeArray<int>( 3, allocator );
+    //        arr[ 0 ] = this.x;
+    //        arr[ 1 ] = this.y;
+    //        arr[ 2 ] = this.z;
+    //        return arr;
+    //    }
+    //}
 
 
 }
