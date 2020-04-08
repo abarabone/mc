@@ -11,14 +11,14 @@ using Unity.Mathematics;
 using Unity.Jobs;
 using Unity.Burst;
 
-namespace MarchingCubes_
+namespace MarchingCubes
 {
 
     using vc = Vector3;
-    using MarchingCubeAsset = MarchingCubes.MarchingCubeAsset;
-    using CubeGridArrayUnsafe = MarchingCubes.CubeGridArrayUnsafe;
-    using CubeInstance = MarchingCubes.CubeInstance;
-    using CubeUtility = MarchingCubes.CubeUtility;
+    //using MarchingCubeAsset = MarchingCubes.MarchingCubeAsset;
+    //using CubeGridArrayUnsafe = MarchingCubes.CubeGridArrayUnsafe;
+    //using CubeInstance = MarchingCubes.CubeInstance;
+    //using CubeUtility = MarchingCubes.CubeUtility;
 
     public class mc : MonoBehaviour
     {

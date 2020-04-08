@@ -1,4 +1,4 @@
-﻿Shader "Custom/mc"
+﻿Shader "Custom/mc0"
 {
     Properties
     {
@@ -111,20 +111,20 @@
 				int pvev_next_selector;
 			};
 
-			int get_cubeid(int gridid, int3 cubepos)
+			float3 get_vtx_normal_current(int cubeid_current, int ivtx_current)
+			{
+				return cube_normals[cubeid_current * 12 + ivtx_current];
+			}
+
+			uint get_cubeid(int gridid, int3 cubepos)
 			{
 				int igrid = gridid * grid_span;
 
 				int3 innerpos = cubepos & 0x1f;
 				int icube = dot(innerpos, inner_span);
 
-				return grid_cubeids[int3(0, igrid + icube, 0)];
+				return grid_cubeids[int3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid)];
 			}
-			float3 get_vtx_normal_current(int cubeid_current, int ivtx_current)
-			{
-				return cube_normals[cubeid_current * 12 + ivtx_current];
-			}
-
 			int get_gridid_ortho(int gridid_current, int3 cubepos, out int pvev_next_selector, out int4 grid_mask)
 			{
 				int3 outerpos = cubepos >> 5;
