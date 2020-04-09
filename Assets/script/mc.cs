@@ -244,8 +244,8 @@ namespace MarchingCubes
             iargs.SetData( ref iargparams );
 
             //var bounds = new Bounds() { center = Vector3.zero, size = Vector3.one * 1000.0f };
-            //Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, args );
-            
+            //Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, iargs );
+
         }
         int i;
 
