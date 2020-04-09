@@ -46,10 +46,10 @@ namespace MarchingCubes
         {
             var res = this.meshResources;
 
-            var baseVtxList = this.MarchingCubeAsset.BaseVertexList.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray();
-            this.Material.SetVectorArray( "BaseVtxList", baseVtxList );
+            //var baseVtxList = this.MarchingCubeAsset.BaseVertexList.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray();
+            this.Material.SetConstantBuffer( "BaseVtxList", res.baseVtxsBuffer, 0, res.baseVtxsBuffer.count );
 
-            this.Material.SetBuffer( "IdxList", res.idxListsBuffer );
+            this.Material.SetConstantBuffer( "IdxList", res.idxListsBuffer, 0, res.idxListsBuffer.count );
 
             this.Material.SetBuffer( "Instances", res.instancesBuffer );
             this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
@@ -109,7 +109,7 @@ namespace MarchingCubes
             res.gridPositionBuffer.SetData( this.gridPositions.AsArray() );
             res.nearGridIdBuffer.SetData( this.nearGrids.AsArray() );
             var remain = ( 64 - ( this.cubeInstances.Length & 0x3f ) ) & 0x3f;
-            for( var i = 0; i < remain; i++ ) this.cubeInstances.AddNoResize( new CubeInstance { instance = 0 } );
+            for( var i = 0; i < remain; i++ ) this.cubeInstances.AddNoResize( new CubeInstance { instance = 1 } );
             this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
             Debug.Log($"{cubeInstances.Length} / {res.instancesBuffer.count}");
 
@@ -230,7 +230,7 @@ namespace MarchingCubes
 
             var dargs = res.argsBufferForDispatch;
             var remain = (64 - (this.cubeInstances.Length & 0x3f) ) & 0x3f;
-            for(var i=0; i<remain; i++) this.cubeInstances.AddNoResize( new CubeInstance { instance = 0 } );
+            for(var i=0; i<remain; i++) this.cubeInstances.AddNoResize( new CubeInstance { instance = 1 } );
             var dargparams = new IndirectArgumentsForDispatch( this.cubeInstances.Length >> 6, 1, 1 );
             dargs.SetData( ref dargparams );
             //this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
@@ -254,7 +254,7 @@ namespace MarchingCubes
         {
             public ComputeBuffer argsBufferForInstancing;
             public ComputeBuffer argsBufferForDispatch;
-            //public ComputeBuffer baseVtxsBuffer;
+            public ComputeBuffer baseVtxsBuffer;
             public ComputeBuffer idxListsBuffer;
             public ComputeBuffer instancesBuffer;
             public ComputeBuffer gridPositionBuffer;
@@ -270,7 +270,7 @@ namespace MarchingCubes
                 this.argsBufferForInstancing = ComputeShaderUtility.CreateIndirectArgumentsBufferForInstancing();
                 this.argsBufferForDispatch = ComputeShaderUtility.CreateIndirectArgumentsBufferForDispatch();
                 this.instancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
-                //this.baseVtxsBuffer = createBaseVtxShaderBuffer_( asset.BaseVertexList );
+                this.baseVtxsBuffer = createBaseVtxShaderBuffer_( asset.BaseVertexList );
                 this.idxListsBuffer = createIdxListsShaderBuffer_( asset.CubeIdAndVertexIndicesList );
                 this.gridPositionBuffer = createGridPositionShaderBuffer_( maxGridLength );
                 this.nearGridIdBuffer = createNearGridShaderBuffer_( maxGridLength );
@@ -285,14 +285,14 @@ namespace MarchingCubes
             {
                 if( this.argsBufferForInstancing != null ) this.argsBufferForInstancing.Dispose();
                 if( this.argsBufferForDispatch != null ) this.argsBufferForDispatch.Dispose();
-                //if( this.baseVtxsBuffer != null ) this.baseVtxsBuffer.Dispose();
+                if( this.baseVtxsBuffer != null ) this.baseVtxsBuffer.Dispose();
                 if( this.idxListsBuffer != null ) this.idxListsBuffer.Dispose();
                 if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
                 if( this.gridPositionBuffer != null ) this.gridPositionBuffer.Dispose();
                 if( this.nearGridIdBuffer != null ) this.nearGridIdBuffer.Dispose();
                 if( this.triNormalsBuffer != null ) this.triNormalsBuffer.Dispose();
                 //if( this.vtxNormalsBuffer != null ) this.vtxNormalsBuffer.Dispose();
-                //if( this.gridCubeIdBuffer != null ) this.gridCubeIdBuffer.Dispose();
+                if( this.gridCubeIdBuffer != null ) this.gridCubeIdBuffer.Release();
                 if( this.cubeNormalBuffer != null ) this.cubeNormalBuffer.Dispose();//
             }
 
@@ -333,14 +333,14 @@ namespace MarchingCubes
                 return buffer;
             }
 
-            //ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
-            //{
-            //    var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector4>() );
+            ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
+            {
+                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector4>() );
 
-            //    buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
 
-            //    return buffer;
-            //}
+                return buffer;
+            }
 
             ComputeBuffer createTriangleNormalshaderBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
             {

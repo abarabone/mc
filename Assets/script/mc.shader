@@ -46,7 +46,8 @@
             float4 _MainTex_ST;
 
             StructuredBuffer<uint> Instances;
-            StructuredBuffer<int> IdxList;
+            //StructuredBuffer<int> IdxList;
+			int IdxList[254 * 12];
             //StructuredBuffer<float4> BaseVtxList;
 			float4 BaseVtxList[12];
             StructuredBuffer<float4> GridPositions;
