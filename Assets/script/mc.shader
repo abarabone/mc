@@ -46,10 +46,12 @@
             float4 _MainTex_ST;
 
             StructuredBuffer<uint> Instances;
-            StructuredBuffer<int> IdxList;
-			//int3 IdxList[254 * 12];
+            //StructuredBuffer<int> IdxList;
             //StructuredBuffer<float4> BaseVtxList;
+			CBUFFER_START(MyRarelyUpdatedVariables)
+			int IdxList[254 * 12];
 			float4 BaseVtxList[12];
+			CBUFFER_END
             StructuredBuffer<float4> GridPositions;
 			StructuredBuffer<float3> Normals;
 
