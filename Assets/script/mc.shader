@@ -1,59 +1,59 @@
 ﻿Shader "Custom/mc"
 {
-    Properties
-    {
-        _MainTex("Texture", 2D) = "white" {}
-    }
-        SubShader
-    {
+	Properties
+	{
+		_MainTex("Texture", 2D) = "white" {}
+	}
+		SubShader
+	{
 		Tags {
 			"RenderType" = "Opaque"
 			"LightMode" = "ForwardBase"
 		}
-        LOD 100
+		LOD 100
 
-        Pass
-        {
-            CGPROGRAM
-            // Upgrade NOTE: excluded shader from DX11, OpenGL ES 2.0 because it uses unsized arrays
-            //#pragma exclude_renderers d3d11 gles
+		Pass
+		{
+			CGPROGRAM
+			// Upgrade NOTE: excluded shader from DX11, OpenGL ES 2.0 because it uses unsized arrays
+			//#pragma exclude_renderers d3d11 gles
 
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_instancing
-            #pragma multi_compile_fog
-            #include "UnityCG.cginc"
-            //#include "AutoLight.cginc"
-            #include "UnityLightingCommon.cginc" // _LightColor0 に対し
+			#pragma vertex vert
+			#pragma fragment frag
+			#pragma multi_compile_instancing
+			#pragma multi_compile_fog
+			#include "UnityCG.cginc"
+			//#include "AutoLight.cginc"
+			#include "UnityLightingCommon.cginc" // _LightColor0 に対し
 
 
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                //float2 uv : TEXCOORD0;
-            };
+			struct appdata
+			{
+				float4 vertex : POSITION;
+				//float2 uv : TEXCOORD0;
+			};
 
-            struct v2f
-            {
-                float2 uv : TEXCOORD0;
-                UNITY_FOG_COORDS(1)
-                float4 vertex : SV_POSITION;
+			struct v2f
+			{
+				float2 uv : TEXCOORD0;
+				UNITY_FOG_COORDS(1)
+				float4 vertex : SV_POSITION;
 				half3 normal : NORMAL;
-                fixed4 color : COLOR;
-            };
+				fixed4 color : COLOR;
+			};
 
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
+			sampler2D _MainTex;
+			float4 _MainTex_ST;
 
-            StructuredBuffer<uint> Instances;
-            //StructuredBuffer<int> IdxList;
-            //StructuredBuffer<float4> BaseVtxList;
-			CBUFFER_START(MyRarelyUpdatedVariables)
-			int IdxList[254 * 12];
-			float4 BaseVtxList[12];
-			CBUFFER_END
-            StructuredBuffer<float4> GridPositions;
-			StructuredBuffer<float3> Normals;
+			StructuredBuffer<uint> Instances;
+			StructuredBuffer<int> IdxList;
+			StructuredBuffer<float3> BaseVtxList;
+			//CBUFFER_START(MyRarelyUpdatedVariables)
+			//int IdxList[12];// 254 * 12];
+			//	float3 BaseVtxList[12];
+			//CBUFFER_END
+			StructuredBuffer<float4> GridPositions;
+			//StructuredBuffer<float3> Normals;
 
 			StructuredBuffer<int4> near_gridids_prev_and_next;
 			// +0 -> prev gridid { x:left,  y:up,   z:front, w:current }
@@ -176,28 +176,29 @@
 				return normalize(nm);
 			}
 
-            v2f vert(appdata v, uint i : SV_InstanceID)
-            {
-                v2f o;
+			v2f vert(appdata v, uint i : SV_InstanceID)
+			{
+				v2f o;
 
-                uint data = Instances[i];
-                uint cubeId = (data & 0xff) - 1;
+				uint data = Instances[i];
+				uint cubeId = (data & 0xff) - 1;
 				uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
 
-				uint vtxIdx = IdxList[idxofs.x];
+				int vtxIdx = IdxList[idxofs.x];
 
-                uint gridId = data >> 8 & 0xff;
-                float4 gridpos = GridPositions[gridId];
+				uint gridId = data >> 8 & 0xff;
+				float4 gridpos = GridPositions[gridId];
 
-                int4 cubepos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0);
-                int4 center = cubepos * int4(1, -1, -1, 1);
-                float4 lvtx = gridpos + center + BaseVtxList[vtxIdx];
+				int4 cubepos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0);
+				int4 center = cubepos * int4(1, -1, -1, 1);
+				float4 lvtx = gridpos + center + float4(BaseVtxList[vtxIdx], 1.0f);
 
-                o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
+				o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
-				
+
 				//half3 normal = Normals[idxofs.y].xyz;
-				half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridId, cubeId, vtxIdx, cubepos.xyz);
+				half3 normal = get_vtx_normal_current(cubeId, vtxIdx);
+				//half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridId, cubeId, vtxIdx, cubepos.xyz);
 				half3 worldNormal = normal;
 				fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
@@ -209,21 +210,21 @@
 				o.normal = worldNormal;
 
 				o.uv = half2(0,0);//lvtx.xy; TRANSFORM_TEX(lvtx.xyspan, _MainTex);
-                UNITY_TRANSFER_FOG(o,o.vertex);
+				UNITY_TRANSFER_FOG(o,o.vertex);
 
-                return o;
-            }
+				return o;
+			}
 
-            fixed4 frag(v2f i) : SV_Target
-            {
-                // sample the texture
+			fixed4 frag(v2f i) : SV_Target
+			{
+				// sample the texture
 				fixed4 col = i.color;// tex2D(_MainTexspan, i.uv) * i.color;
-                // apply fog
-                UNITY_APPLY_FOG(i.fogCoord, col);
-                return col;
-            }
+				// apply fog
+				UNITY_APPLY_FOG(i.fogCoord, col);
+				return col;
+			}
 
-        ENDCG
-    }
-    }
+		ENDCG
+	}
+	}
 }
