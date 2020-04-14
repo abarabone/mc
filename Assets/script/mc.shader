@@ -47,11 +47,11 @@
 
 			StructuredBuffer<uint> Instances;
 			StructuredBuffer<int> IdxList;
-			StructuredBuffer<float3> BaseVtxList;
-			//CBUFFER_START(MyRarelyUpdatedVariables)
-			//int IdxList[12];// 254 * 12];
-			//	float3 BaseVtxList[12];
-			//CBUFFER_END
+			//StructuredBuffer<float3> BaseVtxList;
+			CBUFFER_START(aaa)
+				//int IdxList[254 * 12];
+				float3 BaseVtxList[12];
+			CBUFFER_END
 			StructuredBuffer<float4> GridPositions;
 			//StructuredBuffer<float3> Normals;
 
@@ -171,14 +171,13 @@
 				float3 nm = get_vtx_normal_current(cubeid_current, ivtx_current);
 				nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_current, ivtx.x, o0);
 				nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_current, ivtx.y, o1);
-				nm += get_vtx_normal_slant(gridid_current, cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.pvev_next_selector, o1.grid_mask);
+				//nm += get_vtx_normal_slant(gridid_current, cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.pvev_next_selector, o1.grid_mask);
 
 				return normalize(nm);
 			}
 
 			v2f vert(appdata v, uint i : SV_InstanceID)
-			{
-				v2f o;
+			{				v2f o;
 
 				uint data = Instances[i];
 				uint cubeId = (data & 0xff) - 1;
@@ -197,8 +196,8 @@
 
 
 				//half3 normal = Normals[idxofs.y].xyz;
-				half3 normal = get_vtx_normal_current(cubeId, vtxIdx);
-				//half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridId, cubeId, vtxIdx, cubepos.xyz);
+				//half3 normal = get_vtx_normal_current(cubeId, vtxIdx);
+				half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridId, cubeId, vtxIdx, cubepos.xyz);
 				half3 worldNormal = normal;
 				fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
