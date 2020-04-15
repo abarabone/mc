@@ -334,10 +334,10 @@ namespace MarchingCubes
 
             ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
             {
-                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector3>(), ComputeBufferType.Constant );
+                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<float4>(), ComputeBufferType.Constant );
 
-                //buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
-                buffer.SetData( baseVtxList_ );
+                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+                //buffer.SetData( baseVtxList_ );
 
                 return buffer;
             }

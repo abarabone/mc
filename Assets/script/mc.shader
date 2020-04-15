@@ -190,7 +190,7 @@
 
 				int4 cubepos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0);
 				int4 center = cubepos * int4(1, -1, -1, 1);
-				float4 lvtx = gridpos + center + float4(BaseVtx, 1.0f);
+				float4 lvtx = gridpos + center + float4(BaseVtx[vtxIdx], 1.0f);
 
 				o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
