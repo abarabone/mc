@@ -50,7 +50,7 @@
 			StructuredBuffer<float3> BaseVtxList;
 			//CBUFFER_START(MyRarelyUpdatedVariables)
 			//int IdxList[12];// 254 * 12];
-			//	float3 BaseVtxList[12];
+				float3 BaseVtxList[12];
 			//CBUFFER_END
 			StructuredBuffer<float4> GridPositions;
 			//StructuredBuffer<float3> Normals;

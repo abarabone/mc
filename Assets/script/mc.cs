@@ -47,9 +47,10 @@ namespace MarchingCubes
             var res = this.meshResources;
 
             //var baseVtxList = this.MarchingCubeAsset.BaseVertexList.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray();
-            this.Material.SetConstantBuffer( "BaseVtxList", res.baseVtxsBuffer, 0, res.baseVtxsBuffer.count );
+            this.Material.SetConstantBuffer( "BaseVtxList", res.baseVtxsBuffer, 0, res.baseVtxsBuffer.count * res.baseVtxsBuffer.stride );
 
-            this.Material.SetConstantBuffer( "IdxList", res.idxListsBuffer, 0, res.idxListsBuffer.count );
+            this.Material.SetBuffer( "idxList", res.idxListsBuffer );
+            //this.Material.SetConstantBuffer( "IdxList", res.idxListsBuffer, 0, res.idxListsBuffer.count * res.idxListsBuffer.stride );
 
             this.Material.SetBuffer( "Instances", res.instancesBuffer );
             this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
@@ -335,7 +336,7 @@ namespace MarchingCubes
 
             ComputeBuffer createBaseVtxShaderBuffer_( Vector3[] baseVtxList_ )
             {
-                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<Vector3>() );
+                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<float3>(), ComputeBufferType.Constant );
 
                 //buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
                 buffer.SetData( baseVtxList_ );
@@ -345,7 +346,7 @@ namespace MarchingCubes
 
             ComputeBuffer createTriangleNormalshaderBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
             {
-                var buffer = new ComputeBuffer( 254 * 4, Marshal.SizeOf<Vector3>() );
+                var buffer = new ComputeBuffer( 254 * 4, Marshal.SizeOf<float3>() );
 
                 var q =
                     from x in cubeIdsAndVtxIndexLists_
