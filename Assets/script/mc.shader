@@ -52,19 +52,19 @@
 			struct CubeInstance
 			{
 				int IdxList[3];
-				float3 BaseVtx;
+				float3 normal;
 			}
-			per_cube_instances[254];
+			per_cube_pattern[254];
 			CBUFFER_END
 
 			CBUFFER_START(PerCubeVertex)
 			struct CubeVertex
 			{
+				float3 BaseVtx;
 				int3 near_cube_offsets[2];
 				int3 near_cube_ivtxs;
-				float3 normal;
 			}
-			per_cube[12];
+			per_cube_vtx[12];
 			CBUFFER_END
 
 			CBUFFER_START(PerCubeGrid)
@@ -107,7 +107,7 @@
 
 			float3 get_vtx_normal_current(int cubeid_current, int ivtx_current)
 			{
-				return per_cube[cubeid_current * 12 + ivtx_current].normal;
+				return per_cube_vtx[cubeid_current * 12 + ivtx_current].normal;
 			}
 
 			uint get_cubeid(int gridid, int3 cubepos)
@@ -124,7 +124,7 @@
 				const int3 outerpos = cubepos >> 5;
 
 				pvev_next_selector = (outerpos.x + outerpos.y + outerpos.z) + 1 >> 1;//
-				const int4 near_grid = near_gridids_prev_and_next[gridid_current * 2 + pvev_next_selector];
+				const int4 near_grid = per_grid[gridid_current * 2 + pvev_next_selector].near_gridids_prev_and_next;
 
 				grid_mask = int4(abs(outerpos), 1 - any(outerpos));
 
@@ -136,7 +136,7 @@
 				o.offset = near_cube_offsets[ivtx_current * 2 + index];
 				const int3 pos = cubepos + o.offset;
 				o.gridid = get_gridid_ortho(gridid_current, pos, o.pvev_next_selector, o.grid_mask);
-				return per_cube[get_cubeid(o.gridid, pos) * 12 + ivtx].normal;
+				return per_cube_vtx[get_cubeid(o.gridid, pos) * 12 + ivtx].normal;
 			}
 
 			int get_gridid_slant(int gridid_current, int gridid0, int pvev_next_selector1, int4 grid_mask1)
@@ -150,7 +150,7 @@
 				const int3 offset = offset0 + offset1;
 				const int3 pos = cubepos + offset;
 				const int gridid = get_gridid_slant(gridid_current, gridid0, pvev_next_selector1, grid_mask1);
-				return per_cube[get_cubeid(gridid, pos) * 12 + ivtx].normal;
+				return per_cube_vtx[get_cubeid(gridid, pos) * 12 + ivtx].normal;
 			}
 
 			float3 get_and_caluclate_triangle_to_vertex_normal(int gridid_current, int cubeid_current, int ivtx_current, int3 cubepos)
@@ -174,14 +174,14 @@
 				const uint cubeId = (data & 0xff) - 1;
 				const uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
 
-				const int vtxIdx = IdxList[idxofs.x];
+				const int vtxIdx = per_cube_instance[idxofs.x].IdxList;
 
 				const uint gridId = data >> 8 & 0xff;
-				const float4 gridpos = GridPositions[gridId];
+				const float4 gridpos = per_grid[gridId].position;
 
 				const int4 cubepos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0);
 				const int4 center = cubepos * int4(1, -1, -1, 1);
-				const float4 lvtx = gridpos + center + float4(BaseVtx[vtxIdx], 1.0f);
+				const float4 lvtx = gridpos + center + float4(per_cube_vtx[vtxIdx].BaseVtx, 1.0f);
 
 				o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
