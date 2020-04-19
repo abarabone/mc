@@ -42,53 +42,57 @@
 				fixed4 color : COLOR;
 			};
 
+			struct PerCubePatternIdx
+			{
+				int tri_ivtxs[3 * 4];
+			};
+			struct PerCubePatternVtx
+			{
+				float3 vtx_nmls[12];
+			};
+
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
 
 			StructuredBuffer<uint> cube_instances;
 			Texture2DArray<uint> grid_cubeids;
 
-
-			struct PerCubePatternIdx
-			{
-				int tri_ivtxs[3 * 4];
-			};
-			//CBUFFER_START(_PerCubePatternIndex)
-				PerCubePatternIdx cube_idx_patterns[254];
-			//CBUFFER_END
-			//StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
-
-
-			CBUFFER_START(_PerCubePatternVertex)
-			struct PerCubePatternVtx
-			{
-				float3 vtx_nmls[12];
-			}
-			cube_vtx_patterns[254];
+			
+			CBUFFER_START(awef)
+				PerCubePatternVtx aaaaa[1];
 			CBUFFER_END
-			//StructuredBuffer<PerCubePatternVtx> cube_vtx_patterns;
 
-			CBUFFER_START(_PerCubeVertex)
+			//CBUFFER_START(_PerCubePatternIndexswef)
+			//PerCubePatternIdx cube_idx_patterns[254];
+			//CBUFFER_END
+			StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
+
+			//CBUFFER_START(_PerCubePatternVertex)
+			//PerCubePatternVtx cube_vtx_patterns[254];
+			//CBUFFER_END
+			StructuredBuffer<PerCubePatternVtx> cube_vtx_patterns;
+
+			//CBUFFER_START(_PerCubeVertex)
 			struct PerCubeVertex
 			{
 				float3 base_vtx;
 				int3 near_cube_ivtx;
 				int3 near_cube_ivtx_offsets_prev_and_next[2];
-			}/*
-			cube_vtxs[12]*/;
-			CBUFFER_END
+			};
+			//cube_vtxs[12];
+			//CBUFFER_END
 			StructuredBuffer<PerCubeVertex> cube_vtxs;
 
-			CBUFFER_START(_PerCubeGrid)
+			//CBUFFER_START(_PerCubeGrid)
 			struct PerGrid
 			{
 				float3 pos;
 				int4 near_gridids_prev_and_next[2];
 				// +0 -> prev gridid { x:left,  y:up,   z:front, w:current }
 				// +1 -> next gridid { x:right, y:down, z:back,  w:current }
-			}/*
+			};/*
 			grids[512]*/;
-			CBUFFER_END
+			//CBUFFER_END
 			StructuredBuffer<PerGrid> grids;
 
 
@@ -178,7 +182,7 @@
 			{
 				v2f o;
 
-				const uint data = cube_instances[i];
+				const uint data = cube_instances[i] + aaaaa[0].vtx_nmls[0];
 				const uint cubeId = (data & 0xff) - 1;
 				//const uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
 
