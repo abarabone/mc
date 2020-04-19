@@ -49,26 +49,26 @@
 			Texture2DArray<uint> grid_cubeids;
 
 
-			CBUFFER_START(PerCubePatternIndex2)
 			struct PerCubePatternIdx
 			{
 				int tri_ivtxs[3 * 4];
-			}
-			cube_idx_patterns[254];
-			CBUFFER_END
+			};
+			//CBUFFER_START(_PerCubePatternIndex)
+				PerCubePatternIdx cube_idx_patterns[254];
+			//CBUFFER_END
 			//StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
 
 
-			CBUFFER_START(PerCubePatternVertex)
+			CBUFFER_START(_PerCubePatternVertex)
 			struct PerCubePatternVtx
 			{
 				float3 vtx_nmls[12];
-			}/*
-			cube_vtx_patterns[254]*/;
+			}
+			cube_vtx_patterns[254];
 			CBUFFER_END
-			StructuredBuffer<PerCubePatternVtx> cube_vtx_patterns;
+			//StructuredBuffer<PerCubePatternVtx> cube_vtx_patterns;
 
-			CBUFFER_START(PerCubeVertex)
+			CBUFFER_START(_PerCubeVertex)
 			struct PerCubeVertex
 			{
 				float3 base_vtx;
@@ -79,7 +79,7 @@
 			CBUFFER_END
 			StructuredBuffer<PerCubeVertex> cube_vtxs;
 
-			CBUFFER_START(PerCubeGrid)
+			CBUFFER_START(_PerCubeGrid)
 			struct PerGrid
 			{
 				float3 pos;
