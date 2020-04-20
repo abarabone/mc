@@ -49,10 +49,10 @@ namespace MarchingCubes
             this.Material.SetConstantBuffer( "aaa", res.baseVtxsBuffer, 0, res.baseVtxsBuffer.stride * res.baseVtxsBuffer.count );
             //this.Material.SetBuffer( "BaseVtxList", res.baseVtxsBuffer );
 
-            //this.Material.SetConstantBuffer( "IdxList", res.idxListsBuffer, 0, res.idxListsBuffer.stride * res.idxListsBuffer.count );
-            this.Material.SetBuffer( "IdxList", res.idxListsBuffer );
+            //this.Material.SetConstantBuffer( "cube_idx_patterns", res.idxListsBuffer, 0, res.idxListsBuffer.stride * res.idxListsBuffer.count );
+            this.Material.SetBuffer( "cube_idx_patterns", res.idxListsBuffer );
 
-            this.Material.SetBuffer( "Instances", res.instancesBuffer );
+            this.Material.SetBuffer( "cube_instances", res.instancesBuffer );
             this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
             this.Material.SetBuffer( "near_gridids_prev_and_next", res.nearGridIdBuffer );
             this.Material.SetBuffer( "Normals", res.triNormalsBuffer );
@@ -77,8 +77,8 @@ namespace MarchingCubes
             this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.gridCubeIdBuffer );
 
             //this.Material.SetBuffer( "BaseVtxList", res.baseVtxsBuffer );
-            //this.Material.SetBuffer( "IdxList", res.idxListsBuffer );
-            //this.Material.SetBuffer( "Instances", res.instancesBuffer );
+            //this.Material.SetBuffer( "cube_idx_patterns", res.idxListsBuffer );
+            //this.Material.SetBuffer( "cube_instances", res.instancesBuffer );
             //this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
             //this.Material.SetBuffer( "near_gridids_prev_and_next", res.nearGridIdBuffer );
             ////this.Material.SetBuffer( "Normals", res.triNormalsBuffer );

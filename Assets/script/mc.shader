@@ -58,10 +58,6 @@
 			Texture2DArray<uint> grid_cubeids;
 
 			
-			CBUFFER_START(awef)
-				PerCubePatternVtx aaaaa[1];
-			CBUFFER_END
-
 			//CBUFFER_START(_PerCubePatternIndexswef)
 			//PerCubePatternIdx cube_idx_patterns[254];
 			//CBUFFER_END
@@ -182,7 +178,7 @@
 			{
 				v2f o;
 
-				const uint data = cube_instances[i] + aaaaa[0].vtx_nmls[0];
+				const uint data = cube_instances[i];// +aaaaa[0].vtx_nmls[0];
 				const uint cubeId = (data & 0xff) - 1;
 				//const uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
 
