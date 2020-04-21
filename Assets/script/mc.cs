@@ -61,6 +61,64 @@ namespace MarchingCubes
             
         }
 
+        void setResource2()
+        {
+        StructuredBuffer<uint> cube_instances;
+        Texture2DArray<uint> grid_cubeids;
+
+
+
+            //this.Material.SetConstantBuffer( "PerCubePatternIdx",  );
+            //this.Material.SetConstantBuffer( "PerCubePatternVtx",  );
+            //this.Material.SetConstantBuffer( "PerCubeVertex",  );
+            //this.Material.SetConstantBuffer( "PerGrid",  );
+
+            this.Material.SetConstantBuffer( "cube_idx_patterns",  );
+            this.Material.SetConstantBuffer( "cube_vtx_patterns",  );
+            this.Material.SetConstantBuffer( "cube_vtxs",  );
+            this.Material.SetConstantBuffer( "grids",  );
+
+            
+
+            struct PerCubePatternIdx
+        {
+            int tri_ivtxs[ 3 * 4 ];
+        };
+        //CBUFFER_START(_PerCubePatternIndexswef)
+        //PerCubePatternIdx cube_idx_patterns[254];
+        //CBUFFER_END
+        StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
+
+        struct PerCubePatternVtx
+        {
+            float3 vtx_nmls[ 12 ];
+        };
+        //CBUFFER_START(_PerCubePatternVertex)
+        //PerCubePatternVtx cube_vtx_patterns[254];
+        //CBUFFER_END
+        StructuredBuffer<PerCubePatternVtx> cube_vtx_patterns;
+
+        //CBUFFER_START(_PerCubeVertex)
+        struct PerCubeVertex
+        {
+            float3 base_vtx;
+            int3 near_cube_ivtx;
+            int3 near_cube_ivtx_offsets_prev_and_next[ 2 ];
+        };
+        //cube_vtxs[12];
+        //CBUFFER_END
+        StructuredBuffer<PerCubeVertex> cube_vtxs;
+        
+        struct PerGrid
+        {
+            float3 pos;
+            int4 near_gridids_prev_and_next[ 2 ];
+            // +0 -> prev gridid { x:left,  y:up,   z:front, w:current }
+            // +1 -> next gridid { x:right, y:down, z:back,  w:current }
+        };
+			StructuredBuffer<PerGrid> grids;
+    }
+
 
 
         unsafe void Awake()
@@ -288,6 +346,51 @@ namespace MarchingCubes
 
 
 
+    struct MeshResources2 : System.IDisposable
+    {
+        public ComputeBuffer ArgsBufferForInstancing;
+        public ComputeBuffer ArgsBufferForDispatch;
+
+        public ComputeBuffer CubeIndexPatternBuffer;
+        public ComputeBuffer CubeVertexPatternBuffer;
+        public ComputeBuffer CubeVertexBuffer;
+        public ComputeBuffer GridBuffer;
+        
+        public ComputeBuffer CubeInstancesBuffer;
+        public RenderTexture GridCubeIdBuffer;
+        
+        public Mesh mesh;
+
+        public MeshResources2( MarchingCubeAsset asset, int maxGridLength ) : this()
+        {
+            this.ArgsBufferForInstancing = ComputeShaderUtility.CreateIndirectArgumentsBufferForInstancing();
+            this.ArgsBufferForDispatch = ComputeShaderUtility.CreateIndirectArgumentsBufferForDispatch();
+
+            this.CubeIndexPatternBuffer =;
+            this.CubeVertexPatternBuffer = ;
+            this.CubeVertexBuffer =;
+            this.GridBuffer =;
+
+            this.CubeInstancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
+            this.GridCubeIdBuffer = createGridCubeIdShaderBuffer_( maxGridLength );
+
+            this.mesh = createMesh_();
+        }
+
+        public void Dispose()
+        {
+            if( this.ArgsBufferForInstancing != null ) this.ArgsBufferForInstancing.Dispose();
+            if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
+
+            if( this.CubeIndexPatternBuffer != null ) this.CubeIndexPatternBuffer.Dispose();
+            if( this.CubeVertexPatternBuffer != null ) this.CubeVertexPatternBuffer.Dispose();
+            if( this.CubeVertexBuffer != null ) this.CubeVertexBuffer.Dispose();
+            if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
+
+            if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
+            if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
+        }
+    }
 
 
 
