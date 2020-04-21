@@ -37,6 +37,7 @@ namespace MarchingCubes
         //NativeQueue<CubeInstance> cubeInstances;
 
         MeshResources meshResources;
+        MeshResources2 meshResources2;
 
         public int maxDrawGridLength;
 
@@ -61,63 +62,21 @@ namespace MarchingCubes
             
         }
 
-        void setResource2()
+        void setResources2()
         {
-        StructuredBuffer<uint> cube_instances;
-        Texture2DArray<uint> grid_cubeids;
-
-
+            var res = this.meshResources2;
 
             //this.Material.SetConstantBuffer( "PerCubePatternIdx",  );
             //this.Material.SetConstantBuffer( "PerCubePatternVtx",  );
             //this.Material.SetConstantBuffer( "PerCubeVertex",  );
             //this.Material.SetConstantBuffer( "PerGrid",  );
 
-            this.Material.SetConstantBuffer( "cube_idx_patterns",  );
-            this.Material.SetConstantBuffer( "cube_vtx_patterns",  );
-            this.Material.SetConstantBuffer( "cube_vtxs",  );
-            this.Material.SetConstantBuffer( "grids",  );
+            this.Material.SetConstantBuffer( "cube_idx_patterns", res.CubeIndexPatternBuffer, 0, res.CubeIndexPatternBuffer.stride * res.CubeIndexPatternBuffer.count );
+            this.Material.SetConstantBuffer( "cube_vtx_patterns", res.CubeVertexPatternBuffer, 0, res.CubeVertexPatternBuffer.stride * res.CubeVertexPatternBuffer.count );
+            this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer, 0, res.CubeVertexBuffer.stride * res.CubeVertexBuffer.count );
+            this.Material.SetConstantBuffer( "grids", res.GridBuffer, 0, res.GridBuffer.stride * res.GridBuffer.count );
 
-            
-
-            struct PerCubePatternIdx
-        {
-            int tri_ivtxs[ 3 * 4 ];
-        };
-        //CBUFFER_START(_PerCubePatternIndexswef)
-        //PerCubePatternIdx cube_idx_patterns[254];
-        //CBUFFER_END
-        StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
-
-        struct PerCubePatternVtx
-        {
-            float3 vtx_nmls[ 12 ];
-        };
-        //CBUFFER_START(_PerCubePatternVertex)
-        //PerCubePatternVtx cube_vtx_patterns[254];
-        //CBUFFER_END
-        StructuredBuffer<PerCubePatternVtx> cube_vtx_patterns;
-
-        //CBUFFER_START(_PerCubeVertex)
-        struct PerCubeVertex
-        {
-            float3 base_vtx;
-            int3 near_cube_ivtx;
-            int3 near_cube_ivtx_offsets_prev_and_next[ 2 ];
-        };
-        //cube_vtxs[12];
-        //CBUFFER_END
-        StructuredBuffer<PerCubeVertex> cube_vtxs;
-        
-        struct PerGrid
-        {
-            float3 pos;
-            int4 near_gridids_prev_and_next[ 2 ];
-            // +0 -> prev gridid { x:left,  y:up,   z:front, w:current }
-            // +1 -> next gridid { x:right, y:down, z:back,  w:current }
-        };
-			StructuredBuffer<PerGrid> grids;
-    }
+        }
 
 
 
@@ -134,15 +93,7 @@ namespace MarchingCubes
             this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.instancesBuffer );
             this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.gridCubeIdBuffer );
 
-            //this.Material.SetBuffer( "BaseVtxList", res.baseVtxsBuffer );
-            //this.Material.SetBuffer( "cube_idx_patterns", res.idxListsBuffer );
-            //this.Material.SetBuffer( "cube_instances", res.instancesBuffer );
-            //this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
-            //this.Material.SetBuffer( "near_gridids_prev_and_next", res.nearGridIdBuffer );
-            ////this.Material.SetBuffer( "Normals", res.triNormalsBuffer );
-            //this.Material.SetTexture( "grid_cubeids", res.gridCubeIdBuffer );
-            //this.Material.SetBuffer( "cube_normals", res.cubeNormalBuffer );
-            setResources();
+            setResources2();
 
 
             var cb = createCommandBuffer( res, this.Material );
@@ -366,13 +317,13 @@ namespace MarchingCubes
             this.ArgsBufferForInstancing = ComputeShaderUtility.CreateIndirectArgumentsBufferForInstancing();
             this.ArgsBufferForDispatch = ComputeShaderUtility.CreateIndirectArgumentsBufferForDispatch();
 
-            this.CubeIndexPatternBuffer =;
-            this.CubeVertexPatternBuffer = ;
-            this.CubeVertexBuffer =;
-            this.GridBuffer =;
-
             this.CubeInstancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
             this.GridCubeIdBuffer = createGridCubeIdShaderBuffer_( maxGridLength );
+
+            this.CubeIndexPatternBuffer = createCubeIndexPatternShaderBuffer( 254 );
+            this.CubeVertexPatternBuffer = createCubeVertexPatternShaderBuffer( 254 );
+            this.CubeVertexBuffer = createVetexShaderBuffer();
+            this.GridBuffer = createGridShaderBuffer_( 512 );
 
             this.mesh = createMesh_();
         }
@@ -382,13 +333,83 @@ namespace MarchingCubes
             if( this.ArgsBufferForInstancing != null ) this.ArgsBufferForInstancing.Dispose();
             if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
 
+            if( this.CubeInstancesBuffer != null ) this.CubeInstancesBuffer.Dispose();
+            if( this.GridCubeIdBuffer != null ) this.GridCubeIdBuffer.Release();
+
             if( this.CubeIndexPatternBuffer != null ) this.CubeIndexPatternBuffer.Dispose();
             if( this.CubeVertexPatternBuffer != null ) this.CubeVertexPatternBuffer.Dispose();
             if( this.CubeVertexBuffer != null ) this.CubeVertexBuffer.Dispose();
             if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
+        }
 
-            if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
-            if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
+        ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
+        {
+            var buffer = new ComputeBuffer( maxUnitLength, Marshal.SizeOf<uint>() );
+
+            return buffer;
+        }
+
+        RenderTexture createGridCubeIdShaderBuffer_( int maxGridLength )
+        {
+            var buffer = new RenderTexture( 32 * 32, 32, 0, UnityEngine.Experimental.Rendering.GraphicsFormat.R32_UInt, 0 );
+            buffer.enableRandomWrite = true;
+            buffer.dimension = TextureDimension.Tex2DArray;
+            buffer.volumeDepth = maxGridLength;
+            buffer.Create();
+
+            return buffer;
+        }
+
+        ComputeBuffer createCubeIndexPatternShaderBuffer( int cubePatternLength )
+        {
+            var buffer = new ComputeBuffer( cubePatternLength, Marshal.SizeOf<int>() * 3 * 4, ComputeBufferType.Constant );
+            
+            buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+            //buffer.SetData( baseVtxList_ );
+
+            return buffer;
+        }
+        ComputeBuffer createCubeVertexPatternShaderBuffer( int cubePatternLength )
+        {
+            var buffer = new ComputeBuffer( cubePatternLength, Marshal.SizeOf<float4>() * 12, ComputeBufferType.Constant );
+
+            buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+            //buffer.SetData( baseVtxList_ );
+
+            return buffer;
+        }
+        ComputeBuffer createVetexShaderBuffer()
+        {
+            var buffer = new ComputeBuffer( 12, Marshal.SizeOf<float4>() + Marshal.SizeOf<int4>() * 3, ComputeBufferType.Constant );
+
+            return buffer;
+        }
+        ComputeBuffer createGridShaderBuffer_( int maxGridLength )
+        {
+            var buffer = new ComputeBuffer( maxGridLength, Marshal.SizeOf<float4>() + Marshal.SizeOf<int4>() * 2, ComputeBufferType.Constant );
+
+            return buffer;
+        }
+
+
+
+        Mesh createMesh_()
+        {
+            var mesh_ = new Mesh();
+            mesh_.name = "marching cube unit";
+
+            var qVtx =
+                from i in Enumerable.Range( 0, 12 )
+                select new Vector3( i, i / 3, 0 )
+                ;
+            var qIdx =
+                from i in Enumerable.Range( 0, 3 * 4 )
+                select i
+                ;
+            mesh_.vertices = qVtx.ToArray();
+            mesh_.triangles = qIdx.ToArray();
+
+            return mesh_;
         }
     }
 
