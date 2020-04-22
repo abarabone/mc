@@ -53,9 +53,9 @@
 			{
 				int tri_ivtxs[3 * 4];
 			};
-			//CBUFFER_START(_PerCubePatternIndexswef)
-			PerCubePatternIdx cube_idx_patterns[254];
-			//CBUFFER_END
+			CBUFFER_START(_PerCubePatternIndex)
+			uint4 cube_idx_patterns[254];
+			CBUFFER_END
 			//StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
 
 			struct PerCubePatternVtx
@@ -92,7 +92,11 @@
 
 
 
-
+			uint get_byte(uint3 packed_uint3, int index)
+			{
+				const int iouter = index >> 2;
+				const uint element = dot(packed_uint3, );
+			}
 
 
 			static const int _32e0 = 1;
@@ -180,7 +184,7 @@
 			{
 				v2f o;
 
-				const uint data = cube_instances[i];// +aaaaa[0].vtx_nmls[0];
+				const uint data = cube_instances[i];
 				const uint cubeId = (data & 0xff) - 1;
 				//const uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
 
