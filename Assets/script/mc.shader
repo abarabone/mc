@@ -42,15 +42,6 @@
 				fixed4 color : COLOR;
 			};
 
-			struct PerCubePatternIdx
-			{
-				int tri_ivtxs[3 * 4];
-			};
-			struct PerCubePatternVtx
-			{
-				float3 vtx_nmls[12];
-			};
-
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
 
@@ -58,11 +49,19 @@
 			Texture2DArray<uint> grid_cubeids;
 
 			
+			struct PerCubePatternIdx
+			{
+				int tri_ivtxs[3 * 4];
+			};
 			//CBUFFER_START(_PerCubePatternIndexswef)
-			//PerCubePatternIdx cube_idx_patterns[254];
+			PerCubePatternIdx cube_idx_patterns[254];
 			//CBUFFER_END
-			StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
+			//StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
 
+			struct PerCubePatternVtx
+			{
+				float3 vtx_nmls[12];
+			};
 			//CBUFFER_START(_PerCubePatternVertex)
 			//PerCubePatternVtx cube_vtx_patterns[254];
 			//CBUFFER_END
@@ -90,6 +89,9 @@
 			grids[512]*/;
 			//CBUFFER_END
 			StructuredBuffer<PerGrid> grids;
+
+
+
 
 
 

@@ -37,34 +37,13 @@ namespace MarchingCubes
         //NativeQueue<CubeInstance> cubeInstances;
 
         MeshResources meshResources;
-        MeshResources2 meshResources2;
 
         public int maxDrawGridLength;
 
-
-
+        
         void setResources()
         {
             var res = this.meshResources;
-
-            this.Material.SetConstantBuffer( "aaa", res.baseVtxsBuffer, 0, res.baseVtxsBuffer.stride * res.baseVtxsBuffer.count );
-            //this.Material.SetBuffer( "BaseVtxList", res.baseVtxsBuffer );
-
-            //this.Material.SetConstantBuffer( "cube_idx_patterns", res.idxListsBuffer, 0, res.idxListsBuffer.stride * res.idxListsBuffer.count );
-            this.Material.SetBuffer( "cube_idx_patterns", res.idxListsBuffer );
-
-            this.Material.SetBuffer( "cube_instances", res.instancesBuffer );
-            this.Material.SetBuffer( "GridPositions", res.gridPositionBuffer );
-            this.Material.SetBuffer( "near_gridids_prev_and_next", res.nearGridIdBuffer );
-            this.Material.SetBuffer( "Normals", res.triNormalsBuffer );
-            this.Material.SetTexture( "grid_cubeids", res.gridCubeIdBuffer );
-            this.Material.SetBuffer( "cube_normals", res.cubeNormalBuffer );
-            
-        }
-
-        void setResources2()
-        {
-            var res = this.meshResources2;
 
             //this.Material.SetConstantBuffer( "PerCubePatternIdx",  );
             //this.Material.SetConstantBuffer( "PerCubePatternVtx",  );
@@ -297,169 +276,49 @@ namespace MarchingCubes
 
 
 
-    struct MeshResources2 : System.IDisposable
-    {
-        public ComputeBuffer ArgsBufferForInstancing;
-        public ComputeBuffer ArgsBufferForDispatch;
-
-        public ComputeBuffer CubeIndexPatternBuffer;
-        public ComputeBuffer CubeVertexPatternBuffer;
-        public ComputeBuffer CubeVertexBuffer;
-        public ComputeBuffer GridBuffer;
-        
-        public ComputeBuffer CubeInstancesBuffer;
-        public RenderTexture GridCubeIdBuffer;
-        
-        public Mesh mesh;
-
-        public MeshResources2( MarchingCubeAsset asset, int maxGridLength ) : this()
-        {
-            this.ArgsBufferForInstancing = ComputeShaderUtility.CreateIndirectArgumentsBufferForInstancing();
-            this.ArgsBufferForDispatch = ComputeShaderUtility.CreateIndirectArgumentsBufferForDispatch();
-
-            this.CubeInstancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
-            this.GridCubeIdBuffer = createGridCubeIdShaderBuffer_( maxGridLength );
-
-            this.CubeIndexPatternBuffer = createCubeIndexPatternShaderBuffer( 254 );
-            this.CubeVertexPatternBuffer = createCubeVertexPatternShaderBuffer( 254 );
-            this.CubeVertexBuffer = createVetexShaderBuffer();
-            this.GridBuffer = createGridShaderBuffer_( 512 );
-
-            this.mesh = createMesh_();
-        }
-
-        public void Dispose()
-        {
-            if( this.ArgsBufferForInstancing != null ) this.ArgsBufferForInstancing.Dispose();
-            if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
-
-            if( this.CubeInstancesBuffer != null ) this.CubeInstancesBuffer.Dispose();
-            if( this.GridCubeIdBuffer != null ) this.GridCubeIdBuffer.Release();
-
-            if( this.CubeIndexPatternBuffer != null ) this.CubeIndexPatternBuffer.Dispose();
-            if( this.CubeVertexPatternBuffer != null ) this.CubeVertexPatternBuffer.Dispose();
-            if( this.CubeVertexBuffer != null ) this.CubeVertexBuffer.Dispose();
-            if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
-        }
-
-        ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
-        {
-            var buffer = new ComputeBuffer( maxUnitLength, Marshal.SizeOf<uint>() );
-
-            return buffer;
-        }
-
-        RenderTexture createGridCubeIdShaderBuffer_( int maxGridLength )
-        {
-            var buffer = new RenderTexture( 32 * 32, 32, 0, UnityEngine.Experimental.Rendering.GraphicsFormat.R32_UInt, 0 );
-            buffer.enableRandomWrite = true;
-            buffer.dimension = TextureDimension.Tex2DArray;
-            buffer.volumeDepth = maxGridLength;
-            buffer.Create();
-
-            return buffer;
-        }
-
-        ComputeBuffer createCubeIndexPatternShaderBuffer( int cubePatternLength )
-        {
-            var buffer = new ComputeBuffer( cubePatternLength, Marshal.SizeOf<int>() * 3 * 4, ComputeBufferType.Constant );
-            
-            buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
-            //buffer.SetData( baseVtxList_ );
-
-            return buffer;
-        }
-        ComputeBuffer createCubeVertexPatternShaderBuffer( int cubePatternLength )
-        {
-            var buffer = new ComputeBuffer( cubePatternLength, Marshal.SizeOf<float4>() * 12, ComputeBufferType.Constant );
-
-            buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
-            //buffer.SetData( baseVtxList_ );
-
-            return buffer;
-        }
-        ComputeBuffer createVetexShaderBuffer()
-        {
-            var buffer = new ComputeBuffer( 12, Marshal.SizeOf<float4>() + Marshal.SizeOf<int4>() * 3, ComputeBufferType.Constant );
-
-            return buffer;
-        }
-        ComputeBuffer createGridShaderBuffer_( int maxGridLength )
-        {
-            var buffer = new ComputeBuffer( maxGridLength, Marshal.SizeOf<float4>() + Marshal.SizeOf<int4>() * 2, ComputeBufferType.Constant );
-
-            return buffer;
-        }
-
-
-
-        Mesh createMesh_()
-        {
-            var mesh_ = new Mesh();
-            mesh_.name = "marching cube unit";
-
-            var qVtx =
-                from i in Enumerable.Range( 0, 12 )
-                select new Vector3( i, i / 3, 0 )
-                ;
-            var qIdx =
-                from i in Enumerable.Range( 0, 3 * 4 )
-                select i
-                ;
-            mesh_.vertices = qVtx.ToArray();
-            mesh_.triangles = qIdx.ToArray();
-
-            return mesh_;
-        }
-    }
-
-
-
-
         struct MeshResources : System.IDisposable
         {
-            public ComputeBuffer argsBufferForInstancing;
-            public ComputeBuffer argsBufferForDispatch;
-            public ComputeBuffer baseVtxsBuffer;
-            public ComputeBuffer idxListsBuffer;
-            public ComputeBuffer instancesBuffer;
-            public ComputeBuffer gridPositionBuffer;
-            public ComputeBuffer nearGridIdBuffer;
-            public ComputeBuffer triNormalsBuffer;
-            //public ComputeBuffer vtxNormalsBuffer;
-            public RenderTexture gridCubeIdBuffer;
-            public ComputeBuffer cubeNormalBuffer;//
+            public ComputeBuffer ArgsBufferForInstancing;
+            public ComputeBuffer ArgsBufferForDispatch;
+
+            public ComputeBuffer CubeIndexPatternBuffer;
+            public ComputeBuffer CubeVertexPatternBuffer;
+            public ComputeBuffer CubeVertexBuffer;
+            public ComputeBuffer GridBuffer;
+        
+            public ComputeBuffer CubeInstancesBuffer;
+            public RenderTexture GridCubeIdBuffer;
+        
             public Mesh mesh;
 
             public MeshResources( MarchingCubeAsset asset, int maxGridLength ) : this()
             {
-                this.argsBufferForInstancing = ComputeShaderUtility.CreateIndirectArgumentsBufferForInstancing();
-                this.argsBufferForDispatch = ComputeShaderUtility.CreateIndirectArgumentsBufferForDispatch();
-                this.instancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
-                this.baseVtxsBuffer = createBaseVtxShaderBuffer_( asset.BaseVertexList );
-                this.idxListsBuffer = createIdxListsShaderBuffer_( asset.CubeIdAndVertexIndicesList );
-                this.gridPositionBuffer = createGridPositionShaderBuffer_( maxGridLength );
-                this.nearGridIdBuffer = createNearGridShaderBuffer_( maxGridLength );
-                this.triNormalsBuffer = createTriangleNormalshaderBuffer_( asset.CubeIdAndVertexIndicesList );
-                //this.vtxNormalsBuffer = createVertexNormalshaderBuffer_( maxGridLength );
-                this.gridCubeIdBuffer = createGridCubeIdShaderBuffer_( maxGridLength );
-                this.cubeNormalBuffer = createCubeNormalShaderBuffer_( asset.CubeIdAndVertexIndicesList );//
+                this.ArgsBufferForInstancing = ComputeShaderUtility.CreateIndirectArgumentsBufferForInstancing();
+                this.ArgsBufferForDispatch = ComputeShaderUtility.CreateIndirectArgumentsBufferForDispatch();
+
+                this.CubeInstancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
+                this.GridCubeIdBuffer = createGridCubeIdShaderBuffer_( maxGridLength );
+
+                this.CubeIndexPatternBuffer = createCubeIndexPatternShaderBuffer( 254 );
+                this.CubeVertexPatternBuffer = createCubeVertexPatternShaderBuffer( 254 );
+                this.CubeVertexBuffer = createVetexShaderBuffer();
+                this.GridBuffer = createGridShaderBuffer_( 512 );
+
                 this.mesh = createMesh_();
             }
 
             public void Dispose()
             {
-                if( this.argsBufferForInstancing != null ) this.argsBufferForInstancing.Dispose();
-                if( this.argsBufferForDispatch != null ) this.argsBufferForDispatch.Dispose();
-                if( this.baseVtxsBuffer != null ) this.baseVtxsBuffer.Dispose();
-                if( this.idxListsBuffer != null ) this.idxListsBuffer.Dispose();
-                if( this.instancesBuffer != null ) this.instancesBuffer.Dispose();
-                if( this.gridPositionBuffer != null ) this.gridPositionBuffer.Dispose();
-                if( this.nearGridIdBuffer != null ) this.nearGridIdBuffer.Dispose();
-                if( this.triNormalsBuffer != null ) this.triNormalsBuffer.Dispose();
-                //if( this.vtxNormalsBuffer != null ) this.vtxNormalsBuffer.Dispose();
-                if( this.gridCubeIdBuffer != null ) this.gridCubeIdBuffer.Release();
-                if( this.cubeNormalBuffer != null ) this.cubeNormalBuffer.Dispose();//
+                if( this.ArgsBufferForInstancing != null ) this.ArgsBufferForInstancing.Dispose();
+                if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
+
+                if( this.CubeInstancesBuffer != null ) this.CubeInstancesBuffer.Dispose();
+                if( this.GridCubeIdBuffer != null ) this.GridCubeIdBuffer.Release();
+
+                if( this.CubeIndexPatternBuffer != null ) this.CubeIndexPatternBuffer.Dispose();
+                if( this.CubeVertexPatternBuffer != null ) this.CubeVertexPatternBuffer.Dispose();
+                if( this.CubeVertexBuffer != null ) this.CubeVertexBuffer.Dispose();
+                if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
             }
 
             ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
@@ -468,6 +327,79 @@ namespace MarchingCubes
 
                 return buffer;
             }
+
+            RenderTexture createGridCubeIdShaderBuffer_( int maxGridLength )
+            {
+                var buffer = new RenderTexture( 32 * 32, 32, 0, UnityEngine.Experimental.Rendering.GraphicsFormat.R32_UInt, 0 );
+                buffer.enableRandomWrite = true;
+                buffer.dimension = TextureDimension.Tex2DArray;
+                buffer.volumeDepth = maxGridLength;
+                buffer.Create();
+
+                return buffer;
+            }
+
+            ComputeBuffer createCubeIndexPatternShaderBuffer( int cubePatternLength )
+            {
+                var buffer = new ComputeBuffer( cubePatternLength, Marshal.SizeOf<int>() * 3 * 4, ComputeBufferType.Constant );
+            
+                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+                //buffer.SetData( baseVtxList_ );
+
+                return buffer;
+            }
+            ComputeBuffer createCubeVertexPatternShaderBuffer( int cubePatternLength )
+            {
+                var buffer = new ComputeBuffer( cubePatternLength, Marshal.SizeOf<float4>() * 12, ComputeBufferType.Constant );
+
+                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+                //buffer.SetData( baseVtxList_ );
+
+                return buffer;
+            }
+            ComputeBuffer createVetexShaderBuffer()
+            {
+                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<float4>() + Marshal.SizeOf<int4>() * 3, ComputeBufferType.Constant );
+
+                    var q =
+                        from x in cubeIdsAndVtxIndexLists_
+                            //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
+                            //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
+                        orderby x.cubeId
+                        select x.vertexIndices.Concat( Enumerable.Repeat( 0, 12 - x.vertexIndices.Length ) )
+                        ;
+                    buffer.SetData( q.SelectMany( x => x ).Cast<int>().ToArray() );
+
+                    return buffer;
+            }
+            ComputeBuffer createGridShaderBuffer_( int maxGridLength )
+            {
+                var buffer = new ComputeBuffer( maxGridLength, Marshal.SizeOf<float4>() + Marshal.SizeOf<int4>() * 2, ComputeBufferType.Constant );
+
+                return buffer;
+            }
+
+
+
+            Mesh createMesh_()
+            {
+                var mesh_ = new Mesh();
+                mesh_.name = "marching cube unit";
+
+                var qVtx =
+                    from i in Enumerable.Range( 0, 12 )
+                    select new Vector3( i, i / 3, 0 )
+                    ;
+                var qIdx =
+                    from i in Enumerable.Range( 0, 3 * 4 )
+                    select i
+                    ;
+                mesh_.vertices = qVtx.ToArray();
+                mesh_.triangles = qIdx.ToArray();
+
+                return mesh_;
+            }
+
 
             ComputeBuffer createGridPositionShaderBuffer_( int maxBufferLength )
             {
@@ -509,38 +441,7 @@ namespace MarchingCubes
                 return buffer;
             }
 
-            ComputeBuffer createTriangleNormalshaderBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
-            {
-                var buffer = new ComputeBuffer( 254 * 4, Marshal.SizeOf<Vector3>() );
 
-                var q =
-                    from x in cubeIdsAndVtxIndexLists_
-                        //.Prepend( (cubeId: (byte)0, vtxIdxs: new int[ 0 ]) )
-                        //.Append( (cubeId: (byte)255, vtxIdxs: new int[ 0 ]) )
-                    orderby x.cubeId
-                    select x.normalsForTriangle.Concat( Enumerable.Repeat( Vector3.zero, 4 - x.normalsForTriangle.Length ) )
-                ;
-
-                buffer.SetData( q.SelectMany(x=>x).ToArray() );
-
-                return buffer;
-            }
-            //ComputeBuffer createVertexNormalshaderBuffer_( int maxGridLength )
-            //{
-            //    var buffer = new ComputeBuffer( 32*32*32*3 * maxGridLength, Marshal.SizeOf<Vector3>() );
-
-            //    return buffer;
-            //}
-            RenderTexture createGridCubeIdShaderBuffer_( int maxGridLength )
-            {
-                var buffer = new RenderTexture( 32 * 32, 32, 0, UnityEngine.Experimental.Rendering.GraphicsFormat.R32_UInt, 0 );
-                buffer.enableRandomWrite = true;
-                buffer.dimension = TextureDimension.Tex2DArray;
-                buffer.volumeDepth = maxGridLength;
-                buffer.Create();
-                
-                return buffer;
-            }
             ComputeBuffer createCubeNormalShaderBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdAndVertexIndicesList )
             {
                 var buffer = new ComputeBuffer( 256 * 12, Marshal.SizeOf<float3>() );
@@ -549,26 +450,7 @@ namespace MarchingCubes
 
                 return buffer;
             }
-
-
-            Mesh createMesh_()
-            {
-                var mesh_ = new Mesh();
-                mesh_.name = "marching cube unit";
-
-                var qVtx =
-                    from i in Enumerable.Range( 0, 12 )
-                    select new Vector3( i, i / 3, 0 )
-                    ;
-                var qIdx =
-                    from i in Enumerable.Range( 0, 3 * 4 )
-                    select i
-                    ;
-                mesh_.vertices = qVtx.ToArray();
-                mesh_.triangles = qIdx.ToArray();
-
-                return mesh_;
-            }
+            
         }
 
 
