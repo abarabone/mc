@@ -48,54 +48,52 @@
 			StructuredBuffer<uint> cube_instances;
 			Texture2DArray<uint> grid_cubeids;
 
+
+			float3 normals[155];
+
+			uint4 cube_patterns[254][2];
+			// [0] : vertex posision index { x: tri0(i0>>0 | i1>>8 | i2>>16)  y: tri1  z: tri2  w: tri3 }
+			// [1] : vertex normal index { x: (i0>>0 | i1>>8 | i2>>16 | i3>>24)  y: i4|5|6|7  z:i8|9|10|11 }
+
+
+			uint4 cube_vtxs[12];
+			// x: near vertex index (x>>0 | y>>8 | z>>16)
+			// y: near vertex index offset prev (left >>0 | up  >>8 | front>>16)
+			// z: near vertex index offset next (right>>0 | down>>8 | back >>16)
+			// w: pos(x>>0 | y>>8 | z>>16)
+
+
+			uint3 grids[512][2];
+			// [0] : position as float3
+			// [1] : near grid id
+			// { x: prev(left>>0 | up>>9 | front>>18)  y: next(right>>0 | down>>9 | back>>18)  z: current }
+
 			
-			struct PerCubePatternIdx
+			static const int4 element_mask_table[] =
 			{
-				int tri_ivtxs[3 * 4];
+				{1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1}
 			};
-			CBUFFER_START(_PerCubePatternIndex)
-			uint4 cube_idx_patterns[254];
-			CBUFFER_END
-			//StructuredBuffer<PerCubePatternIdx> cube_idx_patterns;
-
-			struct PerCubePatternVtx
+			
+			uint get_packed8bits(uint4 packed_uint4, int element_index, int packed_index)
 			{
-				float3 vtx_nmls[12];
-			};
-			//CBUFFER_START(_PerCubePatternVertex)
-			//PerCubePatternVtx cube_vtx_patterns[254];
-			//CBUFFER_END
-			StructuredBuffer<PerCubePatternVtx> cube_vtx_patterns;
-
-			//CBUFFER_START(_PerCubeVertex)
-			struct PerCubeVertex
+				const int iouter = element_index;
+				const int iinner = packed_index << 3;// * 8
+				const uint element = dot(packed_uint4, element_mask_table[iouter]);
+				return element >> iinner & 0xf;
+			}
+			uint get_packed8bits(uint4 packed_uint4, int index)
 			{
-				float3 base_vtx;
-				int3 near_cube_ivtx;
-				int3 near_cube_ivtx_offsets_prev_and_next[2];
-			};
-			//cube_vtxs[12];
-			//CBUFFER_END
-			StructuredBuffer<PerCubeVertex> cube_vtxs;
+				const int iouter = index >> 2;// / 4
+				const int iinner = index & 0x3;
+				return get_packed8bits(packed_uint4, iouter, iinner);
+			}
 
-			//CBUFFER_START(_PerCubeGrid)
-			struct PerGrid
+			uint get_packed9bits(uint4 packed_uint4, int element_index, int packed_index)
 			{
-				float3 pos;
-				int4 near_gridids_prev_and_next[2];
-				// +0 -> prev gridid { x:left,  y:up,   z:front, w:current }
-				// +1 -> next gridid { x:right, y:down, z:back,  w:current }
-			};/*
-			grids[512]*/;
-			//CBUFFER_END
-			StructuredBuffer<PerGrid> grids;
-
-
-
-			uint get_byte(uint3 packed_uint3, int index)
-			{
-				const int iouter = index >> 2;
-				const uint element = dot(packed_uint3, );
+				const int iouter = element_index;
+				const int iinner = packed_index * 9;
+				const uint element = dot(packed_uint4, element_mask_table[iouter]);
+				return element >> iinner & 0x1f;
 			}
 
 
