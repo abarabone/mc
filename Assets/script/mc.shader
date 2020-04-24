@@ -45,6 +45,7 @@
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
 
+
 			StructuredBuffer<uint> cube_instances;
 			Texture2DArray<uint> grid_cubeids;
 
@@ -54,6 +55,9 @@
 			uint4 cube_patterns[254][2];
 			// [0] : vertex posision index { x: tri0(i0>>0 | i1>>8 | i2>>16)  y: tri1  z: tri2  w: tri3 }
 			// [1] : vertex normal index { x: (i0>>0 | i1>>8 | i2>>16 | i3>>24)  y: i4|5|6|7  z:i8|9|10|11 }
+
+			static const int ivtx_pos = 0;
+			static const int ivtx_nml = 1;
 
 
 			uint4 cube_vtxs[12];
@@ -68,7 +72,10 @@
 			// [1] : near grid id
 			// { x: prev(left>>0 | up>>9 | front>>18)  y: next(right>>0 | down>>9 | back>>18)  z: current }
 
-			
+			static const int grid_pos = 0;
+			static const int grid_near_id = 1;
+
+
 			static const int4 element_mask_table[] =
 			{
 				{1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1}
@@ -97,6 +104,10 @@
 			}
 
 
+
+
+
+
 			static const int _32e0 = 1;
 			static const int _32e1 = 32;
 			static const int _32e2 = 32 * 32;
@@ -118,7 +129,9 @@
 
 			float3 get_vtx_normal_current(int cubeid_current, int ivtx_current)
 			{
-				return cube_vtx_patterns[cubeid_current].vtx_nmls[ivtx_current];
+				const int inml_packed = cube_patterns[cubeid_current][ivtx_nml];
+				const int inml = get_packed8bits(inml_packed, ivtx_current);
+				return normals[inml];
 			}
 
 			uint get_cubeid(int gridid, int3 cubepos)
@@ -130,6 +143,7 @@
 
 				return grid_cubeids[int3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid)];
 			}
+
 			int get_gridid_ortho(int gridid_current, int3 cubepos, out int pvev_next_selector, out int4 grid_mask)
 			{
 				const int3 outerpos = cubepos >> 5;
