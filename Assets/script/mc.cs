@@ -44,16 +44,28 @@ namespace MarchingCubes
         void setResources()
         {
             var res = this.meshResources;
+            
+            //float3 normals[ 155 ];
 
-            //this.Material.SetConstantBuffer( "PerCubePatternIdx",  );
-            //this.Material.SetConstantBuffer( "PerCubePatternVtx",  );
-            //this.Material.SetConstantBuffer( "PerCubeVertex",  );
-            //this.Material.SetConstantBuffer( "PerGrid",  );
-
-            this.Material.SetConstantBuffer( "cube_idx_patterns", res.CubeIndexPatternBuffer, 0, res.CubeIndexPatternBuffer.stride * res.CubeIndexPatternBuffer.count );
-            this.Material.SetConstantBuffer( "cube_vtx_patterns", res.CubeVertexPatternBuffer, 0, res.CubeVertexPatternBuffer.stride * res.CubeVertexPatternBuffer.count );
-            this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer, 0, res.CubeVertexBuffer.stride * res.CubeVertexBuffer.count );
-            this.Material.SetConstantBuffer( "grids", res.GridBuffer, 0, res.GridBuffer.stride * res.GridBuffer.count );
+            //uint4 cube_patterns[ 254 ][2];
+			// [0] : vertex posision index { x: tri0(i0>>0 | i1>>8 | i2>>16)  y: tri1  z: tri2  w: tri3 }
+			// [1] : vertex normal index { x: (i0>>0 | i1>>8 | i2>>16 | i3>>24)  y: i4|5|6|7  z:i8|9|10|11 }
+            
+            //uint4 cube_vtxs[ 12 ];
+            // x: near vertex index (x>>0 | y>>8 | z>>16)
+            // y: near vertex index offset prev (left >>0 | up  >>8 | front>>16)
+            // z: near vertex index offset next (right>>0 | down>>8 | back >>16)
+            // w: pos(x>>0 | y>>8 | z>>16)
+            
+            //uint3 grids[ 512 ][2];
+			// [0] : position as float3
+			// [1] : near grid id
+			// { x: prev(left>>0 | up>>9 | front>>18)  y: next(right>>0 | down>>9 | back>>18)  z: current }
+            
+            this.Material.SetConstantBuffer( "normals", res.CubeIndexPatternBuffer );
+            this.Material.SetConstantBuffer( "cube_patterns", res.CubeVertexPatternBuffer );
+            this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer );
+            this.Material.SetConstantBuffer( "grids", res.GridBuffer );
 
         }
 
@@ -281,8 +293,8 @@ namespace MarchingCubes
             public ComputeBuffer ArgsBufferForInstancing;
             public ComputeBuffer ArgsBufferForDispatch;
 
-            public ComputeBuffer CubeIndexPatternBuffer;
-            public ComputeBuffer CubeVertexPatternBuffer;
+            public ComputeBuffer NormalBuffer;
+            public ComputeBuffer CubePatternBuffer;
             public ComputeBuffer CubeVertexBuffer;
             public ComputeBuffer GridBuffer;
         
@@ -299,8 +311,8 @@ namespace MarchingCubes
                 this.CubeInstancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
                 this.GridCubeIdBuffer = createGridCubeIdShaderBuffer_( maxGridLength );
 
-                this.CubeIndexPatternBuffer = createCubeIndexPatternShaderBuffer( 254 );
-                this.CubeVertexPatternBuffer = createCubeVertexPatternShaderBuffer( 254 );
+                this.NormalBuffer = createCubeIndexPatternShaderBuffer( 254 );
+                this.CubePatternBuffer = createCubeVertexPatternShaderBuffer( 254 );
                 this.CubeVertexBuffer = createVetexShaderBuffer();
                 this.GridBuffer = createGridShaderBuffer_( 512 );
 
@@ -315,10 +327,10 @@ namespace MarchingCubes
                 if( this.CubeInstancesBuffer != null ) this.CubeInstancesBuffer.Dispose();
                 if( this.GridCubeIdBuffer != null ) this.GridCubeIdBuffer.Release();
 
-                if( this.CubeIndexPatternBuffer != null ) this.CubeIndexPatternBuffer.Dispose();
-                if( this.CubeVertexPatternBuffer != null ) this.CubeVertexPatternBuffer.Dispose();
+                if( this.NormalBuffer != null ) this.NormalBuffer.Dispose();
+                if( this.CubePatternBuffer != null ) this.CubePatternBuffer.Dispose();
                 if( this.CubeVertexBuffer != null ) this.CubeVertexBuffer.Dispose();
-                if( this.ArgsBufferForDispatch != null ) this.ArgsBufferForDispatch.Dispose();
+                if( this.GridBuffer != null ) this.GridBuffer.Dispose();
             }
 
             ComputeBuffer createCubeIdInstancingShaderBuffer_( int maxUnitLength )
@@ -338,6 +350,42 @@ namespace MarchingCubes
 
                 return buffer;
             }
+            
+
+            ComputeBuffer createNormalList_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
+            {
+                var normalToIdDict = cubeIdsAndVtxIndexLists_
+                    .SelectMany( x => x.normalsForVertex )
+                    .Distinct( x => x )
+                    .Select( ( x, i ) => (x, i) )
+                    .ToDictionary( x => x.x, x => x.i );
+
+
+                var buffer = new ComputeBuffer( normalToIdDict.Count, Marshal.SizeOf<Vector4>(), ComputeBufferType.Constant );
+
+                buffer.SetData( normalToIdDict.Select( x => x.Key new Vector4(x.Key, ).ToArray() );
+
+                return buffer;
+            }
+
+            ComputeBuffer createCubePatternBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
+            {
+                var normalToIdDict = cubeIdsAndVtxIndexLists_
+                    .SelectMany( x => x.normalsForVertex )
+                    .Distinct( x => x )
+                    .Select( ( x, i ) => (x, i) )
+                    .ToDictionary( x => x.x, x => x.i );
+
+
+                var buffer = new ComputeBuffer( 254, Marshal.SizeOf<uint4>() * 2, ComputeBufferType.Constant );
+
+                buffer.SetData( normalToIdDict.Select( x => x.Key ).ToArray() );
+
+                return buffer;
+            }
+
+
+
 
             ComputeBuffer createCubeIndexPatternShaderBuffer( int cubePatternLength )
             {
@@ -518,6 +566,9 @@ namespace MarchingCubes
 
         static public ComputeBuffer CreateIndirectArgumentsBufferForDispatch() =>
             new ComputeBuffer( 1, sizeof( int ) * 3, ComputeBufferType.IndirectArguments, ComputeBufferMode.Immutable );
+        
+        static public void SetConstantBuffer( this Material mat, string name, ComputeBuffer buffer ) =>
+            mat.SetConstantBuffer( name, buffer, 0, buffer.stride * buffer.count );
     }
 
 
