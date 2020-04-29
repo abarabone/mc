@@ -249,42 +249,6 @@ namespace MarchingCubes
         int i;
 
 
-        
-        ((int x, int y, int z) prev, (int x, int y, int z) next)[] near_cube_offsets =
-        {
-            (( 0, 0, -1), ( 0, -1, 0)),
-            (( -1, 0, 0), ( 0, -1, 0)),
-            (( +1, 0, 0), ( 0, -1, 0)),
-            (( 0, 0, +1), ( 0, -1, 0)),
-
-            (( -1, 0, 0), ( 0, 0, -1)),
-            (( +1, 0, 0), ( 0, 0, -1)),
-            (( -1, 0, 0), ( 0, 0, +1)),
-            (( +1, 0, 0), ( 0, 0, +1)),
-
-            (( 0, 0, -1), ( 0, +1, 0)),
-            (( -1, 0, 0), ( 0, +1, 0)),
-            (( +1, 0, 0), ( 0, +1, 0)),
-            (( 0, 0, +1), ( 0, +1, 0)),
-        };
-        (int x, int y, int z)[] near_cube_ivtxs =
-        {
-            (3,8,11),
-            (2,9,10),
-            (1,10,9),
-            (0,11,8),
-
-            (5,6,7),
-            (4,7,6),
-            (7,4,5),
-            (6,5,4),
-
-            (11,0,3),
-            (10,1,2),
-            (9,2,1),
-            (8,3,0),
-        };
-
 
 
 
@@ -313,7 +277,7 @@ namespace MarchingCubes
 
                 this.NormalBuffer = createNormalList_( asset.CubeIdAndVertexIndicesList );
                 this.CubePatternBuffer = createCubePatternBuffer_( asset.CubeIdAndVertexIndicesList );
-                this.CubeVertexBuffer = ();
+                this.CubeVertexBuffer = createCubeVertexBuffer_( asset.BaseVertexList );
                 this.GridBuffer = ( 512 );
 
                 this.mesh = createMesh_();
@@ -373,6 +337,7 @@ namespace MarchingCubes
                         z = n.z,
                         w = 0.0f,
                     };
+
                 buffer.SetData( q.ToArray() );
 
                 return buffer;
@@ -391,10 +356,12 @@ namespace MarchingCubes
 
                 var q =
                     from cube in cubeIdsAndVtxIndexLists_
+                    orderby cube.cubeId
                     select (
                         toTriPositionIndex_( cube.vertexIndices ),
                         toVtxNormalIndex_( cube.normalsForVertex, normalToIdDict )
                     );
+
                 buffer.SetData( q.ToArray() );
 
                 return buffer;
@@ -423,37 +390,63 @@ namespace MarchingCubes
                 }
             }
 
-            ComputeBuffer createCubeVertexBuffer_()
+            ComputeBuffer createCubeVertexBuffer_( Vector3[] baseVertices )
             {
                 var buffer = new ComputeBuffer( 12, Marshal.SizeOf<uint4>(), ComputeBufferType.Constant );
 
+                ((int x, int y, int z) prev, (int x, int y, int z) next)[] near_cube_offsets =
+                {
+                    (( 0, 0, -1), ( 0, -1, 0)),
+                    (( -1, 0, 0), ( 0, -1, 0)),
+                    (( +1, 0, 0), ( 0, -1, 0)),
+                    (( 0, 0, +1), ( 0, -1, 0)),
+
+                    (( -1, 0, 0), ( 0, 0, -1)),
+                    (( +1, 0, 0), ( 0, 0, -1)),
+                    (( -1, 0, 0), ( 0, 0, +1)),
+                    (( +1, 0, 0), ( 0, 0, +1)),
+
+                    (( 0, 0, -1), ( 0, +1, 0)),
+                    (( -1, 0, 0), ( 0, +1, 0)),
+                    (( +1, 0, 0), ( 0, +1, 0)),
+                    (( 0, 0, +1), ( 0, +1, 0)),
+                };
+                (int x, int y, int z)[] near_cube_ivtxs =
+                {
+                    (3,8,11),
+                    (2,9,10),
+                    (1,10,9),
+                    (0,11,8),
+
+                    (5,6,7),
+                    (4,7,6),
+                    (7,4,5),
+                    (6,5,4),
+
+                    (11,0,3),
+                    (10,1,2),
+                    (9,2,1),
+                    (8,3,0),
+                };
+
                 var q =
-
-
-                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
+                    from v in Enumerable
+                        .Zip( near_cube_offsets, near_cube_ivtxs, ( x, y ) => (ofs: x, ivtx: y) )
+                        .Zip( baseVertices, (x,y) => (x.ofs, x.ivtx, pos: y) )
+                    let x = v.ivtx.x>>0 & 0xff | v.ivtx.y>> 8 & 0xff | v.ivtx.z>> 16 & 0xff
+                    let y = v.ofs.prev.x+1>>0 & 0xff | v.ofs.prev.y+1>>8 & 0xff | v.ofs.prev.z+1>>16 & 0xff
+                    let z = v.ofs.next.x+1>>0 & 0xff | v.ofs.next.y+1>>8 & 0xff | v.ofs.next.z+1>>16 & 0xff
+                    let w = (int)v.pos.x*2>>0 & 0xff | (int)v.pos.y*2>>8 & 0xff | (int)v.pos.z*2>>16 & 0xff
+                    select new uint4( (uint)x, (uint)y, (uint)z, (uint)w )
+                    ;
+                
+                buffer.SetData( q.ToArray() );
 
                 return buffer;
             }
-
-
-            ComputeBuffer createCubeIndexPatternShaderBuffer( int cubePatternLength )
-            {
-                var buffer = new ComputeBuffer( cubePatternLength, Marshal.SizeOf<int>() * 3 * 4, ComputeBufferType.Constant );
             
-                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
-                //buffer.SetData( baseVtxList_ );
 
-                return buffer;
-            }
-            ComputeBuffer createCubeVertexPatternShaderBuffer( int cubePatternLength )
-            {
-                var buffer = new ComputeBuffer( cubePatternLength, Marshal.SizeOf<float4>() * 12, ComputeBufferType.Constant );
 
-                buffer.SetData( baseVtxList_.Select( v => new Vector4( v.x, v.y, v.z, 1.0f ) ).ToArray() );
-                //buffer.SetData( baseVtxList_ );
-
-                return buffer;
-            }
             ComputeBuffer createVetexShaderBuffer()
             {
                 var buffer = new ComputeBuffer( 12, Marshal.SizeOf<float4>() + Marshal.SizeOf<int4>() * 3, ComputeBufferType.Constant );
