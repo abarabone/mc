@@ -93,9 +93,7 @@ namespace MarchingCubes
             [WriteOnly]
             public NativeList<CubeInstance> dstCubeInstances;
             [WriteOnly]
-            public NativeList<float4> dstGridPositions;
-            [WriteOnly]
-            public NativeList<int4> dstNearGrids;
+            public NativeList<uint4> dstGrids;
 
 
             public void Execute()
