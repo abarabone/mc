@@ -93,7 +93,7 @@ namespace MarchingCubes
             [WriteOnly]
             public NativeList<CubeInstance> dstCubeInstances;
             [WriteOnly]
-            public NativeList<uint4> dstGrids;
+            public NativeList<CubeUtility.GridInstanceData> dstGridData;
 
 
             public void Execute()
@@ -119,15 +119,18 @@ namespace MarchingCubes
                             SampleAllCubes( ref gridset, ref gridcount, gridId, ref dstCubeInstances );
                             //SampleAllCubes( ref gridset, gridId, dstCubeInstances );
 
-                            var pos = (new float4( ix, iy, iz, 0 ) - new float4(1,1,1,0)) * new float4( 32, -32, -32, 0 );
-                            this.dstGridPositions.Add( pos );
+                            var data = new CubeUtility.GridInstanceData
+                            {
+                                Position = ( new int4( ix, iy, iz, 0 ) - new int4( 1, 1, 1, 0 ) ) * new float4( 32, -32, -32, 0 )
+                            };
+                            this.dstGridData.Add( data );
 
                             gridId++;
 
                         }
 
                 var gridScale = 1.0f / new float3( 32, 32, 32 );
-                CubeUtility.GetNearGridList( this.dstGridPositions, gridScale, this.dstNearGrids );
+                CubeUtility.GetNearGridList( this.dstGridData, gridScale );
             }
         }
 

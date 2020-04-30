@@ -96,11 +96,24 @@ namespace MarchingCubes
 
 
 
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public uint ToNearGridId( int3 nearGridId ) =>
+            (uint)nearGridId.z << 18 | (uint)nearGridId.y << 9 | (uint)nearGridId.x << 0;
+
+
+        public struct GridInstanceData
+        {
+            public float4 Position;
+            public uint NearIdPrev; // (left >>0 | up  >>8 | front>>16)
+            public uint NearIdNext; // (right>>0 | down>>8 | back >>16)
+            public uint IdCurrent;  // current
+            private uint dummy;
+        }
 
         static public void GetNearGridList
-            ( NativeList<float4> gridPositions, float3 gridScale, NativeList<int4> dstNextGrids )
+            ( NativeList<GridInstanceData> gridData, float3 gridScale )
         {
-            var posDict = new NativeHashMap<int3, int>( gridPositions.Length, Allocator.Temp );
+            var posDict = new NativeHashMap<float3, int>( gridData.Length, Allocator.Temp );
 
             var i_to_gridpos = gridScale * new float3(1,-1,-1);
 
@@ -113,46 +126,52 @@ namespace MarchingCubes
 
             void addToDict_()
             {
-                for( var i = 0; i < gridPositions.Length; i++ )
+                for( var i = 0; i < gridData.Length; i++ )
                 {
-                    var pos = gridPositions[ i ];
-                    posDict.Add( (int3)( pos.xyz * i_to_gridpos ), i );
+                    var pos = gridData[ i ].Position;
+                    posDict.Add( pos.xyz * i_to_gridpos, i );
                 }
             }
             void getNearGridIds_()
             {
-                for( var i = 0; i < gridPositions.Length; i++ )
+                for( var i = 0; i < gridData.Length; i++ )
                 {
-                    var pos = gridPositions[ i ];
+                    var data = gridData[ i ];
+                    var pos = data.Position;
 
-                    var current = (int3)( pos.xyz * i_to_gridpos );
-                    posDict.TryGetValue( current, out var currentId );
+                    var currentpos = pos.xyz * i_to_gridpos;
+                    posDict.TryGetValue( currentpos, out var currentId );
+
+                    data.IdCurrent = (uint)currentId;
 
 
-                    var prevx = current + new int3( -1,  0,  0 );
-                    var prevy = current + new int3(  0, -1,  0 );
-                    var prevz = current + new int3(  0,  0, -1 );
+                    var prevx = currentpos + new float3( -1,  0,  0 );
+                    var prevy = currentpos + new float3(  0, -1,  0 );
+                    var prevz = currentpos + new float3(  0,  0, -1 );
 
-                    var prevId = new int4( -1, -1, -1, currentId );
+                    var prevId = new int3( -1, -1, -1 );// デフォルトを -1 にしようとしたが…
 
-                    posDict.TryGetValue( prevx, out prevId.x );
+                    posDict.TryGetValue( prevx, out prevId.x ); // 失敗すると 0 が入るので、-1 は維持されない
                     posDict.TryGetValue( prevy, out prevId.y );
                     posDict.TryGetValue( prevz, out prevId.z );
 
-                    dstNextGrids.AddNoResize( prevId );
+                    data.NearIdPrev = CubeUtility.ToNearGridId( prevId );
 
 
-                    var nextx = current + new int3( 1, 0, 0 );
-                    var nexty = current + new int3( 0, 1, 0 );
-                    var nextz = current + new int3( 0, 0, 1 );
+                    var nextx = currentpos + new int3( 1, 0, 0 );
+                    var nexty = currentpos + new int3( 0, 1, 0 );
+                    var nextz = currentpos + new int3( 0, 0, 1 );
 
-                    var nextId = new int4( -1, -1, -1, currentId );
+                    var nextId = new int3( -1, -1, -1 );
 
                     posDict.TryGetValue( nextx, out nextId.x );
                     posDict.TryGetValue( nexty, out nextId.y );
                     posDict.TryGetValue( nextz, out nextId.z );
 
-                    dstNextGrids.AddNoResize( nextId );
+                    data.NearIdPrev = CubeUtility.ToNearGridId( nextId );
+
+
+                    gridData[ i ] = data;
                 }
             }
         }

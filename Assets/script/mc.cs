@@ -31,7 +31,7 @@ namespace MarchingCubes
         public MeshCollider[,,] cubeGridColliders { get; private set; }
 
         //uint[] cubeInstances;
-        NativeList<uint4> grids;
+        NativeList<CubeUtility.GridInstanceData> gridData;
         NativeList<CubeInstance> cubeInstances;
         //NativeQueue<CubeInstance> cubeInstances;
 
@@ -72,7 +72,7 @@ namespace MarchingCubes
 
         unsafe void Awake()
         {
-            this.grids = new NativeList<uint4>( this.maxDrawGridLength * 2, Allocator.Persistent );
+            this.gridData = new NativeList<CubeUtility.GridInstanceData>( this.maxDrawGridLength, Allocator.Persistent );
             this.cubeInstances = new NativeList<CubeInstance>( 1000000, Allocator.Persistent );
             //this.cubeInstances = new NativeQueue<CubeInstance>( Allocator.Persistent );
 
@@ -91,7 +91,7 @@ namespace MarchingCubes
 
             createHitMesh();
         }
-        void initCubes()
+        unsafe void initCubes()
         {
             var res = this.meshResources;
 
@@ -108,13 +108,13 @@ namespace MarchingCubes
                 for( var iz = 0; iz < 15; iz++ )
                     for( var ix = 0; ix < 13; ix++ )
                         c[ 5 + ix, 5 + iy, 5 + iz ] = 1;
-            this.job = this.cubeGrids.BuildCubeInstanceData( this.grids, this.cubeInstances );
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridData, this.cubeInstances );
 
             this.job.Complete();
-            this.grids.AsArray().ForEach( x => Debug.Log( x ) );
+            this.gridData.AsArray().ForEach( x => Debug.Log( x ) );
 
             res.CubeInstancesBuffer.SetData( this.cubeInstances.AsArray() );
-            res.GridBuffer.SetData( this.grids.AsArray() );
+            res.GridBuffer.SetData( this.gridData.AsArray() );
             var remain = ( 64 - ( this.cubeInstances.Length & 0x3f ) ) & 0x3f;
             for( var i = 0; i < remain; i++ ) this.cubeInstances.AddNoResize( new CubeInstance { instance = 1 } );
             this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
@@ -137,7 +137,7 @@ namespace MarchingCubes
             foreach( var cubeId in q )
             {
                 var gridid = (int)cubeId.Key;
-                var gridpos = this.gridPositions[ gridid ];
+                var gridpos = this.gridData[ gridid ].Position;// スケールを１としている
                 var igrid = ((int4)gridpos >> 5) * new int4( 1, -1, -1, 0 );
 
                 if( igrid.x < 0 || igrid.y < 0 || igrid.z < 0 ) continue;
@@ -205,7 +205,7 @@ namespace MarchingCubes
 
             this.meshResources.Dispose();
             this.cubeGrids.Dispose();
-            this.grids.Dispose();
+            this.gridData.Dispose();
             this.cubeInstances.Dispose();
         }
 
@@ -217,9 +217,9 @@ namespace MarchingCubes
             var c = this.cubeGrids[ 5, 1, 3 ];
             c[ i, 0, 0 ] ^= 1;
             i = i + 1 & 31;
-            this.grids.Clear();
+            this.gridData.Clear();
             this.cubeInstances.Clear();
-            this.job = this.cubeGrids.BuildCubeInstanceData( this.grids, this.cubeInstances );
+            this.job = this.cubeGrids.BuildCubeInstanceData( this.gridData, this.cubeInstances );
 
         //}
         //private void LateUpdate()
@@ -228,7 +228,7 @@ namespace MarchingCubes
 
             var res = this.meshResources;
             res.CubeInstancesBuffer.SetData( this.cubeInstances.AsArray() );
-            res.GridBuffer.SetData( this.grids.AsArray() );
+            res.GridBuffer.SetData( this.gridData.AsArray() );
 
             var remain = (64 - (this.cubeInstances.Length & 0x3f) ) & 0x3f;
             for(var i=0; i<remain; i++) this.cubeInstances.AddNoResize( new CubeInstance { instance = 1 } );
