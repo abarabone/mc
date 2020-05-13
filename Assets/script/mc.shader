@@ -92,6 +92,10 @@
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
 				return element >> iinner & 0xf;
 			}
+			//uint get_packed8bits(uint4 packed_uint4, int2 index)
+			//{
+			//	return get_packed8bits(packed_uint4, index.y, index.x)
+			//}
 			uint get_packed8bits(uint4 packed_uint4, int index)
 			{
 				const int iouter = index >> 2;// / 4
@@ -203,8 +207,8 @@
 
 				OrthoTempData o0, o1;
 				float3 nm = get_vtx_normal_current(cubeid_current, ivtx_in_cube);
-				nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_in_cube, ivtx_near.x);// , o0);
-				nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_in_cube, ivtx_near.y);// , o1);
+				//nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_in_cube, ivtx_near.x);// , o0);
+				//nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_in_cube, ivtx_near.y);// , o1);
 				//nm += get_vtx_normal_slant(gridid_current, cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.pvev_next_selector, o1.grid_mask);
 
 				return normalize(nm);
@@ -219,14 +223,14 @@
 				//const uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
 
 				const uint4 _ivtx = cube_patterns[cubeid][tri_to_ivtx];
-				const int ivtx_in_cube = get_packed8bits(_ivtx, v.vertex.xy);
+				const int ivtx_in_cube = get_packed8bits(_ivtx, v.vertex.y, v.vertex.x);
 
 				const uint gridid = data >> 8 & 0xff;
 				const float3 gridpos = asfloat(grids[gridid][grid_pos]);
 
 				const int3 cubepos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0);
-				const int3 cubest = cubepos * int3(1, -1, -1);
-				const float4 lvtx = float4(gridpos + cubest + unpack8bits3(cube_vtxs[ivtx_in_cube].w), 1.0f);
+				const int3 cube_origin = cubepos * int3(1, -1, -1);
+				const float4 lvtx = float4(gridpos + cube_origin, 1.0f);// unpack8bits3(cube_vtxs[ivtx_in_cube].w), 1.0f);
 
 				o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
@@ -234,7 +238,7 @@
 				//const half3 normal = Normals[idxofs.y].xyz;
 				//const half3 normal = get_vtx_normal_current(cubeId, vtxIdx);
 				const half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridid, cubeid, ivtx_in_cube, cubepos.xyz);
-				const half3 worldNormal = normal;
+				const half3 worldNormal = float3(0, 1, 0);//normal;
 				const fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
 				//// この処理をしないと陰影が強くつきすぎる
