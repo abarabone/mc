@@ -66,6 +66,8 @@ namespace MarchingCubes
             this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer );
             this.Material.SetConstantBuffer( "grids", res.GridBuffer );
 
+            this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.CubeInstancesBuffer );
+            this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.GridCubeIdBuffer );
         }
 
 
@@ -79,15 +81,10 @@ namespace MarchingCubes
             this.meshResources = new MeshResources( this.MarchingCubeAsset, this.maxDrawGridLength );
             var res = this.meshResources;
 
-            this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.CubeInstancesBuffer );
-            this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.GridCubeIdBuffer );
-
             setResources();
-
 
             var cb = createCommandBuffer( res, this.Material );
             Camera.main.AddCommandBuffer( CameraEvent.BeforeSkybox, cb );
-
 
             initCubes();
             createHitMesh();
@@ -112,7 +109,7 @@ namespace MarchingCubes
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridData, this.cubeInstances );
 
             this.job.Complete();
-            this.gridData.AsArray().ForEach( x => Debug.Log( x ) );
+            //this.gridData.AsArray().ForEach( x => Debug.Log( x ) );
 
             res.CubeInstancesBuffer.SetData( this.cubeInstances.AsArray() );
             res.GridBuffer.SetData( this.gridData.AsArray() );
@@ -361,12 +358,13 @@ namespace MarchingCubes
                 var q =
                     from cube in cubeIdsAndVtxIndexLists_
                     orderby cube.cubeId
-                    select (
+                    select new[]
+                    {
                         toTriPositionIndex_( cube.vertexIndices ),
                         toVtxNormalIndex_( cube.normalsForVertex, normalToIdDict )
-                    );
-
-                buffer.SetData( q.ToArray() );
+                    };
+                q.Select(x=>(new float4(x.First()>>0&, x.Last())).ForEach( x => Debug.Log($"{x.Item1} {x.Item2}") );
+                buffer.SetData( q.SelectMany(x=>x).ToArray() );
 
                 return buffer;
 
@@ -376,14 +374,13 @@ namespace MarchingCubes
                     var idxs = indices
                         .Concat( Enumerable.Repeat( 0, 12 - indices.Length ) )
                         .ToArray();
-                    Debug.Log($"idxs {idxs.Length}");
 
                     return new uint4
                     {
-                        x = (uint)( idxs[ 0]<<0 & 0xff | idxs[ 1]<<8 & 0xff00 | idxs[ 2]<<16 & 0xff0000 ),
-                        y = (uint)( idxs[ 3]<<0 & 0xff | idxs[ 4]<<8 & 0xff00 | idxs[ 5]<<16 & 0xff0000 ),
-                        z = (uint)( idxs[ 6]<<0 & 0xff | idxs[ 7]<<8 & 0xff00 | idxs[ 8]<<16 & 0xff0000 ),
-                        w = (uint)( idxs[ 9]<<0 & 0xff | idxs[10]<<8 & 0xff00 | idxs[11]<<16 & 0xff0000 ),
+                        x = (uint)( idxs[ 0]<<0 & 0xff | idxs[ 1]<<8 & 0xff | idxs[ 2]<<16 & 0xff ),
+                        y = (uint)( idxs[ 3]<<0 & 0xff | idxs[ 4]<<8 & 0xff | idxs[ 5]<<16 & 0xff ),
+                        z = (uint)( idxs[ 6]<<0 & 0xff | idxs[ 7]<<8 & 0xff | idxs[ 8]<<16 & 0xff ),
+                        w = (uint)( idxs[ 9]<<0 & 0xff | idxs[10]<<8 & 0xff | idxs[11]<<16 & 0xff ),
                     };
                 }
                 uint4 toVtxNormalIndex_( Vector3[] normals, Dictionary<half3, int> normalToIdDict_ )
@@ -395,7 +392,7 @@ namespace MarchingCubes
                         z = (uint)( ntoi(8,0) | ntoi(9,8) | ntoi(10,16) | ntoi(11,24) ),
                         w = 0,
                     };
-                    int ntoi( int i, int shift ) => (normalToIdDict_[ new half3( normals[ i ] ) ] & 0xff) << shift;
+                    int ntoi( int i, int shift ) => normalToIdDict_[ new half3( normals[ i ] ) ] << shift & 0xff;
                 }
             }
 
@@ -470,7 +467,7 @@ namespace MarchingCubes
 
                 var qVtx =
                     from i in Enumerable.Range( 0, 12 )
-                    select new Vector3( i, i / 3, 0 )
+                    select new Vector3( i % 3, i / 3, 0 )
                     ;
                 var qIdx =
                     from i in Enumerable.Range( 0, 3 * 4 )
