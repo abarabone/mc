@@ -224,7 +224,7 @@
 				const uint gridid = data >> 8 & 0xff;
 				const float3 gridpos = float3(0,0,0);//asfloat(grids[gridid][grid_pos]);
 
-				const int3 cubepos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0);
+				const int3 cubepos = int3(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f);
 				const int3 cubest = cubepos * int3(1, -1, -1);
 				const float4 lvtx = float4(gridpos + cubest + unpack8bits3(cube_vtxs[ivtx_in_cube].w), 1.0f);
 

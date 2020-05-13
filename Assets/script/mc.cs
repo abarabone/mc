@@ -89,6 +89,7 @@ namespace MarchingCubes
             Camera.main.AddCommandBuffer( CameraEvent.BeforeSkybox, cb );
 
 
+            initCubes();
             createHitMesh();
         }
         unsafe void initCubes()
@@ -379,10 +380,10 @@ namespace MarchingCubes
 
                     return new uint4
                     {
-                        x = (uint)( indices[0]<<0 & 0xff | indices[ 1]<<8 & 0xff00 | indices[ 2]<<16 & 0xff0000 ),
-                        y = (uint)( indices[3]<<0 & 0xff | indices[ 4]<<8 & 0xff00 | indices[ 5]<<16 & 0xff0000 ),
-                        z = (uint)( indices[6]<<0 & 0xff | indices[ 7]<<8 & 0xff00 | indices[ 8]<<16 & 0xff0000 ),
-                        w = (uint)( indices[9]<<0 & 0xff | indices[10]<<8 & 0xff00 | indices[11]<<16 & 0xff0000 ),
+                        x = (uint)( idxs[ 0]<<0 & 0xff | idxs[ 1]<<8 & 0xff00 | idxs[ 2]<<16 & 0xff0000 ),
+                        y = (uint)( idxs[ 3]<<0 & 0xff | idxs[ 4]<<8 & 0xff00 | idxs[ 5]<<16 & 0xff0000 ),
+                        z = (uint)( idxs[ 6]<<0 & 0xff | idxs[ 7]<<8 & 0xff00 | idxs[ 8]<<16 & 0xff0000 ),
+                        w = (uint)( idxs[ 9]<<0 & 0xff | idxs[10]<<8 & 0xff00 | idxs[11]<<16 & 0xff0000 ),
                     };
                 }
                 uint4 toVtxNormalIndex_( Vector3[] normals, Dictionary<half3, int> normalToIdDict_ )
