@@ -363,7 +363,7 @@ namespace MarchingCubes
                         toTriPositionIndex_( cube.vertexIndices ),
                         toVtxNormalIndex_( cube.normalsForVertex, normalToIdDict )
                     };
-                q.Select(x=>(new float4(x.First()>>0&, x.Last())).ForEach( x => Debug.Log($"{x.Item1} {x.Item2}") );
+                //q.Select(x=>(new float4(x.First()>>0&, x.Last())).ForEach( x => Debug.Log($"{x.Item1} {x.Item2}") );
                 buffer.SetData( q.SelectMany(x=>x).ToArray() );
 
                 return buffer;
@@ -377,10 +377,10 @@ namespace MarchingCubes
 
                     return new uint4
                     {
-                        x = (uint)( idxs[ 0]<<0 & 0xff | idxs[ 1]<<8 & 0xff | idxs[ 2]<<16 & 0xff ),
-                        y = (uint)( idxs[ 3]<<0 & 0xff | idxs[ 4]<<8 & 0xff | idxs[ 5]<<16 & 0xff ),
-                        z = (uint)( idxs[ 6]<<0 & 0xff | idxs[ 7]<<8 & 0xff | idxs[ 8]<<16 & 0xff ),
-                        w = (uint)( idxs[ 9]<<0 & 0xff | idxs[10]<<8 & 0xff | idxs[11]<<16 & 0xff ),
+                        x = (uint)( idxs[ 0]<<0 & 0xff | idxs[ 1]<<8 & 0xff00 | idxs[ 2]<<16 & 0xff0000 ),
+                        y = (uint)( idxs[ 3]<<0 & 0xff | idxs[ 4]<<8 & 0xff00 | idxs[ 5]<<16 & 0xff0000 ),
+                        z = (uint)( idxs[ 6]<<0 & 0xff | idxs[ 7]<<8 & 0xff00 | idxs[ 8]<<16 & 0xff0000 ),
+                        w = (uint)( idxs[ 9]<<0 & 0xff | idxs[10]<<8 & 0xff00 | idxs[11]<<16 & 0xff0000 ),
                     };
                 }
                 uint4 toVtxNormalIndex_( Vector3[] normals, Dictionary<half3, int> normalToIdDict_ )
@@ -392,7 +392,7 @@ namespace MarchingCubes
                         z = (uint)( ntoi(8,0) | ntoi(9,8) | ntoi(10,16) | ntoi(11,24) ),
                         w = 0,
                     };
-                    int ntoi( int i, int shift ) => normalToIdDict_[ new half3( normals[ i ] ) ] << shift & 0xff;
+                    int ntoi( int i, int shift ) => (normalToIdDict_[ new half3( normals[ i ] ) ] & 0xff) << shift;
                 }
             }
 

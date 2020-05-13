@@ -226,9 +226,9 @@
 				const int ivtx_in_cube = get_packed8bits(_ivtx, v.vertex.y, v.vertex.x);
 
 				const uint gridid = data >> 8 & 0xff;
-				const float3 gridpos = asfloat(grids[gridid][grid_pos]);
+				const float3 gridpos = float3(0,0,0);//asfloat(grids[gridid][grid_pos]);
 
-				const int3 cubepos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0);
+				const int3 cubepos = int3(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f);
 				const int3 cube_origin = cubepos * int3(1, -1, -1);
 				const float4 lvtx = float4(gridpos + cube_origin, 1.0f);// unpack8bits3(cube_vtxs[ivtx_in_cube].w), 1.0f);
 
@@ -237,7 +237,7 @@
 
 				//const half3 normal = Normals[idxofs.y].xyz;
 				//const half3 normal = get_vtx_normal_current(cubeId, vtxIdx);
-				const half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridid, cubeid, ivtx_in_cube, cubepos.xyz);
+			//	const half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridid, cubeid, ivtx_in_cube, cubepos.xyz);
 				const half3 worldNormal = float3(0, 1, 0);//normal;
 				const fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
