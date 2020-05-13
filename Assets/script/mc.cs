@@ -375,13 +375,14 @@ namespace MarchingCubes
                     var idxs = indices
                         .Concat( Enumerable.Repeat( 0, 12 - indices.Length ) )
                         .ToArray();
+                    Debug.Log($"idxs {idxs.Length}");
 
                     return new uint4
                     {
-                        x = (uint)( indices[0]<<0 & 0xff | indices[ 1]<<8 & 0xff | indices[ 2]<<16 & 0xff ),
-                        y = (uint)( indices[3]<<0 & 0xff | indices[ 4]<<8 & 0xff | indices[ 5]<<16 & 0xff ),
-                        z = (uint)( indices[6]<<0 & 0xff | indices[ 7]<<8 & 0xff | indices[ 8]<<16 & 0xff ),
-                        w = (uint)( indices[9]<<0 & 0xff | indices[10]<<8 & 0xff | indices[11]<<16 & 0xff ),
+                        x = (uint)( indices[0]<<0 & 0xff | indices[ 1]<<8 & 0xff00 | indices[ 2]<<16 & 0xff0000 ),
+                        y = (uint)( indices[3]<<0 & 0xff | indices[ 4]<<8 & 0xff00 | indices[ 5]<<16 & 0xff0000 ),
+                        z = (uint)( indices[6]<<0 & 0xff | indices[ 7]<<8 & 0xff00 | indices[ 8]<<16 & 0xff0000 ),
+                        w = (uint)( indices[9]<<0 & 0xff | indices[10]<<8 & 0xff00 | indices[11]<<16 & 0xff0000 ),
                     };
                 }
                 uint4 toVtxNormalIndex_( Vector3[] normals, Dictionary<half3, int> normalToIdDict_ )
@@ -393,7 +394,7 @@ namespace MarchingCubes
                         z = (uint)( ntoi(8,0) | ntoi(9,8) | ntoi(10,16) | ntoi(11,24) ),
                         w = 0,
                     };
-                    int ntoi( int i, int shift ) => normalToIdDict_[ new half3( normals[ i ] ) ] << shift & 0xff;
+                    int ntoi( int i, int shift ) => (normalToIdDict_[ new half3( normals[ i ] ) ] & 0xff) << shift;
                 }
             }
 

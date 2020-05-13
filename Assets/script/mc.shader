@@ -203,8 +203,8 @@
 
 				OrthoTempData o0, o1;
 				float3 nm = get_vtx_normal_current(cubeid_current, ivtx_in_cube);
-				nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_in_cube, ivtx_near.x);// , o0);
-				nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_in_cube, ivtx_near.y);// , o1);
+				//nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_in_cube, ivtx_near.x);// , o0);
+				//nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_in_cube, ivtx_near.y);// , o1);
 				//nm += get_vtx_normal_slant(gridid_current, cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.pvev_next_selector, o1.grid_mask);
 
 				return normalize(nm);
@@ -222,7 +222,7 @@
 				const int ivtx_in_cube = get_packed8bits(_ivtx, v.vertex.xy);
 
 				const uint gridid = data >> 8 & 0xff;
-				const float3 gridpos = asfloat(grids[gridid][grid_pos]);
+				const float3 gridpos = float3(0,0,0);//asfloat(grids[gridid][grid_pos]);
 
 				const int3 cubepos = int4(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f, 0);
 				const int3 cubest = cubepos * int3(1, -1, -1);
@@ -233,7 +233,7 @@
 
 				//const half3 normal = Normals[idxofs.y].xyz;
 				//const half3 normal = get_vtx_normal_current(cubeId, vtxIdx);
-				const half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridid, cubeid, ivtx_in_cube, cubepos.xyz);
+				const half3 normal = float3(1,0,0);//get_and_caluclate_triangle_to_vertex_normal(gridid, cubeid, ivtx_in_cube, cubepos.xyz);
 				const half3 worldNormal = normal;
 				const fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
