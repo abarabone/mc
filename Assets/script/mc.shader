@@ -230,7 +230,7 @@
 
 				const int3 cubepos = int3(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f);
 				const int3 cube_origin = cubepos * int3(1, -1, -1);
-				const float4 lvtx = float4(gridpos + cube_origin, 1.0f);// unpack8bits3(cube_vtxs[ivtx_in_cube].w), 1.0f);
+				const float4 lvtx = float4(gridpos + cube_origin + unpack8bits3(cube_vtxs[ivtx_in_cube].w), 1.0f);
 
 				o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
