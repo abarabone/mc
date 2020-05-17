@@ -63,8 +63,11 @@ namespace MarchingCubes
             
             this.Material.SetConstantBuffer( "normals", res.NormalBuffer );
             this.Material.SetConstantBuffer( "cube_patterns", res.CubePatternBuffer );
-            this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer );
+            //this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer );
+            this.Material.SetBuffer( "cube_vtxs", res.CubeVertexBuffer );
             this.Material.SetConstantBuffer( "grids", res.GridBuffer );
+            this.Material.SetBuffer( "cube_instances", res.CubeInstancesBuffer );
+            this.Material.SetTexture( "grid_cubeids", res.GridCubeIdBuffer );
 
             this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.CubeInstancesBuffer );
             this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.GridCubeIdBuffer );
@@ -79,10 +82,9 @@ namespace MarchingCubes
             //this.cubeInstances = new NativeQueue<CubeInstance>( Allocator.Persistent );
 
             this.meshResources = new MeshResources( this.MarchingCubeAsset, this.maxDrawGridLength );
-            var res = this.meshResources;
-
             setResources();
 
+            var res = this.meshResources;
             var cb = createCommandBuffer( res, this.Material );
             Camera.main.AddCommandBuffer( CameraEvent.BeforeSkybox, cb );
 
@@ -212,9 +214,9 @@ namespace MarchingCubes
 
         private unsafe void Update()
         {
-            var c = this.cubeGrids[ 5, 1, 3 ];
-            c[ i, 0, 0 ] ^= 1;
-            i = i + 1 & 31;
+            //var c = this.cubeGrids[ 5, 1, 3 ];
+            //c[ i, 0, 0 ] ^= 1;
+            //i = i + 1 & 31;
             this.gridData.Clear();
             this.cubeInstances.Clear();
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridData, this.cubeInstances );
@@ -398,7 +400,7 @@ namespace MarchingCubes
 
             ComputeBuffer createCubeVertexBuffer_( Vector3[] baseVertices )
             {
-                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<uint4>(), ComputeBufferType.Constant );
+                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<uint4>() );//, ComputeBufferType.Constant );
 
                 ((int x, int y, int z) prev, (int x, int y, int z) next)[] near_cube_offsets =
                 {
@@ -439,10 +441,10 @@ namespace MarchingCubes
                     from v in Enumerable
                         .Zip( near_cube_offsets, near_cube_ivtxs, ( x, y ) => (ofs: x, ivtx: y) )
                         .Zip( baseVertices, (x,y) => (x.ofs, x.ivtx, pos: y) )
-                    let x = v.ivtx.x>>0 & 0xff | v.ivtx.y>> 8 & 0xff | v.ivtx.z>> 16 & 0xff
-                    let y = v.ofs.prev.x+1>>0 & 0xff | v.ofs.prev.y+1>>8 & 0xff | v.ofs.prev.z+1>>16 & 0xff
-                    let z = v.ofs.next.x+1>>0 & 0xff | v.ofs.next.y+1>>8 & 0xff | v.ofs.next.z+1>>16 & 0xff
-                    let w = (int)v.pos.x*2>>0 & 0xff | (int)v.pos.y*2>>8 & 0xff | (int)v.pos.z*2>>16 & 0xff
+                    let x = v.ivtx.x<<0 & 0xff | v.ivtx.y<<8 & 0xff00 | v.ivtx.z<<16 & 0xff0000
+                    let y = v.ofs.prev.x+1<<0 & 0xff | v.ofs.prev.y+1<<8 & 0xff00 | v.ofs.prev.z+1<<16 & 0xff0000
+                    let z = v.ofs.next.x+1<<0 & 0xff | v.ofs.next.y+1<<8 & 0xff00 | v.ofs.next.z+1<<16 & 0xff0000
+                    let w = (int)(v.pos.x*2)<<0 & 0xff | (int)(v.pos.y*2)<<8 & 0xff00 | (int)(v.pos.z*2)<<16 & 0xff0000
                     select new uint4( (uint)x, (uint)y, (uint)z, (uint)w )
                     ;
                 
