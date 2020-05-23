@@ -10,6 +10,7 @@ using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Jobs;
 using Unity.Burst;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace MarchingCubes
 {
@@ -44,8 +45,6 @@ namespace MarchingCubes
         {
             var res = this.meshResources;
             
-            //float3 normals[ 155 ];
-
             //uint4 cube_patterns[ 254 ][2];
 			// [0] : vertex posision index { x: tri0(i0>>0 | i1>>8 | i2>>16)  y: tri1  z: tri2  w: tri3 }
 			// [1] : vertex normal index { x: (i0>>0 | i1>>8 | i2>>16 | i3>>24)  y: i4|5|6|7  z:i8|9|10|11 }
@@ -63,11 +62,12 @@ namespace MarchingCubes
             
             this.Material.SetConstantBuffer( "normals", res.NormalBuffer );
             this.Material.SetConstantBuffer( "cube_patterns", res.CubePatternBuffer );
-            //this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer );
-            this.Material.SetBuffer( "cube_vtxs", res.CubeVertexBuffer );
-            this.Material.SetConstantBuffer( "grids", res.GridBuffer );
+            this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer );
+            //this.Material.SetConstantBuffer( "grids", res.GridBuffer );
+
             this.Material.SetBuffer( "cube_instances", res.CubeInstancesBuffer );
             this.Material.SetTexture( "grid_cubeids", res.GridCubeIdBuffer );
+
 
             this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.CubeInstancesBuffer );
             this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.GridCubeIdBuffer );
@@ -355,7 +355,8 @@ namespace MarchingCubes
                     .Select( ( x, i ) => (x, i) )
                     .ToDictionary( x => x.x, x => x.i );
 
-                var buffer = new ComputeBuffer( 254, Marshal.SizeOf<uint4>() * 2, ComputeBufferType.Constant );
+                //var buffer = new ComputeBuffer( 254, Marshal.SizeOf<uint4>() * 2, ComputeBufferType.Constant );
+                var buffer = new ComputeBuffer( 254 * 2, Marshal.SizeOf<uint4>(), ComputeBufferType.Constant );
 
                 var q =
                     from cube in cubeIdsAndVtxIndexLists_
@@ -365,8 +366,8 @@ namespace MarchingCubes
                         toTriPositionIndex_( cube.vertexIndices ),
                         toVtxNormalIndex_( cube.normalsForVertex, normalToIdDict )
                     };
-                //q.Select(x=>(new float4(x.First()>>0&, x.Last())).ForEach( x => Debug.Log($"{x.Item1} {x.Item2}") );
-                buffer.SetData( q.SelectMany(x=>x).ToArray() );
+
+                buffer.SetData( q.SelectMany(x=>x).Select(x=>math.asfloat(x)).ToArray() );
 
                 return buffer;
 
@@ -400,7 +401,7 @@ namespace MarchingCubes
 
             ComputeBuffer createCubeVertexBuffer_( Vector3[] baseVertices )
             {
-                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<uint4>() );//, ComputeBufferType.Constant );
+                var buffer = new ComputeBuffer( 12, Marshal.SizeOf<uint4>(), ComputeBufferType.Constant );
 
                 ((int x, int y, int z) prev, (int x, int y, int z) next)[] near_cube_offsets =
                 {
@@ -448,14 +449,14 @@ namespace MarchingCubes
                     select new uint4( (uint)x, (uint)y, (uint)z, (uint)w )
                     ;
                 
-                buffer.SetData( q.ToArray() );
+                buffer.SetData( q.Select(x=>math.asfloat(x)).ToArray() );
 
                 return buffer;
             }
             
             ComputeBuffer createGridShaderBuffer_( int maxGridLength )
             {
-                var buffer = new ComputeBuffer( maxGridLength, Marshal.SizeOf<uint4>() * 2, ComputeBufferType.Constant );
+                var buffer = new ComputeBuffer( maxGridLength * 2, Marshal.SizeOf<uint4>(), ComputeBufferType.Constant );
 
                 return buffer;
             }
@@ -548,9 +549,15 @@ namespace MarchingCubes
 
         static public ComputeBuffer CreateIndirectArgumentsBufferForDispatch() =>
             new ComputeBuffer( 1, sizeof( int ) * 3, ComputeBufferType.IndirectArguments, ComputeBufferMode.Immutable );
-        
-        static public void SetConstantBuffer( this Material mat, string name, ComputeBuffer buffer ) =>
-            mat.SetConstantBuffer( name, buffer, 0, buffer.stride * buffer.count );
+
+        //static public void SetConstantBuffer( this Material mat, string name, ComputeBuffer buffer ) =>
+        //    mat.SetConstantBuffer( name, buffer, 0, buffer.stride * buffer.count );
+        static public void SetConstantBuffer( this Material mat, string name, ComputeBuffer buffer )
+        {
+            var arr = new Vector4[ buffer.stride / Marshal.SizeOf<Vector4>() * buffer.count ];
+            buffer.GetData( arr );
+            mat.SetVectorArray( name, arr );
+        }
     }
 
 
