@@ -228,7 +228,18 @@ namespace MarchingCubes
 
             var res = this.meshResources;
             res.CubeInstancesBuffer.SetData( this.cubeInstances.AsArray() );
-            res.GridBuffer.SetData( this.gridData.AsArray() );
+
+            //res.GridBuffer.SetData( this.gridData.AsArray() );
+            var grids = new Vector4[this.gridData.Length * 2];
+            fixed( Vector4 *pdst = grids )
+            {
+                var psrc = (Vector4*)this.gridData.GetUnsafeReadOnlyPtr();
+                for( var i = 0; i < this.gridData.Length*2; i++ )
+                {
+                    pdst[ i ] = psrc[ i ];
+                }
+            }
+            this.Material.SetVectorArray( "grids", grids );
 
             var remain = (64 - (this.cubeInstances.Length & 0x3f) ) & 0x3f;
             for(var i=0; i<remain; i++) this.cubeInstances.AddNoResize( new CubeInstance { instance = 1 } );

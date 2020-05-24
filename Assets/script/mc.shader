@@ -235,8 +235,8 @@
 				const int3 cube_location = int3(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f);
 				const int3 cube_location_ltb = cube_location * int3(1, -1, -1);
 				const float3 cube_vtx_lpos = unpack8bits_uint_to_uint3(asuint(cube_vtxs[ivtx_in_cube].w)) * 0.5f;
-				const float4 lvtx = float4(gridpos + cube_location_ltb + cube_vtx_lpos, 1.0f);
-				//const float4 lvtx = float4(gridpos + cube_location_ltb + vvvv[v.vertex.x], 1.0f);
+				//const float4 lvtx = float4(gridpos + cube_location_ltb + cube_vtx_lpos, 1.0f);
+				const float4 lvtx = float4(gridpos + cube_location_ltb + vvvv[v.vertex.x], 1.0f);
 
 				o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 
