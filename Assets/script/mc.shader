@@ -81,7 +81,7 @@
 			static const uint grid_near_id = 1;
 
 
-			static const int4 element_mask_table[] =
+			static const uint4 element_mask_table[] =
 			{
 				{1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1}
 			};
@@ -93,10 +93,6 @@
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
 				return element >> iinner & 0xff;
 			}
-			//uint unpack8bit_uint4_to_uint(uint4 packed_uint4, int2 index)
-			//{
-			//	return get_packed8bits(packed_uint4, index.y, index.x)
-			//}
 			uint unpack8bit_uint4_to_uint(uint4 packed_uint4, int index)
 			{
 				const int element_index = index >> 2;// / 4
@@ -114,7 +110,7 @@
 
 			uint3 unpack8bits_uint_to_uint3(uint packed3_uint)
 			{
-				return (packed3_uint.xxx >> uint3(0, 8, 16)) & 0xff;
+				return packed3_uint.xxx >> uint3(0, 8, 16) & 0xff;
 			}
 			uint3 unpack8bits_uint3_to_uint3(uint3 packed3_uint3, uint element_index)
 			{
@@ -144,12 +140,12 @@
 				int pvev_next_selector;
 			};
 
-			//float3 get_vtx_normal_current(uint cubeid_current, uint ivtx_in_cube)
-			//{
-			//	const uint4 inml_packed = cube_patterns[cubeid_current][vtx_to_inml];
-			//	const uint inml = unpack8bit_uint4_to_uint(inml_packed, ivtx_in_cube);
-			//	return normals[inml];
-			//}
+			float3 get_vtx_normal_current(uint cubeid_current, uint ivtx_in_cube)
+			{
+				const uint4 inml_packed = cube_patterns[cubeid_current][vtx_to_inml];
+				const uint inml = unpack8bit_uint4_to_uint(inml_packed, ivtx_in_cube);
+				return normals[inml];
+			}
 
 			//uint get_cubeid(int gridid, int3 cubepos)
 			//{
@@ -202,20 +198,20 @@
 			////	return cube_vtx_patterns[get_cubeid(gridid, pos)].vtx_nmls[ivtx];
 			////}
 
-			//float3 get_and_caluclate_triangle_to_vertex_normal
-			//	(uint gridid_current, uint cubeid_current, uint ivtx_in_cube, int3 cubepos)
-			//{
-			//	const uint ivtx_near_packed = cube_vtxs[ivtx_in_cube].x;
-			//	const uint3 ivtx_near = unpack8bits_uint_to_uint3(ivtx_near_packed);
+			float3 get_and_caluclate_triangle_to_vertex_normal
+				(uint gridid_current, uint cubeid_current, uint ivtx_in_cube, int3 cubepos)
+			{
+				const uint ivtx_near_packed = cube_vtxs[ivtx_in_cube].x;
+				const uint3 ivtx_near = unpack8bits_uint_to_uint3(ivtx_near_packed);
 
-			//	OrthoTempData o0, o1;
-			//	float3 nm = get_vtx_normal_current(cubeid_current, ivtx_in_cube);
-			//	//nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_in_cube, ivtx_near.x);// , o0);
-			//	//nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_in_cube, ivtx_near.y);// , o1);
-			//	//nm += get_vtx_normal_slant(gridid_current, cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.pvev_next_selector, o1.grid_mask);
+				OrthoTempData o0, o1;
+				float3 nm = get_vtx_normal_current(cubeid_current, ivtx_in_cube);
+				//nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_in_cube, ivtx_near.x);// , o0);
+				//nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_in_cube, ivtx_near.y);// , o1);
+				//nm += get_vtx_normal_slant(gridid_current, cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.pvev_next_selector, o1.grid_mask);
 
-			//	return normalize(nm);
-			//}
+				return normalize(nm);
+			}
 
 			static const float3 vvvv[] = { {0,0,0}, {1,0,0}, {0,1,0} };
 			v2f vert(appdata v, uint i : SV_InstanceID)
@@ -226,15 +222,17 @@
 				const uint cubeid = (data & 0xff) - 1;
 				//const uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
 
-				const uint4 ivtx_packed = asuint(cube_patterns[cubeid][tri_to_ivtx]);
-				const uint ivtx_in_cube = unpack8bit_uint4_to_uint(ivtx_packed, v.vertex.y, v.vertex.x);
-
 				const uint gridid = data >> 8 & 0xff;
 				const float3 gridpos = grids[gridid][grid_pos];
 
+				const uint4 ivtx_packed = asuint(cube_patterns[cubeid][tri_to_ivtx]);
+				const uint ivtx_in_cube = unpack8bit_uint4_to_uint(ivtx_packed, v.vertex.y, v.vertex.x);
+
 				const int3 cube_location = int3(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f);
 				const int3 cube_location_ltb = cube_location * int3(1, -1, -1);
-				const float3 cube_vtx_lpos = (unpack8bits_uint_to_uint3(asuint(cube_vtxs[ivtx_in_cube].w)) - 1) * 0.5f;
+				const uint cube_vtx_lpos_packed = asuint(cube_vtxs[ivtx_in_cube].w);
+				const float3 cube_vtx_lpos = ((int3)unpack8bits_uint_to_uint3(cube_vtx_lpos_packed) - 1) * 0.5f;
+
 				const float4 lvtx = float4(gridpos + cube_location_ltb + cube_vtx_lpos, 1.0f);
 				//const float4 lvtx = float4(gridpos + cube_location_ltb + vvvv[v.vertex.x], 1.0f);
 
@@ -243,8 +241,8 @@
 
 				//const half3 normal = Normals[idxofs.y].xyz;
 				//const half3 normal = get_vtx_normal_current(cubeId, vtxIdx);
-			//	const half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridid, cubeid, ivtx_in_cube, cubepos.xyz);
-				const half3 worldNormal = float3(0, 1, 0);//normal;
+				const half3 normal = get_and_caluclate_triangle_to_vertex_normal(gridid, cubeid, ivtx_in_cube, cube_location.xyz);
+				const half3 worldNormal = normal;
 				const fixed nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				o.color = _LightColor0 * nl;
 				//// この処理をしないと陰影が強くつきすぎる

@@ -343,7 +343,10 @@ namespace MarchingCubes
                 var buffer = new ComputeBuffer( normalToIdDict.Count, Marshal.SizeOf<Vector4>(), ComputeBufferType.Constant );
 
                 var q =
-                    from n in normalToIdDict.Select(x => x.Key)
+                    from n in normalToIdDict
+                        //.OrderBy(x=>x.Value)
+                        .Do( x => Debug.Log( $"{x.Value} {x.Key}" ) )
+                        .Select(x => x.Key)
                     select new Vector4
                     {
                         x = n.x,
@@ -377,7 +380,7 @@ namespace MarchingCubes
                         toTriPositionIndex_( cube.vertexIndices ),
                         toVtxNormalIndex_( cube.normalsForVertex, normalToIdDict )
                     };
-
+                q.SelectMany(x=>x).ForEach( x => Debug.Log(x) );
                 buffer.SetData( q.SelectMany(x=>x).Select(x=>math.asfloat(x)).ToArray() );
 
                 return buffer;
