@@ -91,7 +91,7 @@
 				const int iouter = element_index;
 				const int iinner = packed_index << 3;// * 8
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
-				return element >> iinner & 0xf;
+				return element >> iinner & 0xff;
 			}
 			//uint unpack8bit_uint4_to_uint(uint4 packed_uint4, int2 index)
 			//{
@@ -109,12 +109,12 @@
 				const int iouter = index.x;
 				const int iinner = index.y * 9;
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
-				return element >> iinner & 0x1f;
+				return element >> iinner & 0x1ff;
 			}
 
 			uint3 unpack8bits_uint_to_uint3(uint packed3_uint)
 			{
-				return packed3_uint.xxx >> uint3(0, 8, 16) & 0xff;
+				return (packed3_uint.xxx >> uint3(0, 8, 16)) & 0xff;
 			}
 			uint3 unpack8bits_uint3_to_uint3(uint3 packed3_uint3, uint element_index)
 			{
@@ -234,9 +234,9 @@
 
 				const int3 cube_location = int3(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f);
 				const int3 cube_location_ltb = cube_location * int3(1, -1, -1);
-				const float3 cube_vtx_lpos = unpack8bits_uint_to_uint3(asuint(cube_vtxs[ivtx_in_cube].w)) * 0.5f;
-				//const float4 lvtx = float4(gridpos + cube_location_ltb + cube_vtx_lpos, 1.0f);
-				const float4 lvtx = float4(gridpos + cube_location_ltb + vvvv[v.vertex.x], 1.0f);
+				const float3 cube_vtx_lpos = (unpack8bits_uint_to_uint3(asuint(cube_vtxs[ivtx_in_cube].w)) - 1) * 0.5f;
+				const float4 lvtx = float4(gridpos + cube_location_ltb + cube_vtx_lpos, 1.0f);
+				//const float4 lvtx = float4(gridpos + cube_location_ltb + vvvv[v.vertex.x], 1.0f);
 
 				o.vertex = mul(UNITY_MATRIX_VP, lvtx);//UnityObjectToClipPos(lvtx);
 

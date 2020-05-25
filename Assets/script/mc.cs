@@ -456,10 +456,10 @@ namespace MarchingCubes
                     let x = v.ivtx.x<<0 & 0xff | v.ivtx.y<<8 & 0xff00 | v.ivtx.z<<16 & 0xff0000
                     let y = v.ofs.prev.x+1<<0 & 0xff | v.ofs.prev.y+1<<8 & 0xff00 | v.ofs.prev.z+1<<16 & 0xff0000
                     let z = v.ofs.next.x+1<<0 & 0xff | v.ofs.next.y+1<<8 & 0xff00 | v.ofs.next.z+1<<16 & 0xff0000
-                    let w = (int)(v.pos.x*2)<<0 & 0xff | (int)(v.pos.y*2)<<8 & 0xff00 | (int)(v.pos.z*2)<<16 & 0xff0000
+                    let w = (int)(v.pos.x*2+1)<<0 & 0xff | (int)(v.pos.y*2+1)<<8 & 0xff00 | (int)(v.pos.z*2+1)<<16 & 0xff0000
                     select new uint4( (uint)x, (uint)y, (uint)z, (uint)w )
                     ;
-                
+
                 buffer.SetData( q.Select(x=>math.asfloat(x)).ToArray() );
 
                 return buffer;
