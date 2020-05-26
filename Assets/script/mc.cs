@@ -95,7 +95,7 @@ namespace MarchingCubes
         {
             var res = this.meshResources;
 
-            this.cubeGrids = new CubeGridArrayUnsafe( 8, 3, 8 );
+            this.cubeGrids = new CubeGridArrayUnsafe( 8, 5, 8 );
             this.cubeGrids.FillCubes( new int3( -1, 2, -1 ), new int3( 11, 11, 11 ), isFillAll: true );
             this.cubeGrids.FillCubes( new int3( 2, 1, 3 ), new int3( 1, 2, 1 ), isFillAll: true );
 
@@ -280,6 +280,7 @@ namespace MarchingCubes
             public RenderTexture GridCubeIdBuffer;
         
             public Mesh mesh;
+            
 
             public MeshResources( MarchingCubeAsset asset, int maxGridLength ) : this()
             {
@@ -289,8 +290,9 @@ namespace MarchingCubes
                 this.CubeInstancesBuffer = createCubeIdInstancingShaderBuffer_( 32 * 32 * 32 * maxGridLength );
                 this.GridCubeIdBuffer = createGridCubeIdShaderBuffer_( maxGridLength );
 
-                this.NormalBuffer = createNormalList_( asset.CubeIdAndVertexIndicesList );
-                this.CubePatternBuffer = createCubePatternBuffer_( asset.CubeIdAndVertexIndicesList );
+                var vertexNormalDict = makeVertexNormalsDict_( asset.CubeIdAndVertexIndicesList );
+                this.NormalBuffer = createNormalList_( vertexNormalDict );
+                this.CubePatternBuffer = createCubePatternBuffer_( asset.CubeIdAndVertexIndicesList, vertexNormalDict );
                 this.CubeVertexBuffer = createCubeVertexBuffer_( asset.BaseVertexList );
                 this.GridBuffer = createGridShaderBuffer_( 512 );
 
@@ -328,24 +330,32 @@ namespace MarchingCubes
 
                 return buffer;
             }
-            
 
-            ComputeBuffer createNormalList_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
+
+            static float3 round_normal_( float3 x )
             {
-                var normalToIdDict = cubeIdsAndVtxIndexLists_//
+                var digits = 7;
+
+                return new float3( (float)Math.Round( x.x, digits ), (float)Math.Round( x.y, digits ), (float)Math.Round( x.z, digits ) );
+            }
+            Dictionary<float3, int> makeVertexNormalsDict_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
+            {
+                return cubeIdsAndVtxIndexLists_
                     .SelectMany( x => x.normalsForVertex )
-                    .Select( x => new half3(x) )
+                    .Select( x => round_normal_(x) )
                     .Distinct( x => x )
                     .Select( ( x, i ) => (x, i) )
                     .ToDictionary( x => x.x, x => x.i );
+            }
 
-
+            ComputeBuffer createNormalList_( Dictionary<float3, int> normalToIdDict )
+            {
                 var buffer = new ComputeBuffer( normalToIdDict.Count, Marshal.SizeOf<Vector4>(), ComputeBufferType.Constant );
 
                 var q =
                     from n in normalToIdDict
                         //.OrderBy(x=>x.Value)
-                        .Do( x => Debug.Log( $"{x.Value} {x.Key}" ) )
+                        //.Do( x => Debug.Log( $"{x.Value} {x.Key}" ) )
                         .Select(x => x.Key)
                     select new Vector4
                     {
@@ -360,15 +370,8 @@ namespace MarchingCubes
                 return buffer;
             }
 
-            ComputeBuffer createCubePatternBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_ )
+            ComputeBuffer createCubePatternBuffer_( MarchingCubeAsset.CubeWrapper[] cubeIdsAndVtxIndexLists_, Dictionary<float3, int> normalToIdDict )
             {
-                var normalToIdDict = cubeIdsAndVtxIndexLists_//
-                    .SelectMany( x => x.normalsForVertex )
-                    .Select( x => new half3( x ) )
-                    .Distinct( x => x )
-                    .Select( ( x, i ) => (x, i) )
-                    .ToDictionary( x => x.x, x => x.i );
-
                 //var buffer = new ComputeBuffer( 254, Marshal.SizeOf<uint4>() * 2, ComputeBufferType.Constant );
                 var buffer = new ComputeBuffer( 254 * 2, Marshal.SizeOf<uint4>(), ComputeBufferType.Constant );
 
@@ -380,7 +383,7 @@ namespace MarchingCubes
                         toTriPositionIndex_( cube.vertexIndices ),
                         toVtxNormalIndex_( cube.normalsForVertex, normalToIdDict )
                     };
-                q.SelectMany(x=>x).ForEach( x => Debug.Log(x) );
+                //q.SelectMany(x=>x).ForEach( x => Debug.Log(x) );
                 buffer.SetData( q.SelectMany(x=>x).Select(x=>math.asfloat(x)).ToArray() );
 
                 return buffer;
@@ -400,7 +403,7 @@ namespace MarchingCubes
                         w = (uint)( idxs[ 9]<<0 & 0xff | idxs[10]<<8 & 0xff00 | idxs[11]<<16 & 0xff0000 ),
                     };
                 }
-                uint4 toVtxNormalIndex_( Vector3[] normals, Dictionary<half3, int> normalToIdDict_ )
+                uint4 toVtxNormalIndex_( Vector3[] normals, Dictionary<float3, int> normalToIdDict_ )
                 {
                     return new uint4
                     {
@@ -409,7 +412,7 @@ namespace MarchingCubes
                         z = (uint)( ntoi(8,0) | ntoi(9,8) | ntoi(10,16) | ntoi(11,24) ),
                         w = 0,
                     };
-                    int ntoi( int i, int shift ) => (normalToIdDict_[ new half3( normals[ i ] ) ] & 0xff) << shift;
+                    int ntoi( int i, int shift ) => (normalToIdDict_[ round_normal_(normals[ i ]) ] & 0xff) << shift;
                 }
             }
 

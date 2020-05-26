@@ -142,7 +142,7 @@
 
 			float3 get_vtx_normal_current(uint cubeid_current, uint ivtx_in_cube)
 			{
-				const uint4 inml_packed = cube_patterns[cubeid_current][vtx_to_inml];
+				const uint4 inml_packed = asuint(cube_patterns[cubeid_current][vtx_to_inml]);
 				const uint inml = unpack8bit_uint4_to_uint(inml_packed, ivtx_in_cube);
 				return normals[inml];
 			}
@@ -201,7 +201,7 @@
 			float3 get_and_caluclate_triangle_to_vertex_normal
 				(uint gridid_current, uint cubeid_current, uint ivtx_in_cube, int3 cubepos)
 			{
-				const uint ivtx_near_packed = cube_vtxs[ivtx_in_cube].x;
+				const uint ivtx_near_packed = asuint(cube_vtxs[ivtx_in_cube].x);
 				const uint3 ivtx_near = unpack8bits_uint_to_uint3(ivtx_near_packed);
 
 				OrthoTempData o0, o1;
