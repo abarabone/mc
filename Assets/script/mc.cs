@@ -64,6 +64,7 @@ namespace MarchingCubes
             this.Material.SetConstantBuffer( "cube_patterns", res.CubePatternBuffer );
             this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer );
             //this.Material.SetConstantBuffer( "grids", res.GridBuffer );
+            this.Material.SetVectorArray( "grids", new Vector4[ 512 * 2 ] );// res.GridBuffer );
 
             this.Material.SetBuffer( "cube_instances", res.CubeInstancesBuffer );
             this.Material.SetTexture( "grid_cubeids", res.GridCubeIdBuffer );
@@ -221,9 +222,9 @@ namespace MarchingCubes
             this.cubeInstances.Clear();
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridData, this.cubeInstances );
 
-        //}
-        //private void LateUpdate()
-        //{
+        }
+        private unsafe void LateUpdate()
+        {
             this.job.Complete();
 
             var res = this.meshResources;

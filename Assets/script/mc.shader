@@ -76,6 +76,7 @@
 			// [0] : position as float3
 			// [1] : near grid id
 			// { x: prev(left>>0 | up>>9 | front>>18)  y: next(right>>0 | down>>9 | back>>18)  z: current }
+			// { x : back>>0 | up>>9  y : left>>0 | current>>9  z : right>>0 | down>>9  w : forward>>0 }
 
 			static const uint grid_pos = 0;
 			static const uint grid_near_id = 1;
@@ -100,10 +101,11 @@
 				return unpack8bit_uint4_to_uint(packed_uint4, element_index, packed_index);
 			}
 
-			uint unpack9bit_uint4_to_uint(uint4 packed_uint4, int2 index)
+			uint unpack9bit_uint4_to_uint(uint4 packed_uint4, int index)
+			// 9bit 値を、エレメントに２つずつ格納
 			{
-				const int iouter = index.x;
-				const int iinner = index.y * 9;
+				const int iouter = index >> 1;
+				const int iinner = index & 1;
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
 				return element >> iinner & 0x1ff;
 			}
@@ -140,22 +142,29 @@
 				int pvev_next_selector;
 			};
 
-			float3 get_vtx_normal_current(uint cubeid_current, uint ivtx_in_cube)
+			float3 get_vtx_normal(uint cubeid, uint ivtx_in_cube)
 			{
-				const uint4 inml_packed = asuint(cube_patterns[cubeid_current][vtx_to_inml]);
+				const uint4 inml_packed = asuint(cube_patterns[cubeid][vtx_to_inml]);
 				const uint inml = unpack8bit_uint4_to_uint(inml_packed, ivtx_in_cube);
 				return normals[inml];
 			}
 
-			//uint get_cubeid(int gridid, int3 cubepos)
-			//{
-			//	const int igrid = gridid * grid_span;
+			uint get_cubeid(uint gridid, int3 outerpos)
+			{
+				const uint3 innerpos = outerpos & 0x1f;
 
-			//	const int3 innerpos = cubepos & 0x1f;
-			//	const int icube = dot(innerpos, inner_span);
+				return grid_cubeids[int3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid)];
+			}
+			uint get_gridid(uint gridid_current, int3 outerpos)
+			{
+				const int3 outer_offset = outerpos >> 5;
+				const uint grid_near_selector = dot(outer_offset, int3(1, 2, 3)) + 3;
 
-			//	return grid_cubeids[int3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid)];
-			//}
+				const uint4 near_gridid_packed = asuint(grids[gridid_current][grid_near_id]);
+				const uint near_gridid = unpack9bit_uint4_to_uint(near_gridid_packed, grid_near_selector);
+
+				return near_gridid;
+			}
 
 			//int get_gridid_ortho(int gridid_current, int3 cubepos)// , out int pvev_next_selector, out int4 grid_mask)
 			//{
@@ -248,7 +257,7 @@
 				//// この処理をしないと陰影が強くつきすぎる
 				//// https://docs.unity3d.com/ja/current/Manual/SL-VertexFragmentShaderExamples.html
 				//// の「アンビエントを使った拡散ライティング」を参考
-				//o.color.rgb += ShadeSH9(half4(worldNormal, 1));
+				o.color.rgb += ShadeSH9(half4(worldNormal, 1));
 
 				o.normal = worldNormal;
 
