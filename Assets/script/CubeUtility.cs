@@ -105,10 +105,11 @@ namespace MarchingCubes
         public struct GridInstanceData
         {
             public float4 Position;
-            public uint NearIdPrev; // (left >>0 | up  >>8 | front>>16)
-            public uint NearIdNext; // (right>>0 | down>>8 | back >>16)
-            public uint IdCurrent;  // current
-            private uint dummy;
+            //public uint NearIdPrev; // (left >>0 | up  >>8 | front>>16)
+            //public uint NearIdNext; // (right>>0 | down>>8 | back >>16)
+            //public uint IdCurrent;  // current
+            //private uint dummy;
+            public ushort 
         }
 
         static public void GetNearGridList
