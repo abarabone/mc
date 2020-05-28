@@ -72,10 +72,9 @@
 			//static const uint vtx_pos = 3;
 
 
-			float3 grids[512][2];
+			float4 grids[512][2];
 			// [0] : position as float3
 			// [1] : near grid id
-			// { x: prev(left>>0 | up>>9 | front>>18)  y: next(right>>0 | down>>9 | back>>18)  z: current }
 			// { x : back>>0 | up>>9  y : left>>0 | current>>9  z : right>>0 | down>>9  w : forward>>0 }
 
 			static const uint grid_pos = 0;
@@ -101,13 +100,12 @@
 				return unpack8bit_uint4_to_uint(packed_uint4, element_index, packed_index);
 			}
 
-			uint unpack9bit_uint4_to_uint(uint4 packed_uint4, int index)
-			// 9bit 値を、エレメントに２つずつ格納
+			uint unpack16bit_uint4_to_uint(uint4 packed_uint4, int index)
 			{
 				const int iouter = index >> 1;
-				const int iinner = index & 1;
+				const int iinner = (index & 1) << 4;
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
-				return element >> iinner & 0x1ff;
+				return element >> iinner & 0xffff;
 			}
 
 			uint3 unpack8bits_uint_to_uint3(uint packed3_uint)
@@ -134,13 +132,35 @@
 			static const int3 inner_span = int3(xspan, yspan, zspan);
 
 
-			struct OrthoTempData
+
+			int3 calc_outerpos(uint3 cubepos, uint ivtx_in_cube, uint ortho_selector)
 			{
-				int4 grid_mask;
-				int3 offset;
-				int gridid;
-				int pvev_next_selector;
-			};
+				const uint4 offset_packed = asuint(cube_vtxs[ivtx_in_cube]);
+				const int3 offset = (int3)unpack8bits_uint3_to_uint3(offset_packed, ortho_selector) - 1;
+				const int3 outerpos = cubepos + offset;
+				return outerpos;
+			}
+			uint3 calc_innerpos(int3 outerpos)
+			{
+				return outerpos & 0x1f;
+			}
+
+			uint get_cubeid_near(uint gridid_current, int3 outerpos)
+			{
+				const uint3 innerpos = calc_innerpos(outerpos);
+				const int3 index = int3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid_current);
+				return grid_cubeids[index];
+			}
+			uint get_gridid_near(uint gridid_current, int3 outerpos)
+			{
+				const int3 outer_offset = outerpos >> 5;
+				const uint grid_near_selector = dot(outer_offset, int3(1, 2, 3)) + 3;
+
+				const uint4 near_gridid_packed = asuint(grids[gridid_current][grid_near_id]);
+				const uint near_gridid = unpack16bit_uint4_to_uint(near_gridid_packed, grid_near_selector);
+
+				return near_gridid;
+			}
 
 			float3 get_vtx_normal(uint cubeid, uint ivtx_in_cube)
 			{
@@ -148,76 +168,35 @@
 				const uint inml = unpack8bit_uint4_to_uint(inml_packed, ivtx_in_cube);
 				return normals[inml];
 			}
-
-			uint get_cubeid(uint gridid, int3 outerpos)
+			float3 get_vtx_normal_ortho
+				(uint gridid_current, uint3 cubepos_current, uint ivtx_ortho, uint ortho_selector, out uint gridid_ortho, out int3 outerpos_ortho)
 			{
-				const uint3 innerpos = outerpos & 0x1f;
+				const int3 outerpos = calc_outerpos(cubepos_current, ivtx_ortho, ortho_selector);
+				const uint gridid = get_gridid_near(gridid_current, outerpos);
+				const uint cubeid = get_cubeid_near(gridid_current, outerpos);
 
-				return grid_cubeids[int3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid)];
+				gridid_ortho = gridid;
+				outerpos_ortho = outerpos;
+				return get_vtx_normal(cubeid, ivtx_ortho);
 			}
-			uint get_gridid(uint gridid_current, int3 outerpos)
+			float3 get_vtx_normal_slant(uint gridid, int3 outerpos, uint ivtx_in_cube)
 			{
-				const int3 outer_offset = outerpos >> 5;
-				const uint grid_near_selector = dot(outer_offset, int3(1, 2, 3)) + 3;
 
-				const uint4 near_gridid_packed = asuint(grids[gridid_current][grid_near_id]);
-				const uint near_gridid = unpack9bit_uint4_to_uint(near_gridid_packed, grid_near_selector);
-
-				return near_gridid;
 			}
-
-			//int get_gridid_ortho(int gridid_current, int3 cubepos)// , out int pvev_next_selector, out int4 grid_mask)
-			//{
-			//	const int3 outerpos = cubepos >> 5;
-
-			//	const uint pvev_next_selector = (outerpos.x + outerpos.y + outerpos.z) + 1 >> 1;//
-			//	const uint3 near_gridid3_packed = grids[gridid_current][grid_near_id];
-			//	const uint3 near_gridid3 = unpack8bits_uint3_to_uint3(near_gridid3_packed, pvev_next_selector);
-			//	const uint current_gridid = near_gridid3_packed.z;
-			//	const uint4 near_gridid4 = uint4(near_gridid3, current_gridid);
-
-			//	const uint4 grid_mask = uint4(abs(outerpos), 1 - any(outerpos));
-
-			//	return dot(near_gridid4, grid_mask);
-			//}
-			//float3 get_vtx_normal_ortho
-			//	(int iortho, int gridid_current, int3 cubepos, int ivtx_in_cube, int ivtx_near)//, out OrthoTempData o)
-			//{
-			//	const uint offset = unpack8bit_uint4_to_uint(cube_vtxs[ivtx_in_cube], near_iofs + iortho);
-			//	const int3 pos = cubepos + offset;
-			//	
-			//	const uint gridid = get_gridid_ortho(gridid_current, pos);// , o.pvev_next_selector, o.grid_mask);
-			//	const uint4 inml4_packed = cube_patterns[get_cubeid(gridid, pos)][vtx_to_inml];
-			//	const int inml = unpack8bit_uint4_to_uint(inml4_packed, ivtx_near);
-			//	return normals[ inml ];
-			//}
-
-			////int get_gridid_slant(int gridid_current, int gridid0, int pvev_next_selector1, int4 grid_mask1)
-			////{
-			////	const int4 near_grid = grids[gridid0].near_gridids_prev_and_next[pvev_next_selector1];
-			////	const int4 near_grid01 = int4(near_grid.xyz, gridid_current);
-			////	return dot(near_grid01, grid_mask1);
-			////}
-			////float3 get_vtx_normal_slant
-			////	(int gridid_current, int3 cubepos, int ivtx, int3 offset0, int3 offset1, int gridid0, int pvev_next_selector1, int4 grid_mask1)
-			////{
-			////	const int3 offset = offset0 + offset1;
-			////	const int3 pos = cubepos + offset;
-			////	const int gridid = get_gridid_slant(gridid_current, gridid0, pvev_next_selector1, grid_mask1);
-			////	return cube_vtx_patterns[get_cubeid(gridid, pos)].vtx_nmls[ivtx];
-			////}
 
 			float3 get_and_caluclate_triangle_to_vertex_normal
-				(uint gridid_current, uint cubeid_current, uint ivtx_in_cube, int3 cubepos)
+				(uint gridid_current, uint cubeid_current, uint ivtx_in_cube, uint3 cubepos_current)
 			{
 				const uint ivtx_near_packed = asuint(cube_vtxs[ivtx_in_cube].x);
 				const uint3 ivtx_near = unpack8bits_uint_to_uint3(ivtx_near_packed);
 
-				OrthoTempData o0, o1;
-				float3 nm = get_vtx_normal_current(cubeid_current, ivtx_in_cube);
-				//nm += get_vtx_normal_ortho(0, gridid_current, cubepos, ivtx_in_cube, ivtx_near.x);// , o0);
-				//nm += get_vtx_normal_ortho(1, gridid_current, cubepos, ivtx_in_cube, ivtx_near.y);// , o1);
-				//nm += get_vtx_normal_slant(gridid_current, cubepos, ivtx.z, o0.offset, o1.offset, o0.gridid, o1.pvev_next_selector, o1.grid_mask);
+				uint gridid_ortho1, gridid_ortho2;
+				int3 outerpos_ortho1, outerpos_ortho2;
+				float3 nm = get_vtx_normal(cubeid_current, ivtx_in_cube);
+				nm += get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.x, 1, gridid_ortho1, outerpos_ortho1);
+				nm += get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.y, 2, gridid_ortho2, outerpos_ortho2);
+				//nm += get_vtx_normal_slant(gridid_ortho1, outerpos_ortho2, ivtx_near.z, 2);
+				//nm += get_vtx_normal_near(gridid_ortho, cubepos_current, ivtx_near.z, 2, gridid_ortho);
 
 				return normalize(nm);
 			}

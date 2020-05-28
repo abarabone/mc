@@ -96,9 +96,9 @@ namespace MarchingCubes
 
 
 
-        [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        static public uint ToNearGridId( int3 nearGridId ) =>
-            (uint)nearGridId.z << 18 | (uint)nearGridId.y << 9 | (uint)nearGridId.x << 0;
+        //[MethodImpl( MethodImplOptions.AggressiveInlining )]
+        //static public uint ToNearGridId( int3 nearGridId ) =>
+        //    (uint)nearGridId.z << 18 | (uint)nearGridId.y << 9 | (uint)nearGridId.x << 0;
 
 
         [StructLayout(LayoutKind.Sequential)]
@@ -109,7 +109,8 @@ namespace MarchingCubes
             //public uint NearIdNext; // (right>>0 | down>>8 | back >>16)
             //public uint IdCurrent;  // current
             //private uint dummy;
-            public ushort 
+            public ushort back, up, left, current, right, down, forward;
+            private ushort dummy;
         }
 
         static public void GetNearGridList
@@ -145,7 +146,7 @@ namespace MarchingCubes
                     var currentpos = pos.xyz * i_to_gridpos;
                     posDict.TryGetValue( currentpos, out var currentId );
 
-                    data.IdCurrent = (uint)currentId;
+                    data.current = (ushort)currentId;
 
 
                     var prevx = currentpos + new float3( -1,  0,  0 );
@@ -158,7 +159,9 @@ namespace MarchingCubes
                     posDict.TryGetValue( prevy, out prevId.y );
                     posDict.TryGetValue( prevz, out prevId.z );
 
-                    data.NearIdPrev = CubeUtility.ToNearGridId( prevId );
+                    data.left = (ushort)prevId.x;
+                    data.up = (ushort)prevId.y;
+                    data.back = (ushort)prevId.z;
 
 
                     var nextx = currentpos + new int3( 1, 0, 0 );
@@ -171,7 +174,9 @@ namespace MarchingCubes
                     posDict.TryGetValue( nexty, out nextId.y );
                     posDict.TryGetValue( nextz, out nextId.z );
 
-                    data.NearIdPrev = CubeUtility.ToNearGridId( nextId );
+                    data.right = (ushort)nextId.x;
+                    data.down = (ushort)nextId.y;
+                    data.forward = (ushort)nextId.z;
 
 
                     gridData[ i ] = data;
