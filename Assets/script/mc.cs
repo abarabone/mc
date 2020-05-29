@@ -421,7 +421,7 @@ namespace MarchingCubes
             {
                 var buffer = new ComputeBuffer( 12, Marshal.SizeOf<uint4>(), ComputeBufferType.Constant );
 
-                ((int x, int y, int z) prev, (int x, int y, int z) next)[] near_cube_offsets =
+                ((int x, int y, int z) ortho1, (int x, int y, int z) ortho2)[] near_cube_offsets =
                 {
                     (( 0, 0, -1), ( 0, -1, 0)),
                     (( -1, 0, 0), ( 0, -1, 0)),
@@ -461,8 +461,8 @@ namespace MarchingCubes
                         .Zip( near_cube_offsets, near_cube_ivtxs, ( x, y ) => (ofs: x, ivtx: y) )
                         .Zip( baseVertices, (x,y) => (x.ofs, x.ivtx, pos: y) )
                     let x = v.ivtx.x<<0 & 0xff | v.ivtx.y<<8 & 0xff00 | v.ivtx.z<<16 & 0xff0000
-                    let y = v.ofs.prev.x+1<<0 & 0xff | v.ofs.prev.y+1<<8 & 0xff00 | v.ofs.prev.z+1<<16 & 0xff0000
-                    let z = v.ofs.next.x+1<<0 & 0xff | v.ofs.next.y+1<<8 & 0xff00 | v.ofs.next.z+1<<16 & 0xff0000
+                    let y = v.ofs.ortho1.x+1<<0 & 0xff | v.ofs.ortho1.y+1<<8 & 0xff00 | v.ofs.ortho1.z+1<<16 & 0xff0000
+                    let z = v.ofs.ortho2.x+1<<0 & 0xff | v.ofs.ortho2.y+1<<8 & 0xff00 | v.ofs.ortho2.z+1<<16 & 0xff0000
                     let w = (int)(v.pos.x*2+1)<<0 & 0xff | (int)(v.pos.y*2+1)<<8 & 0xff00 | (int)(v.pos.z*2+1)<<16 & 0xff0000
                     select new uint4( (uint)x, (uint)y, (uint)z, (uint)w )
                     ;
