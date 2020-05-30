@@ -398,22 +398,30 @@ namespace MarchingCubes
 
                     return new uint4
                     {
-                        x = (uint)( idxs[ 0]<<0 & 0xff | idxs[ 1]<<8 & 0xff00 | idxs[ 2]<<16 & 0xff0000 ),
-                        y = (uint)( idxs[ 3]<<0 & 0xff | idxs[ 4]<<8 & 0xff00 | idxs[ 5]<<16 & 0xff0000 ),
-                        z = (uint)( idxs[ 6]<<0 & 0xff | idxs[ 7]<<8 & 0xff00 | idxs[ 8]<<16 & 0xff0000 ),
-                        w = (uint)( idxs[ 9]<<0 & 0xff | idxs[10]<<8 & 0xff00 | idxs[11]<<16 & 0xff0000 ),
+                        x = (idxs[ 0], idxs[ 1], idxs[ 2], 0).PackToByte4Uint(),
+                        y = (idxs[ 3], idxs[ 4], idxs[ 5], 0).PackToByte4Uint(),
+                        z = (idxs[ 6], idxs[ 7], idxs[ 8], 0).PackToByte4Uint(),
+                        w = (idxs[ 9], idxs[10], idxs[11], 0).PackToByte4Uint(),
+                        //x = (uint)( idxs[ 0]<<0 & 0xff | idxs[ 1]<<8 & 0xff00 | idxs[ 2]<<16 & 0xff0000 ),
+                        //y = (uint)( idxs[ 3]<<0 & 0xff | idxs[ 4]<<8 & 0xff00 | idxs[ 5]<<16 & 0xff0000 ),
+                        //z = (uint)( idxs[ 6]<<0 & 0xff | idxs[ 7]<<8 & 0xff00 | idxs[ 8]<<16 & 0xff0000 ),
+                        //w = (uint)( idxs[ 9]<<0 & 0xff | idxs[10]<<8 & 0xff00 | idxs[11]<<16 & 0xff0000 ),
                     };
                 }
                 uint4 toVtxNormalIndex_( Vector3[] normals, Dictionary<float3, int> normalToIdDict_ )
                 {
                     return new uint4
                     {
-                        x = (uint)( ntoi(0,0) | ntoi(1,8) | ntoi( 2,16) | ntoi( 3,24) ),
-                        y = (uint)( ntoi(4,0) | ntoi(5,8) | ntoi( 6,16) | ntoi( 7,24) ),
-                        z = (uint)( ntoi(8,0) | ntoi(9,8) | ntoi(10,16) | ntoi(11,24) ),
+                        x = (ntoi( 0), ntoi( 1), ntoi( 2), ntoi( 3)).PackToByte4Uint(),
+                        y = (ntoi( 4), ntoi( 5), ntoi( 6), ntoi( 7)).PackToByte4Uint(),
+                        z = (ntoi( 8), ntoi( 9), ntoi(10), ntoi(11)).PackToByte4Uint(),
+                        //x = (uint)( ntoi(0,0) | ntoi(1,8) | ntoi( 2,16) | ntoi( 3,24) ),
+                        //y = (uint)( ntoi(4,0) | ntoi(5,8) | ntoi( 6,16) | ntoi( 7,24) ),
+                        //z = (uint)( ntoi(8,0) | ntoi(9,8) | ntoi(10,16) | ntoi(11,24) ),
                         w = 0,
                     };
-                    int ntoi( int i, int shift ) => (normalToIdDict_[ round_normal_(normals[ i ]) ] & 0xff) << shift;
+                    //int ntoi( int i, int shift ) => (normalToIdDict_[ round_normal_(normals[ i ]) ] & 0xff) << shift;
+                    int ntoi( int i ) => normalToIdDict_[ round_normal_(normals[i]) ];
                 }
             }
 
@@ -460,11 +468,15 @@ namespace MarchingCubes
                     from v in Enumerable
                         .Zip( near_cube_offsets, near_cube_ivtxs, ( x, y ) => (ofs: x, ivtx: y) )
                         .Zip( baseVertices, (x,y) => (x.ofs, x.ivtx, pos: y) )
-                    let x = v.ivtx.x<<0 & 0xff | v.ivtx.y<<8 & 0xff00 | v.ivtx.z<<16 & 0xff0000
-                    let y = v.ofs.ortho1.x+1<<0 & 0xff | v.ofs.ortho1.y+1<<8 & 0xff00 | v.ofs.ortho1.z+1<<16 & 0xff0000
-                    let z = v.ofs.ortho2.x+1<<0 & 0xff | v.ofs.ortho2.y+1<<8 & 0xff00 | v.ofs.ortho2.z+1<<16 & 0xff0000
-                    let w = (int)(v.pos.x*2+1)<<0 & 0xff | (int)(v.pos.y*2+1)<<8 & 0xff00 | (int)(v.pos.z*2+1)<<16 & 0xff0000
-                    select new uint4( (uint)x, (uint)y, (uint)z, (uint)w )
+                        let x = (v.ivtx.x, v.ivtx.y, v.ivtx.z, 0).PackToByte4Uint()
+                        let y = (v.ofs.ortho1.x + 1, v.ofs.ortho1.y + 1, v.ofs.ortho1.z + 1, 0).PackToByte4Uint()
+                        let z = (v.ofs.ortho2.x + 1, v.ofs.ortho2.y + 1, v.ofs.ortho2.z + 1, 0).PackToByte4Uint()
+                        let w = ((int)(v.pos.x * 2) + 1, (int)(v.pos.y * 2) + 1, (int)(v.pos.z * 2) + 1, 0).PackToByte4Uint()
+                        //let x = v.ivtx.x<<0 & 0xff | v.ivtx.y<<8 & 0xff00 | v.ivtx.z<<16 & 0xff0000
+                        //let y = v.ofs.ortho1.x+1<<0 & 0xff | v.ofs.ortho1.y+1<<8 & 0xff00 | v.ofs.ortho1.z+1<<16 & 0xff0000
+                        //let z = v.ofs.ortho2.x+1<<0 & 0xff | v.ofs.ortho2.y+1<<8 & 0xff00 | v.ofs.ortho2.z+1<<16 & 0xff0000
+                        //let w = (int)(v.pos.x*2+1)<<0 & 0xff | (int)(v.pos.y*2+1)<<8 & 0xff00 | (int)(v.pos.z*2+1)<<16 & 0xff0000
+                    select new uint4( x, y, z, w )
                     ;
 
                 buffer.SetData( q.Select(x=>math.asfloat(x)).ToArray() );

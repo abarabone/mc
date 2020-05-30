@@ -25,6 +25,9 @@
 			#include "UnityCG.cginc"
 			//#include "AutoLight.cginc"
 			#include "UnityLightingCommon.cginc" // _LightColor0 に対し
+			
+			
+		#pragma enable_d3d11_debug_symbols
 
 
 			struct appdata
@@ -68,7 +71,7 @@
 			// w: pos(x>>0 | y>>8 | z>>16)
 
 			//static const uint near_ivtx = 0;
-			static const uint near_iofs = 1;
+			//static const uint near_iofs = 1;
 			//static const uint vtx_pos = 3;
 
 
@@ -174,10 +177,11 @@
 				const int3 outerpos = calc_outerpos(cubepos_current, ivtx_ortho, ortho_selector);
 				const uint gridid = get_gridid_near(gridid_current, outerpos);
 				const uint cubeid = get_cubeid_near(gridid, outerpos);
+				const float3 normal = get_vtx_normal(cubeid, ivtx_ortho);
 
 				gridid_ortho = gridid;
 				outerpos_ortho = outerpos;
-				return get_vtx_normal(cubeid, ivtx_ortho);
+				return normal;
 			}
 			float3 get_vtx_normal_slant(uint gridid, int3 outerpos, uint ivtx_in_cube)
 			{
@@ -193,7 +197,7 @@
 				uint gridid_ortho1, gridid_ortho2;
 				int3 outerpos_ortho1, outerpos_ortho2;
 				float3 nm = get_vtx_normal(cubeid_current, ivtx_in_cube);
-				nm += get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.x, 1, gridid_ortho1, outerpos_ortho1);
+				nm = get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.x, 1, gridid_ortho1, outerpos_ortho1);
 				//nm += get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.y, 2, gridid_ortho2, outerpos_ortho2);
 				//nm += get_vtx_normal_slant(gridid_ortho1, outerpos_ortho2, ivtx_near.z, 2);
 				//nm += get_vtx_normal_near(gridid_ortho, cubepos_current, ivtx_near.z, 2, gridid_ortho);

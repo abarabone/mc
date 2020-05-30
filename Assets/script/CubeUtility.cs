@@ -52,6 +52,16 @@ namespace MarchingCubes
 
 
 
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public uint PackToByte4Uint( int x, int y, int z, int w ) =>
+            (uint)( (x & 0xff)<<0 | (y & 0xff)<<8 | (z & 0xff)<<16 | (w & 0xff)<<24 );
+
+        [MethodImpl( MethodImplOptions.AggressiveInlining )]
+        static public uint PackToByte4Uint( this (int x, int y, int z, int w) i ) => PackToByte4Uint( i.x, i.y, i.z, i.w );
+
+
+
+
         static public (NativeList<int> tris, NativeList<float3> vtxs) MakeCollisionMeshData
             ( IEnumerable<CubeInstance> cubeInstances, int[][] srcIdxLists, float3[] srcVtxList )
         {
@@ -107,7 +117,7 @@ namespace MarchingCubes
             public float4 Position;
             //public ushort back, up, left, current, right, down, forward;
             //private ushort dummy;
-            public int4 ortho;
+            public uint4 ortho;
         }
 
         static public void GetNearGridList
@@ -176,10 +186,10 @@ namespace MarchingCubes
                     //data.forward = (ushort)nextId.z;
 
 
-                    data.ortho.x = prevId.z << 0 | prevId.y << 16;
-                    data.ortho.y = prevId.x << 0 | currentId << 16;
-                    data.ortho.z = nextId.x << 0 | nextId.y << 16;
-                    data.ortho.w = nextId.z << 0;
+                    data.ortho.x = (uint)(prevId.z << 0 | prevId.y << 16);
+                    data.ortho.y = (uint)(prevId.x << 0 | currentId << 16);
+                    data.ortho.z = (uint)(nextId.x << 0 | nextId.y << 16);
+                    data.ortho.w = (uint)(nextId.z << 0);
 
                     gridData[ i ] = data;
                 }
