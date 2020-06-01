@@ -161,7 +161,7 @@
 			uint get_cubeid_near(uint gridid, int3 outerpos)
 			{
 				const uint3 innerpos = calc_innerpos(outerpos);
-				const int3 index = int3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid);
+				const uint3 index = uint3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid);
 				return grid_cubeids[index];
 			}
 

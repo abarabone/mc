@@ -275,6 +275,7 @@ namespace MarchingCubes
             public ComputeBuffer NormalBuffer;
             public ComputeBuffer CubePatternBuffer;
             public ComputeBuffer CubeVertexBuffer;
+            public ComputeBuffer TriangleVertexBuffer;
             public ComputeBuffer GridBuffer;
         
             public ComputeBuffer CubeInstancesBuffer;
@@ -311,6 +312,7 @@ namespace MarchingCubes
                 if( this.NormalBuffer != null ) this.NormalBuffer.Dispose();
                 if( this.CubePatternBuffer != null ) this.CubePatternBuffer.Dispose();
                 if( this.CubeVertexBuffer != null ) this.CubeVertexBuffer.Dispose();
+                if( this.TriangleVertexBuffer != null ) this.TriangleVertexBuffer.Dispose();
                 if( this.GridBuffer != null ) this.GridBuffer.Dispose();
             }
 

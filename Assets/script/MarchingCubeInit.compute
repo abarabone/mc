@@ -21,12 +21,13 @@ static const int _32e3 = 32 * 32 * 32;
 //}
 void write_cubeid_to_grid(int gridid, int cubeid, int3 innerpos)
 {
-	int igrid = gridid * _32e3;
+	//int igrid = gridid * _32e3;
 
-	static const int3 inner_span = int3(_32e0, _32e2, _32e1);
-	int icube = dot(innerpos, inner_span);
+	//static const int3 inner_span = int3(_32e0, _32e2, _32e1);
+	//int icube = dot(innerpos, inner_span);
 
-	dst_grid_cubeids[int3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid)] = (uint)(cubeid);
+	uint3 index = uint3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid);
+	dst_grid_cubeids[index] = (uint)(cubeid);
 }
 
 int get_cubeid(uint cube_instance)
