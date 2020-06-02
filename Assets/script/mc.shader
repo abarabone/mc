@@ -89,21 +89,21 @@
 				{1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1}
 			};
 			
-			uint unpack8bit_uint4_to_uint(uint4 packed_uint4, int element_index, int packed_index)
+			uint unpack8bit_uint4_to_uint(uint4 packed_uint4, uint element_index, uint packed_index)
 			{
 				const int iouter = element_index;
 				const int iinner = packed_index << 3;// * 8
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
 				return element >> iinner & 0xff;
 			}
-			uint unpack8bit_uint4_to_uint(uint4 packed_uint4, int index)
+			uint unpack8bit_uint4_to_uint(uint4 packed_uint4, uint index)
 			{
 				const int element_index = index >> 2;// / 4
 				const int packed_index = index & 0x3;
 				return unpack8bit_uint4_to_uint(packed_uint4, element_index, packed_index);
 			}
 
-			uint unpack16bit_uint4_to_uint(uint4 packed_uint4, int index)
+			uint unpack16bit_uint4_to_uint(uint4 packed_uint4, uint index)
 			{
 				const int iouter = index >> 1;
 				const int iinner = (index & 1) << 4;
