@@ -444,7 +444,7 @@ namespace MarchingCubes
                     (( +1, 0, 0), ( 0, +1, 0)),
                     (( 0, 0, +1), ( 0, +1, 0)),
                 };
-                (int x, int y, int z)[] near_cube_ivtxs =
+                (int ortho1, int ortho2, int slant)[] near_cube_ivtxs =
                 {
                     (3,8,11),
                     (2,9,10),
@@ -466,7 +466,7 @@ namespace MarchingCubes
                     from v in Enumerable
                         .Zip( near_cube_offsets, near_cube_ivtxs, ( x, y ) => (ofs: x, ivtx: y) )
                         .Zip( baseVertices, (x,y) => (x.ofs, x.ivtx, pos: y) )
-                        let x = (v.ivtx.x, v.ivtx.y, v.ivtx.z, 0).PackToByte4Uint()
+                        let x = (v.ivtx.ortho1, v.ivtx.ortho2, v.ivtx.slant, 0).PackToByte4Uint()
                         let y = (v.ofs.ortho1.x + 1, v.ofs.ortho1.y + 1, v.ofs.ortho1.z + 1, 0).PackToByte4Uint()
                         let z = (v.ofs.ortho2.x + 1, v.ofs.ortho2.y + 1, v.ofs.ortho2.z + 1, 0).PackToByte4Uint()
                         let w = ((int)(v.pos.x * 2) + 1, (int)(v.pos.y * 2) + 1, (int)(v.pos.z * 2) + 1, 0).PackToByte4Uint()

@@ -65,7 +65,7 @@
 
 
 			float4 cube_vtxs[12];
-			// x: near vertex index (x>>0 | y>>8 | z>>16)
+			// x: near vertex index (ortho1>>0 | ortho2>>8 | slant>>16)
 			// y: near vertex offset ortho1 (x>>0 | y>>8 | z>>16)
 			// z: near vertex offset ortho2 (x>>0 | y>>8 | z>>16)
 			// w: pos(x>>0 | y>>8 | z>>16)
@@ -91,29 +91,30 @@
 			
 			uint unpack8bit_uint4_to_uint(uint4 packed_uint4, uint element_index, uint packed_index)
 			{
-				const int iouter = element_index;
-				const int iinner = packed_index << 3;// * 8
+				const uint iouter = element_index;
+				const uint iinner = packed_index << 3;// * 8
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
 				return element >> iinner & 0xff;
 			}
 			uint unpack8bit_uint4_to_uint(uint4 packed_uint4, uint index)
 			{
-				const int element_index = index >> 2;// / 4
-				const int packed_index = index & 0x3;
+				const uint element_index = index >> 2;// / 4
+				const uint packed_index = index & 0x3;
 				return unpack8bit_uint4_to_uint(packed_uint4, element_index, packed_index);
 			}
 
 			uint unpack16bit_uint4_to_uint(uint4 packed_uint4, uint index)
 			{
-				const int iouter = index >> 1;
-				const int iinner = (index & 1) << 4;
+				const uint iouter = index >> 1;
+				const uint iinner = (index & 1) << 4;
 				const uint element = dot(packed_uint4, element_mask_table[iouter]);
 				return element >> iinner & 0xffff;
 			}
 
 			uint3 unpack8bits_uint_to_uint3(uint packed3_uint)
 			{
-				return packed3_uint.xxx >> uint3(0, 8, 16) & 0xff;
+				//return packed3_uint.xxx >> uint3(0, 8, 16) & 0xff;
+				return uint3(packed3_uint, packed3_uint, packed3_uint) >> uint3(0, 8, 16) & uint3(0xff,0xff,0xff);
 			}
 			uint3 unpack8bits_uint3_to_uint3(uint3 packed3_uint3, uint element_index)
 			{
@@ -139,18 +140,21 @@
 			int3 calc_outerpos(uint3 cubepos, uint ivtx_in_cube, uint ortho_selector)
 			{
 				const uint3 offset_packed = asuint(cube_vtxs[ivtx_in_cube].xyz);
-				const int3 offset = (int3)unpack8bits_uint3_to_uint3(offset_packed, ortho_selector) - 1;
+				//const int3 offset = (int3)unpack8bits_uint3_to_uint3(offset_packed, ortho_selector) - 1;
+				const int3 offset = (int3)unpack8bits_uint3_to_uint3(offset_packed, ortho_selector) - int3(1,1,1);
 				const int3 outerpos = cubepos + offset;
 				return outerpos;
 			}
 			uint3 calc_innerpos(int3 outerpos)
 			{
-				return outerpos & 0x1f;
+				//return outerpos & 0x1f;
+				return outerpos & int3(0x1f, 0x1f, 0x1f);
 			}
 
 			uint get_gridid_near(uint gridid_current, int3 outerpos)
 			{
-				const int3 outer_offset = outerpos >> 5;
+				//const int3 outer_offset = outerpos >> 5;
+				const int3 outer_offset = outerpos >> int3(5,5,5);
 				const uint grid_near_selector = dot(outer_offset, int3(1, 2, 3)) + 3;
 
 				const uint4 near_gridid_packed = asuint(grids[gridid_current][grid_near_id]);
