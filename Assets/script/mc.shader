@@ -171,7 +171,7 @@
 				
 				const int igrid = gridid * grid_span;
 				const int icube = dot(innerpos, inner_span);
-				return grid_cubeids[igrid + icube] & 0xff;
+				return grid_cubeids[igrid + icube];
 			}
 
 			float3 get_vtx_normal(uint cubeid, uint ivtx_in_cube)

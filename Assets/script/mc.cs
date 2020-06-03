@@ -119,8 +119,8 @@ namespace MarchingCubes
             res.CubeInstancesBuffer.SetData( this.cubeInstances.AsArray() );
             res.GridBuffer.SetData( this.gridData.AsArray() );
             var remain = ( 64 - ( this.cubeInstances.Length & 0x3f ) ) & 0x3f;
-            for( var i = 0; i < remain; i++ ) this.cubeInstances.AddNoResize( new CubeInstance { instance = 1 } );
-            this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
+            //for( var i = 0; i < remain; i++ ) this.cubeInstances.AddNoResize( new CubeInstance { instance = 1 } );
+            //this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
             Debug.Log( $"{cubeInstances.Length} / {res.CubeInstancesBuffer.count}" );
         }
         void createHitMesh()
