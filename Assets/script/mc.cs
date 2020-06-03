@@ -67,11 +67,13 @@ namespace MarchingCubes
             this.Material.SetVectorArray( "grids", new Vector4[ 512 * 2 ] );// res.GridBuffer );
 
             this.Material.SetBuffer( "cube_instances", res.CubeInstancesBuffer );
-            this.Material.SetTexture( "grid_cubeids", res.GridCubeIdBuffer );
+            //this.Material.SetTexture( "grid_cubeids", res.GridCubeIdBuffer );
+            this.Material.SetBuffer( "grid_cubeids", res.GridCubeIdBuffer );
 
 
             this.setGridCubeIdShader.SetBuffer( 0, "src_instances", res.CubeInstancesBuffer );
-            this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.GridCubeIdBuffer );
+            //this.setGridCubeIdShader.SetTexture( 0, "dst_grid_cubeids", res.GridCubeIdBuffer );
+            this.setGridCubeIdShader.SetBuffer( 0, "dst_grid_cubeids", res.GridCubeIdBuffer );
         }
 
 
@@ -275,8 +277,9 @@ namespace MarchingCubes
             public ComputeBuffer GridBuffer;
         
             public ComputeBuffer CubeInstancesBuffer;
-            public RenderTexture GridCubeIdBuffer;
-        
+            //public RenderTexture GridCubeIdBuffer;
+            public ComputeBuffer GridCubeIdBuffer;
+
             public Mesh mesh;
             
 
@@ -318,13 +321,19 @@ namespace MarchingCubes
                 return buffer;
             }
 
-            RenderTexture createGridCubeIdShaderBuffer_( int maxGridLength )
+            //RenderTexture createGridCubeIdShaderBuffer_( int maxGridLength )
+            //{
+            //    var buffer = new RenderTexture( 32 * 32, 32, 0, UnityEngine.Experimental.Rendering.GraphicsFormat.R32_UInt, 0 );
+            //    buffer.enableRandomWrite = true;
+            //    buffer.dimension = TextureDimension.Tex2DArray;
+            //    buffer.volumeDepth = maxGridLength;
+            //    buffer.Create();
+
+            //    return buffer;
+            //}
+            ComputeBuffer createGridCubeIdShaderBuffer_( int maxGridLength )
             {
-                var buffer = new RenderTexture( 32 * 32, 32, 0, UnityEngine.Experimental.Rendering.GraphicsFormat.R32_UInt, 0 );
-                buffer.enableRandomWrite = true;
-                buffer.dimension = TextureDimension.Tex2DArray;
-                buffer.volumeDepth = maxGridLength;
-                buffer.Create();
+                var buffer = new ComputeBuffer( 32 * 32 * 32 * maxGridLength, Marshal.SizeOf<uint>() );
 
                 return buffer;
             }

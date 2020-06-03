@@ -50,18 +50,19 @@
 
 
 			StructuredBuffer<uint> cube_instances;
-			Texture2DArray<uint> grid_cubeids;
+			//Texture2DArray<uint> grid_cubeids;
+			StructuredBuffer<uint> grid_cubeids;
 
 
-			float3 normals[155];
+			float4 normals[155];
 
 			//StructuredBuffer<uint4> cube_patterns;
 			float4 cube_patterns[254][2];
-			// [0] : vertex posision index { x: tri0(i0>>0 | i1>>8 | i2>>16)  y: tri1  z: tri2  w: tri3 }
-			// [1] : vertex normal index { x: (i0>>0 | i1>>8 | i2>>16 | i3>>24)  y: i4|5|6|7  z:i8|9|10|11 }
+			// [0] : vertex posision index for tringle { x: tri0(i0>>0 | i1>>8 | i2>>16)  y: tri1  z: tri2  w: tri3 }
+			// [1] : vertex normal index for vertex { x: (i0>>0 | i1>>8 | i2>>16 | i3>>24)  y: i4|5|6|7  z:i8|9|10|11 }
 
-			static const uint tri_to_ivtx = 0;
-			static const uint vtx_to_inml = 1;
+			static const uint itri_to_ivtx = 0;
+			static const uint ivtx_to_inml = 1;
 
 
 			float4 cube_vtxs[12];
@@ -165,13 +166,17 @@
 			uint get_cubeid_near(uint gridid, int3 outerpos)
 			{
 				const uint3 innerpos = calc_innerpos(outerpos);
-				const uint3 index = uint3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid);
-				return grid_cubeids[index];
+				//const uint3 index = uint3(innerpos.z * 32 + innerpos.x, innerpos.y, gridid);
+				//return grid_cubeids[index];
+				
+				const int igrid = gridid * grid_span;
+				const int icube = dot(innerpos, inner_span);
+				return grid_cubeids[igrid + icube] & 0xff;
 			}
 
 			float3 get_vtx_normal(uint cubeid, uint ivtx_in_cube)
 			{
-				const uint4 inml_packed = asuint(cube_patterns[cubeid][vtx_to_inml]);
+				const uint4 inml_packed = asuint(cube_patterns[cubeid][ivtx_to_inml]);
 				const uint inml = unpack8bit_uint4_to_uint(inml_packed, ivtx_in_cube);
 				return normals[inml];
 			}
@@ -180,7 +185,8 @@
 			{
 				const int3 outerpos = calc_outerpos(cubepos_current, ivtx_ortho, ortho_selector);
 				const uint gridid = get_gridid_near(gridid_current, outerpos);
-				const uint cubeid = get_cubeid_near(gridid, outerpos);
+				//const uint cubeid = get_cubeid_near(gridid, outerpos);
+				const uint cubeid = get_cubeid_near(gridid_current, outerpos);
 				const float3 normal = get_vtx_normal(cubeid, ivtx_ortho);
 
 				gridid_ortho = gridid;
@@ -200,13 +206,13 @@
 
 				uint gridid_ortho1, gridid_ortho2;
 				int3 outerpos_ortho1, outerpos_ortho2;
-				float3 nm = get_vtx_normal(cubeid_current, ivtx_in_cube);
-				nm = get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.x, 1, gridid_ortho1, outerpos_ortho1);
-				//nm += get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.y, 2, gridid_ortho2, outerpos_ortho2);
-				//nm += get_vtx_normal_slant(gridid_ortho1, outerpos_ortho2, ivtx_near.z, 2);
-				//nm += get_vtx_normal_near(gridid_ortho, cubepos_current, ivtx_near.z, 2, gridid_ortho);
+				const float3 nm0 = get_vtx_normal(cubeid_current, ivtx_in_cube);
+				const float3 nm1 = get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.x, 1, gridid_ortho1, outerpos_ortho1);
+				const float3 nm2 = get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.y, 2, gridid_ortho2, outerpos_ortho2);
+				//const float3 nm3 = get_vtx_normal_slant(gridid_ortho1, outerpos_ortho2, ivtx_near.z, 2);
+				//const float3 nm3 = get_vtx_normal_near(gridid_ortho, cubepos_current, ivtx_near.z, 2, gridid_ortho);
 
-				return normalize(nm);
+				return normalize(nm1);// nm0 + nm1 + nm2 + nm3);
 			}
 
 			static const float3 vvvv[] = { {0,0,0}, {1,0,0}, {0,1,0} };
@@ -221,7 +227,7 @@
 				const uint gridid = data >> 8 & 0xff;
 				const float3 gridpos = grids[gridid][grid_pos];
 
-				const uint4 ivtx_packed = asuint(cube_patterns[cubeid][tri_to_ivtx]);
+				const uint4 ivtx_packed = asuint(cube_patterns[cubeid][itri_to_ivtx]);
 				const uint ivtx_in_cube = unpack8bit_uint4_to_uint(ivtx_packed, v.vertex.y, v.vertex.x);
 
 				const int3 cube_location = int3(data >> 16 & 0x1f, data >> 21 & 0x1f, data >> 26 & 0x1f);
