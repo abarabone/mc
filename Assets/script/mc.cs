@@ -157,7 +157,7 @@ namespace MarchingCubes
             cb.name = "marching cubes drawer";
 
             cb.DispatchCompute( this.setGridCubeIdShader, 0, res.ArgsBufferForDispatch, 0 );
-
+            
             cb.DrawMeshInstancedIndirect( res.mesh, 0, mat, 0, res.ArgsBufferForInstancing );
 
             return cb;
@@ -246,8 +246,8 @@ namespace MarchingCubes
             var dargparams = new IndirectArgumentsForDispatch( this.cubeInstances.Length >> 6, 1, 1 );
             var dargs = res.ArgsBufferForDispatch;
             dargs.SetData( ref dargparams );
-            //this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );
-
+            //this.setGridCubeIdShader.Dispatch( 0, this.cubeInstances.Length >> 6, 1, 1 );//
+            
             var mesh = res.mesh;
             var mat = this.Material;
             var iargs = res.ArgsBufferForInstancing;
@@ -256,8 +256,8 @@ namespace MarchingCubes
             var iargparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             iargs.SetData( ref iargparams );
 
-            //var bounds = new Bounds() { center = Vector3.zero, size = Vector3.one * 1000.0f };
-            //Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, iargs );
+            //var bounds = new Bounds() { center = Vector3.zero, size = Vector3.one * 1000.0f };//
+            //Graphics.DrawMeshInstancedIndirect( mesh, 0, mat, bounds, iargs );//
 
         }
         int i;

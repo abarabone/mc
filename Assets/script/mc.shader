@@ -138,24 +138,24 @@
 
 
 
-			int3 calc_outerpos(uint3 cubepos, uint ivtx_in_cube, uint ortho_selector)
+			int3 calc_outerpos(int3 cubepos, uint ivtx_in_cube, uint ortho_selector)
 			{
 				const uint3 offset_packed = asuint(cube_vtxs[ivtx_in_cube].xyz);
-				//const int3 offset = (int3)unpack8bits_uint3_to_uint3(offset_packed, ortho_selector) - 1;
-				const int3 offset = (int3)unpack8bits_uint3_to_uint3(offset_packed, ortho_selector) - int3(1,1,1);
+				const int3 offset = (int3)unpack8bits_uint3_to_uint3(offset_packed, ortho_selector) - 1;
+				//const int3 offset = (int3)unpack8bits_uint3_to_uint3(offset_packed, ortho_selector) - int3(1,1,1);
 				const int3 outerpos = cubepos + offset;
 				return outerpos;
 			}
 			uint3 calc_innerpos(int3 outerpos)
 			{
-				//return outerpos & 0x1f;
-				return outerpos & int3(0x1f, 0x1f, 0x1f);
+				return outerpos & 0x1f;
+				//return outerpos & int3(0x1f, 0x1f, 0x1f);
 			}
 
 			uint get_gridid_near(uint gridid_current, int3 outerpos)
 			{
-				//const int3 outer_offset = outerpos >> 5;
-				const int3 outer_offset = outerpos >> int3(5,5,5);
+				const int3 outer_offset = outerpos >> 5;
+				//const int3 outer_offset = outerpos >> int3(5,5,5);
 				const uint grid_near_selector = dot(outer_offset, int3(1, 2, 3)) + 3;
 
 				const uint4 near_gridid_packed = asuint(grids[gridid_current][grid_near_id]);
@@ -181,21 +181,27 @@
 				return normals[inml];
 			}
 			float3 get_vtx_normal_ortho
-				(uint gridid_current, uint3 cubepos_current, uint ivtx_ortho, uint ortho_selector, out uint gridid_ortho, out int3 outerpos_ortho)
+				(uint gridid_current, uint3 cubepos_current, uint ivtx_current, uint ivtx_ortho, uint ortho_selector,
+					out uint gridid_ortho, out int3 outerpos_ortho)
 			{
-				const int3 outerpos = calc_outerpos(cubepos_current, ivtx_ortho, ortho_selector);
+				const int3 outerpos = calc_outerpos(cubepos_current, ivtx_current, ortho_selector);
 				const uint gridid = get_gridid_near(gridid_current, outerpos);
-				//const uint cubeid = get_cubeid_near(gridid, outerpos);
-				const uint cubeid = get_cubeid_near(gridid_current, outerpos);
+				const uint cubeid = get_cubeid_near(gridid, outerpos);
 				const float3 normal = get_vtx_normal(cubeid, ivtx_ortho);
 
 				gridid_ortho = gridid;
 				outerpos_ortho = outerpos;
 				return normal;
 			}
-			float3 get_vtx_normal_slant(uint gridid, int3 outerpos, uint ivtx_in_cube)
+			float3 get_vtx_normal_slant
+				(uint gridid_ortho, int3 outerpos_ortho, uint ivtx_current, uint ivtx_slant, uint ortho_selector)
 			{
+				const int3 outerpos = calc_outerpos(outerpos_ortho, ivtx_current, ortho_selector);
+				const uint gridid = get_gridid_near(gridid_ortho, outerpos);
+				const uint cubeid = get_cubeid_near(gridid, outerpos);
+				const float3 normal = get_vtx_normal(cubeid, ivtx_slant);
 
+				return normal;
 			}
 
 			float3 get_and_caluclate_triangle_to_vertex_normal
@@ -207,12 +213,37 @@
 				uint gridid_ortho1, gridid_ortho2;
 				int3 outerpos_ortho1, outerpos_ortho2;
 				const float3 nm0 = get_vtx_normal(cubeid_current, ivtx_in_cube);
-				const float3 nm1 = get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.x, 1, gridid_ortho1, outerpos_ortho1);
-				const float3 nm2 = get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_near.y, 2, gridid_ortho2, outerpos_ortho2);
-				//const float3 nm3 = get_vtx_normal_slant(gridid_ortho1, outerpos_ortho2, ivtx_near.z, 2);
-				//const float3 nm3 = get_vtx_normal_near(gridid_ortho, cubepos_current, ivtx_near.z, 2, gridid_ortho);
+				const float3 nm1 = get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_in_cube, ivtx_near.x, 1, gridid_ortho1, outerpos_ortho1);
+				const float3 nm2 = get_vtx_normal_ortho(gridid_current, cubepos_current, ivtx_in_cube, ivtx_near.y, 2, gridid_ortho2, outerpos_ortho2);
+				const float3 nm3 = get_vtx_normal_slant(gridid_ortho1,  outerpos_ortho1, ivtx_in_cube, ivtx_near.z, 2);
 
-				return normalize(nm1);// nm0 + nm1 + nm2 + nm3);
+				//uint gridid_ortho1, gridid_ortho2, gridid_slant;
+				//int3 outerpos_ortho1, outerpos_ortho2, outerpos_slant;
+				//const float3 nm0 = get_vtx_normal(cubeid_current, ivtx_in_cube);
+				//const float3 nm1 = get_vtx_normal_near(gridid_current, cubepos_current, ivtx_in_cube, ivtx_near.x, 1, gridid_ortho1, outerpos_ortho1);
+				//const float3 nm2 = get_vtx_normal_near(gridid_current, cubepos_current, ivtx_in_cube, ivtx_near.y, 2, gridid_ortho2, outerpos_ortho2);
+				//const float3 nm3 = get_vtx_normal_near(gridid_ortho1, outerpos_ortho1, ivtx_in_cube, ivtx_near.z, 2, gridid_slant, outerpos_slant);
+
+
+				//const float3 nm0 = get_vtx_normal(cubeid_current, ivtx_in_cube);
+
+				//const int3 outerpos1 = calc_outerpos(cubepos_current, ivtx_in_cube, 1);
+				//const uint gridid1 = get_gridid_near(gridid_current, outerpos1);
+				//const uint cubeid1 = get_cubeid_near(gridid1, outerpos1);
+				//const float3 nm1 = get_vtx_normal(cubeid1, ivtx_near.x);
+
+				//const int3 outerpos2 = calc_outerpos(cubepos_current, ivtx_in_cube, 2);
+				//const uint gridid2 = get_gridid_near(gridid_current, outerpos2);
+				//const uint cubeid2 = get_cubeid_near(gridid2, outerpos2);
+				//const float3 nm2 = get_vtx_normal(cubeid2, ivtx_near.y);
+
+				//const int3 outerpos3 = calc_outerpos(outerpos1, ivtx_in_cube, 2);
+				//const uint gridid3 = get_gridid_near(gridid1, outerpos3);
+				//const uint cubeid3 = get_cubeid_near(gridid3, outerpos3);
+				//const float3 nm3 = get_vtx_normal(cubeid3, ivtx_near.z);
+
+
+				return normalize(nm0 + nm1 + nm2 + nm3);
 			}
 
 			static const float3 vvvv[] = { {0,0,0}, {1,0,0}, {0,1,0} };
@@ -222,7 +253,6 @@
 
 				const uint data = cube_instances[i];
 				const uint cubeid = (data & 0xff) - 1;
-				//const uint2 idxofs = cubeId * uint2(12,4) + v.vertex.xy;
 
 				const uint gridid = data >> 8 & 0xff;
 				const float3 gridpos = grids[gridid][grid_pos];
