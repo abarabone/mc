@@ -157,7 +157,7 @@ namespace MarchingCubes
             cb.name = "marching cubes drawer";
 
             cb.DispatchCompute( this.setGridCubeIdShader, 0, res.ArgsBufferForDispatch, 0 );
-            
+
             cb.DrawMeshInstancedIndirect( res.mesh, 0, mat, 0, res.ArgsBufferForInstancing );
 
             return cb;
