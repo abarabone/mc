@@ -54,7 +54,7 @@
 			//StructuredBuffer<uint> grid_cubeids;
 
 
-			float4 normals[142];
+			float4 normals[155];
 
 			//StructuredBuffer<uint4> cube_patterns;
 			float4 cube_patterns[254][2];

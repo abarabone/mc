@@ -224,9 +224,9 @@ namespace MarchingCubes
             this.cubeInstances.Clear();
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridData, this.cubeInstances );
 
-        }
-        private unsafe void LateUpdate()
-        {
+        //}
+        //private unsafe void LateUpdate()
+        //{
             this.job.Complete();
 
             var res = this.meshResources;
