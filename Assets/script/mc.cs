@@ -63,8 +63,8 @@ namespace MarchingCubes
             this.Material.SetConstantBuffer( "normals", res.NormalBuffer );
             this.Material.SetConstantBuffer( "cube_patterns", res.CubePatternBuffer );
             this.Material.SetConstantBuffer( "cube_vtxs", res.CubeVertexBuffer );
-            //this.Material.SetConstantBuffer( "grids", res.GridBuffer );
-            this.Material.SetVectorArray( "grids", new Vector4[ 512 * 2 ] );// res.GridBuffer );
+            this.Material.SetConstantBuffer("grids", res.GridBuffer);
+            //this.Material.SetVectorArray( "grids", new Vector4[ 512 * 2 ] );// res.GridBuffer );
 
             this.Material.SetBuffer( "cube_instances", res.CubeInstancesBuffer );
             this.Material.SetTexture( "grid_cubeids", res.GridCubeIdBuffer );
@@ -222,16 +222,18 @@ namespace MarchingCubes
             //i = i + 1 & 31;
             this.gridData.Clear();
             this.cubeInstances.Clear();
+            Debug.Log($"pre {this.cubeInstances.Length} {this.gridData.Length}");
             this.job = this.cubeGrids.BuildCubeInstanceData( this.gridData, this.cubeInstances );
-
         //}
         //private unsafe void LateUpdate()
         //{
             this.job.Complete();
+            Debug.Log($"aft {this.cubeInstances.Length}/{this.cubeInstances.length} {this.gridData.Length}/{this.gridData.length}");
 
             var res = this.meshResources;
             res.CubeInstancesBuffer.SetData( this.cubeInstances.AsArray() );
-            
+            Debug.Log($"CubeInstancesBuffer setdata {this.cubeInstances.Length} {this.gridData.Length}");
+
             //res.GridBuffer.SetData( this.gridData.AsArray() );
             var grids = new Vector4[this.gridData.Length * 2];
             fixed( Vector4 *pdst = grids )
@@ -240,6 +242,7 @@ namespace MarchingCubes
                 UnsafeUtility.MemCpy( pdst, psrc, this.gridData.Length * 2 * sizeof( float4 ) );
             }
             this.Material.SetVectorArray( "grids", grids );
+            Debug.Log($"SetVectorArray {grids.Length}");
 
             var remain = (64 - (this.cubeInstances.Length & 0x3f) ) & 0x3f;
             for(var i=0; i<remain; i++) this.cubeInstances.AddNoResize( new CubeInstance { instance = 1 } );
@@ -253,6 +256,7 @@ namespace MarchingCubes
             var iargs = res.ArgsBufferForInstancing;
 
             var instanceCount = this.cubeInstances.Length;
+            Debug.Log($"instanceCount {instanceCount}");
             var iargparams = new IndirectArgumentsForInstancing( mesh, instanceCount );
             iargs.SetData( ref iargparams );
 
